@@ -1,0 +1,139 @@
+export type MatchStage = "group" | "qf" | "sf" | "final" | "third";
+export type MatchStatus = "not_started" | "live" | "half_time" | "full_time";
+
+export type Database = {
+  public: {
+    Tables: {
+      profiles: {
+        Row: {
+          id: string;
+          is_admin: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id: string;
+          is_admin?: boolean;
+        };
+        Update: {
+          id?: string;
+          is_admin?: boolean;
+        };
+      };
+      teams: {
+        Row: {
+          id: string;
+          name: string;
+          group_letter: string;
+          group_order: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          group_letter: string;
+          group_order: number;
+        };
+        Update: {
+          name?: string;
+          group_letter?: string;
+          group_order?: number;
+        };
+      };
+      players: {
+        Row: {
+          id: string;
+          team_id: string;
+          name: string;
+          sort_order: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          team_id: string;
+          name: string;
+          sort_order?: number;
+        };
+        Update: {
+          team_id?: string;
+          name?: string;
+          sort_order?: number;
+        };
+      };
+      matches: {
+        Row: {
+          id: string;
+          stage: MatchStage;
+          slot_code: string | null;
+          group_letter: string | null;
+          home_team_id: string | null;
+          away_team_id: string | null;
+          scheduled_at: string | null;
+          status: MatchStatus;
+          home_score: number;
+          away_score: number;
+          sort_order: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          stage: MatchStage;
+          slot_code?: string | null;
+          group_letter?: string | null;
+          home_team_id?: string | null;
+          away_team_id?: string | null;
+          scheduled_at?: string | null;
+          status?: MatchStatus;
+          home_score?: number;
+          away_score?: number;
+          sort_order?: number;
+        };
+        Update: {
+          stage?: MatchStage;
+          slot_code?: string | null;
+          group_letter?: string | null;
+          home_team_id?: string | null;
+          away_team_id?: string | null;
+          scheduled_at?: string | null;
+          status?: MatchStatus;
+          home_score?: number;
+          away_score?: number;
+          sort_order?: number;
+        };
+      };
+      match_goals: {
+        Row: {
+          id: string;
+          match_id: string;
+          team_id: string;
+          scorer_name: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          match_id: string;
+          team_id: string;
+          scorer_name: string;
+        };
+        Update: {
+          match_id?: string;
+          team_id?: string;
+          scorer_name?: string;
+        };
+      };
+      site_settings: {
+        Row: {
+          key: string;
+          value: unknown;
+        };
+        Insert: {
+          key: string;
+          value?: unknown;
+        };
+        Update: {
+          value?: unknown;
+        };
+      };
+    };
+  };
+};
