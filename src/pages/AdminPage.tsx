@@ -25,6 +25,13 @@ export function AdminPage() {
 
   const { pot1, pot2 } = useMemo(() => qualifiedPot(teams, matches), [teams, matches]);
 
+  const matchesForLivePick = useMemo(() => sortMatchesForAdminPicker(matches), [matches]);
+
+  const liveMatch = useMemo(() => {
+    if (!currentLiveMatchId) return null;
+    return matches.find((m) => m.id === currentLiveMatchId) ?? null;
+  }, [currentLiveMatchId, matches]);
+
   if (authLoading) return <p className="empty">Loading…</p>;
   if (!session) {
     return (
@@ -189,9 +196,6 @@ where id = 'YOUR_USER_UUID';`}
       "Bracket synced: semi-final slots updated from quarter-finals. Final / 3rd place updated when semi-finals have winners.",
     );
   }
-
-  const liveMatch = currentLiveMatchId ? matches.find((m) => m.id === currentLiveMatchId) : null;
-  const matchesForLivePick = useMemo(() => sortMatchesForAdminPicker(matches), [matches]);
 
   return (
     <main className="admin-page">
