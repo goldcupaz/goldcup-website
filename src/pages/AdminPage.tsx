@@ -5,6 +5,7 @@ import { useAuth } from "../context/AuthContext";
 import { useTournament } from "../context/TournamentContext";
 import type { Database } from "../lib/database.types";
 import { statusLabel } from "../lib/format";
+import { sortMatchesForAdminPicker } from "../lib/matchSort";
 import { qualifiedPot } from "../lib/pots";
 import { supabase } from "../lib/supabase";
 import { finalComputed, getBySlot, thirdComputed } from "../lib/knockoutResolve";
@@ -190,6 +191,7 @@ where id = 'YOUR_USER_UUID';`}
   }
 
   const liveMatch = currentLiveMatchId ? matches.find((m) => m.id === currentLiveMatchId) : null;
+  const matchesForLivePick = useMemo(() => sortMatchesForAdminPicker(matches), [matches]);
 
   return (
     <main className="admin-page">
@@ -245,13 +247,33 @@ where id = 'YOUR_USER_UUID';`}
                 onChange={(e) => void setLiveMatch(e.target.value || null)}
               >
                 <option value="">None</option>
-                {matches.map((m) => {
+                {matchesForLivePick.map((m) => {
                   const hn = m.home_team_id ? teams.find((t) => t.id === m.home_team_id)?.name : "TBD";
                   const an = m.away_team_id ? teams.find((t) => t.id === m.away_team_id)?.name : "TBD";
+                  const stageTag =
+                    m.stage === "group"
+                      ? `Group ${m.group_letter ?? "?"}`
+                      : m.stage === "qf"
+                        ? "QF"
+                        : m.stage === "sf"
+                          ? "SF"
+                          : m.stage === "third"
+                            ? "3rd"
+                            : m.stage === "final"
+                              ? "Final"
+                              : m.stage;
+                  const when = m.scheduled_at
+                    ? new Date(m.scheduled_at).toLocaleString(undefined, {
+                        month: "short",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })
+                    : "TBD";
                   const label = [m.slot_code, m.group_letter].filter(Boolean).join(" ") || m.stage;
                   return (
                     <option key={m.id} value={m.id}>
-                      {label} · {hn} vs {an}
+                      [{stageTag}] {when} · {label} · {hn} vs {an}
                     </option>
                   );
                 })}
@@ -261,6 +283,7 @@ where id = 'YOUR_USER_UUID';`}
 
           {liveMatch && (
             <LiveEditor
+              key={liveMatch.id}
               match={liveMatch}
               teams={teams}
               goals={goals.filter((g) => g.match_id === liveMatch.id)}
@@ -567,6 +590,14 @@ function LiveEditor({
   const [scorer, setScorer] = useState("");
   const [side, setSide] = useState<"home" | "away">("home");
 
+  useEffect(() => {
+    setSt(match.status);
+    setHs(String(match.home_score));
+    setAs(String(match.away_score));
+    setScorer("");
+    setSide("home");
+  }, [match.id, match.status, match.home_score, match.away_score, match.home_team_id, match.away_team_id]);
+
   const homeTeam = teams.find((t) => t.id === match.home_team_id);
   const awayTeam = teams.find((t) => t.id === match.away_team_id);
 
@@ -703,6 +734,15 @@ function TeamsEditor({
     if (!error) void refresh();
   }
 
+  async function deletePlayer(playerId: string) {
+    const { error } = await supabase.from("players").delete().eq("id", playerId);
+    if (error) {
+      console.error(error);
+      return;
+    }
+    void refresh();
+  }
+
   return (
     <section className="card">
       <h2 style={{ marginTop: 0, fontSize: 14, letterSpacing: "0.12em", textTransform: "uppercase" }}>
@@ -769,9 +809,18 @@ function TeamsEditor({
         </button>
       </form>
 
-      <ul>
+      <ul className="admin-player-list">
         {roster.map((p) => (
-          <li key={p.id}>{p.name}</li>
+          <li key={p.id} className="admin-player-row">
+            <span>{p.name}</span>
+            <button
+              type="button"
+              className="btn"
+              onClick={() => void deletePlayer(p.id)}
+            >
+              Remove
+            </button>
+          </li>
         ))}
       </ul>
     </section>
