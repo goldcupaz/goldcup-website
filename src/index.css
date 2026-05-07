@@ -546,6 +546,33 @@ button {
   gap: 10px;
 }
 
+.main-sponsor-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+.sponsor-logo-tile {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 14px;
+  background: rgba(0, 0, 0, 0.22);
+  display: grid;
+  place-items: center;
+  min-height: 90px;
+}
+
+.sponsor-logo-tile--main {
+  border-color: var(--gold-dim);
+}
+
+.sponsor-logo {
+  max-width: 100%;
+  max-height: 68px;
+  object-fit: contain;
+  filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.35));
+}
+
 .sponsor-tile {
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 14px;
@@ -581,6 +608,9 @@ button {
     grid-template-columns: 1fr 1fr;
   }
   .sponsor-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .main-sponsor-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }

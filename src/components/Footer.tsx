@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 
 import logo from "../assets/goldcup-logo.svg";
+import azersunLogo from "../assets/sponsors/azersun.png";
 
 export function Footer() {
   return (
@@ -28,10 +29,11 @@ export function Footer() {
         <div className="site-footer-sponsors">
           <div className="site-footer-head">Sponsors & Partners</div>
           <div className="footer-sponsor-grid">
-            <div className="footer-sponsor-tile footer-sponsor-tile--main">Main Sponsor</div>
-            <div className="footer-sponsor-tile">Official Sponsor</div>
-            <div className="footer-sponsor-tile">Official Sponsor</div>
-            <div className="footer-sponsor-tile">Partner</div>
+            <div className="footer-sponsor-tile footer-sponsor-tile--main">
+              <img className="sponsor-logo" src={azersunLogo} alt="Azersun logo" />
+            </div>
+            <div className="footer-sponsor-tile footer-sponsor-tile--main">Sponsor Logo</div>
+            <div className="footer-sponsor-tile footer-sponsor-tile--main">Sponsor Logo</div>
           </div>
           <div className="site-footer-links">
             <Link className="site-footer-link" to="/sponsors">

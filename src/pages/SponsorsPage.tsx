@@ -1,3 +1,5 @@
+import azersunLogo from "../assets/sponsors/azersun.png";
+
 export function SponsorsPage() {
   return (
     <main>
@@ -5,8 +7,14 @@ export function SponsorsPage() {
       <p className="subtitle">Sponsor logos are placeholders for now.</p>
 
       <section className="card">
-        <h2 className="section-title">Main Sponsor</h2>
-        <div className="sponsor-hero">Main Sponsor Logo</div>
+        <h2 className="section-title">Main Sponsors</h2>
+        <div className="main-sponsor-grid">
+          <div className="sponsor-logo-tile sponsor-logo-tile--main">
+            <img className="sponsor-logo" src={azersunLogo} alt="Azersun logo" />
+          </div>
+          <div className="sponsor-logo-tile sponsor-logo-tile--main">Sponsor Logo</div>
+          <div className="sponsor-logo-tile sponsor-logo-tile--main">Sponsor Logo</div>
+        </div>
       </section>
 
       <div className="grid-2" style={{ marginTop: 14 }}>

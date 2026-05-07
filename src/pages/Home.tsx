@@ -8,6 +8,7 @@ import { isMatchInPlayOrBreak } from "../lib/matchStatus";
 import { computeStandingsForGroup } from "../lib/standings";
 import { formatTimelineLine, sortMatchEvents } from "../lib/timeline";
 import logo from "../assets/goldcup-logo.svg";
+import azersunLogo from "../assets/sponsors/azersun.png";
 
 type MatchRow = Database["public"]["Tables"]["matches"]["Row"];
 
@@ -221,27 +222,13 @@ export function Home() {
           </Link>
         </div>
         <div className="home-sponsor-block">
-          <div className="home-sponsor-head">Main Sponsor</div>
-          <div className="sponsor-hero">Main Sponsor Logo</div>
-        </div>
-        <div className="home-sponsor-split">
-          <div className="home-sponsor-block">
-            <div className="home-sponsor-head">Official Sponsors</div>
-            <div className="sponsor-grid">
-              <div className="sponsor-tile">Logo</div>
-              <div className="sponsor-tile">Logo</div>
-              <div className="sponsor-tile">Logo</div>
-              <div className="sponsor-tile">Logo</div>
+          <div className="home-sponsor-head">Main Sponsors</div>
+          <div className="main-sponsor-grid">
+            <div className="sponsor-logo-tile sponsor-logo-tile--main">
+              <img className="sponsor-logo" src={azersunLogo} alt="Azersun logo" />
             </div>
-          </div>
-          <div className="home-sponsor-block">
-            <div className="home-sponsor-head">Partners</div>
-            <div className="sponsor-grid">
-              <div className="sponsor-tile">Logo</div>
-              <div className="sponsor-tile">Logo</div>
-              <div className="sponsor-tile">Logo</div>
-              <div className="sponsor-tile">Logo</div>
-            </div>
+            <div className="sponsor-logo-tile sponsor-logo-tile--main">Sponsor Logo</div>
+            <div className="sponsor-logo-tile sponsor-logo-tile--main">Sponsor Logo</div>
           </div>
         </div>
       </section>
