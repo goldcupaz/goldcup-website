@@ -596,7 +596,9 @@ button {
 }
 
 .sponsor-logo--star {
-  max-height: 92px;
+  /* keep same size, but zoom into mark */
+  transform: scale(1.45);
+  transform-origin: center;
 }
 
 .sponsor-tile {
