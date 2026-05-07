@@ -1,5 +1,3 @@
-import { Link } from "react-router-dom";
-
 import logo from "../assets/goldcup-logo.png";
 import azersunLogo from "../assets/sponsors/azersun.png";
 import dreamFestLogo from "../assets/sponsors/dreamfest.png";
@@ -14,29 +12,6 @@ export function Footer() {
           <div>
             <div className="site-footer-title">Gold Cup</div>
             <div className="site-footer-tag">#morethanagame</div>
-          </div>
-        </div>
-
-        <div className="site-footer-about">
-          <div className="site-footer-head">About Gold Cup</div>
-          <p className="site-footer-text">
-            Gold Cup is a youth football tournament created to bring competition, atmosphere, and community together.
-            Our goal is to give teams a professional tournament experience both on and off the pitch.
-          </p>
-          <a className="site-footer-link" href="#" onClick={(e) => e.preventDefault()} aria-label="Instagram (placeholder)">
-            Instagram →
-          </a>
-        </div>
-
-        <div className="site-footer-sponsors">
-          <div className="site-footer-head">Links</div>
-          <div className="site-footer-links">
-            <Link className="site-footer-link" to="/sponsors">
-              Sponsors
-            </Link>
-            <Link className="site-footer-link" to="/about">
-              About
-            </Link>
           </div>
         </div>
       </div>

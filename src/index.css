@@ -738,59 +738,10 @@ button {
   margin-bottom: 8px;
 }
 
-.site-footer-text {
-  margin: 0;
-  color: var(--muted);
-  font-size: 13px;
-  line-height: 1.55;
-}
-
-.site-footer-link {
-  display: inline-block;
-  margin-top: 10px;
-  color: rgba(255, 255, 255, 0.85);
-  text-decoration: none;
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  border-bottom: 1px solid transparent;
-}
-
-.site-footer-link:hover {
-  color: var(--gold);
-  border-bottom-color: var(--gold-dim);
-}
-
-.footer-sponsor-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-}
-
-.footer-sponsor-tile {
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 14px;
-  padding: 12px;
-  background: rgba(0, 0, 0, 0.22);
-  color: var(--muted);
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  text-align: center;
-}
-
-.footer-sponsor-tile--main {
-  grid-column: 1 / -1;
-  border-color: var(--gold-dim);
-  color: rgba(255, 255, 255, 0.88);
-}
-
-.site-footer-links {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-  margin-top: 10px;
+.site-footer-sponsorbar {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .site-footer-bottom {
@@ -813,14 +764,8 @@ button {
 
 @media (min-width: 960px) {
   .site-footer-inner {
-    grid-template-columns: 1.2fr 1fr 1fr;
-    align-items: start;
-  }
-  .footer-sponsor-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-  .footer-sponsor-tile--main {
-    grid-column: span 2;
+    grid-template-columns: 1fr;
+    align-items: center;
   }
 }
 
