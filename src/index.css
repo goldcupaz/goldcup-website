@@ -780,11 +780,6 @@ button {
   overflow: hidden;
 }
 
-.official-sponsor-slot--light {
-  background: #ffffff;
-  border-color: rgba(212, 175, 55, 0.28);
-}
-
 .official-sponsor-link {
   display: flex;
   align-items: center;
@@ -830,9 +825,21 @@ button {
   transform: scale(1.28);
 }
 
-/* All Sports — stronger zoom inside same card height */
+/* HIVideo — clearer on dark card (same dimensions as other slots) */
+.sponsor-official-img--hivido-footer {
+  transform: scale(1.36);
+  filter: brightness(1.08) contrast(1.05);
+}
+
+/* Bona Dea · Liv Hospital — horizontal mark, balanced in grid cell */
+.sponsor-official-img--bona-dea-footer {
+  max-height: 32px;
+  transform: scale(1.06);
+}
+
+/* All Sports — strong zoom inside same card height */
 .sponsor-official-img--zoom-xl {
-  transform: scale(1.72);
+  transform: scale(2.18);
 }
 
 @media (min-width: 720px) {
@@ -840,8 +847,13 @@ button {
     max-height: 40px;
   }
 
+  .sponsor-official-img--bona-dea-footer {
+    max-height: 36px;
+    transform: scale(1.04);
+  }
+
   .sponsor-official-img--zoom-xl {
-    transform: scale(1.65);
+    transform: scale(2.08);
   }
 }
 

@@ -8,6 +8,7 @@ import officialHividoLogo from "../assets/sponsors/official-hivido.png";
 import officialNeonNLogo from "../assets/sponsors/official-neon-n.png";
 import officialAllSportsLogo from "../assets/sponsors/official-all-sports.png";
 import officialTimsportLogo from "../assets/sponsors/official-timsport.png";
+import officialBonaDeaLivLogo from "../assets/sponsors/official-bona-dea-liv.png";
 
 type OfficialSlot =
   | { kind: "placeholder" }
@@ -28,15 +29,15 @@ const STAR_COLLEGES_URL = "https://star.edu.az/";
 const HIVIDEO_URL = "https://hivideo.az/";
 const NOOSHCARD_URL = "https://www.instagram.com/nooshcard?igsh=MWN1bWI0Y2oxcGM3aQ==";
 const TIMSPORT_URL = "https://timsport.az/en";
+const LIV_HOSPITAL_URL = "https://www.livhospital.az/";
 
 const OFFICIAL_SPONSOR_SLOTS: OfficialSlot[] = [
   {
     kind: "img",
     src: officialHividoLogo,
     alt: "HIVideo",
-    zoomClass: "sponsor-official-img--zoom-lg",
+    zoomClass: "sponsor-official-img--hivido-footer",
     href: HIVIDEO_URL,
-    slotClass: "official-sponsor-slot--light",
   },
   {
     kind: "img",
@@ -58,7 +59,13 @@ const OFFICIAL_SPONSOR_SLOTS: OfficialSlot[] = [
     zoomClass: "sponsor-official-img--zoom-md",
     href: TIMSPORT_URL,
   },
-  { kind: "placeholder" },
+  {
+    kind: "img",
+    src: officialBonaDeaLivLogo,
+    alt: "Bona Dea · Liv Hospital",
+    zoomClass: "sponsor-official-img--bona-dea-footer",
+    href: LIV_HOSPITAL_URL,
+  },
   { kind: "placeholder" },
   { kind: "placeholder" },
 ];
