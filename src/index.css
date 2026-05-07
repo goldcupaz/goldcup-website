@@ -699,8 +699,25 @@ button {
   padding: 12px;
 }
 
-.sponsor-row--footer .sponsor-logo {
-  max-height: 64px;
+/* Footer: larger readable Azersun + Dream Fest; Star stays on global .sponsor-logo--star rules */
+.sponsor-row--footer .sponsor-logo--footer-azersun {
+  padding: 6px 8px;
+  max-height: 92px;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  transform: scale(1.14);
+  transform-origin: center;
+}
+
+.sponsor-row--footer .sponsor-logo--footer-dreamfest {
+  padding: 8px 10px;
+  max-height: 76px;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  transform: scale(1.1);
+  transform-origin: center;
 }
 
 /* Footer */

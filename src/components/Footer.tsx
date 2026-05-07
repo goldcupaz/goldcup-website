@@ -47,10 +47,18 @@ export function Footer() {
         </div>
         <div className="sponsor-row sponsor-row--footer" aria-label="Sponsor logos">
           <div className="sponsor-row-item">
-            <img className="sponsor-logo sponsor-logo--free" src={azersunLogo} alt="Azersun logo" />
+            <img
+              className="sponsor-logo sponsor-logo--free sponsor-logo--footer-azersun"
+              src={azersunLogo}
+              alt="Azersun logo"
+            />
           </div>
           <div className="sponsor-row-item">
-            <img className="sponsor-logo sponsor-logo--free" src={dreamFestLogo} alt="Dream Fest logo" />
+            <img
+              className="sponsor-logo sponsor-logo--free sponsor-logo--footer-dreamfest"
+              src={dreamFestLogo}
+              alt="Dream Fest logo"
+            />
           </div>
           <div className="sponsor-row-item">
             <div className="sponsor-logo-chip">
