@@ -35,10 +35,10 @@ export function Footer() {
               <img className="sponsor-logo" src={azersunLogo} alt="Azersun logo" />
             </div>
             <div className="footer-sponsor-tile footer-sponsor-tile--main">
-              <img className="sponsor-logo sponsor-logo--banner" src={dreamFestLogo} alt="Dream Fest logo" />
+              <img className="sponsor-logo" src={dreamFestLogo} alt="Dream Fest logo" />
             </div>
-            <div className="footer-sponsor-tile footer-sponsor-tile--main sponsor-logo-tile--light">
-              <img className="sponsor-logo sponsor-logo--dark" src={starCollegesLogo} alt="Star Colleges logo" />
+            <div className="footer-sponsor-tile footer-sponsor-tile--main">
+              <img className="sponsor-logo" src={starCollegesLogo} alt="Star Colleges logo" />
             </div>
           </div>
           <div className="site-footer-links">

@@ -230,10 +230,10 @@ export function Home() {
               <img className="sponsor-logo" src={azersunLogo} alt="Azersun logo" />
             </div>
             <div className="sponsor-logo-tile sponsor-logo-tile--main">
-              <img className="sponsor-logo sponsor-logo--banner" src={dreamFestLogo} alt="Dream Fest logo" />
+              <img className="sponsor-logo" src={dreamFestLogo} alt="Dream Fest logo" />
             </div>
-            <div className="sponsor-logo-tile sponsor-logo-tile--main sponsor-logo-tile--light">
-              <img className="sponsor-logo sponsor-logo--dark" src={starCollegesLogo} alt="Star Colleges logo" />
+            <div className="sponsor-logo-tile sponsor-logo-tile--main">
+              <img className="sponsor-logo" src={starCollegesLogo} alt="Star Colleges logo" />
             </div>
           </div>
         </div>
