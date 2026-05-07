@@ -4,6 +4,20 @@ import logo from "../assets/goldcup-logo.png";
 import azersunLogo from "../assets/sponsors/azersun.png";
 import dreamFestLogo from "../assets/sponsors/dreamfest.png";
 import starCollegesLogo from "../assets/sponsors/star-colleges.png";
+import officialHividoLogo from "../assets/sponsors/official-hivido.png";
+import officialNeonNLogo from "../assets/sponsors/official-neon-n.png";
+import officialAllSportsLogo from "../assets/sponsors/official-all-sports.png";
+import officialTimsportLogo from "../assets/sponsors/official-timsport.png";
+
+const OFFICIAL_SPONSOR_SLOTS = [
+  { kind: "img" as const, src: officialHividoLogo, alt: "HIVideo", zoomClass: "sponsor-official-img--zoom-lg" },
+  { kind: "img" as const, src: officialNeonNLogo, alt: "Partner logo", zoomClass: "sponsor-official-img--zoom-lg" },
+  { kind: "img" as const, src: officialAllSportsLogo, alt: "All Sports", zoomClass: "sponsor-official-img--zoom-md" },
+  { kind: "img" as const, src: officialTimsportLogo, alt: "TIMSPORT", zoomClass: "sponsor-official-img--zoom-md" },
+  { kind: "placeholder" as const },
+  { kind: "placeholder" as const },
+  { kind: "placeholder" as const },
+];
 
 export function Footer() {
   return (
@@ -64,6 +78,21 @@ export function Footer() {
             <div className="sponsor-logo-chip">
               <img className="sponsor-logo sponsor-logo--star" src={starCollegesLogo} alt="Star Colleges logo" />
             </div>
+          </div>
+        </div>
+
+        <div className="official-sponsors-block">
+          <div className="official-sponsors-title">Official Sponsors</div>
+          <div className="official-sponsors-grid" aria-label="Official sponsor logos">
+            {OFFICIAL_SPONSOR_SLOTS.map((slot, i) => (
+              <div key={i} className="official-sponsor-slot">
+                {slot.kind === "placeholder" ? (
+                  <span className="official-sponsor-placeholder">Sponsor Logo</span>
+                ) : (
+                  <img className={`sponsor-official-img ${slot.zoomClass}`} src={slot.src} alt={slot.alt} />
+                )}
+              </div>
+            ))}
           </div>
         </div>
       </div>

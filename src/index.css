@@ -720,6 +720,84 @@ button {
   transform-origin: center;
 }
 
+/* Footer: Official Sponsors (secondary row) */
+.official-sponsors-block {
+  margin-top: 16px;
+}
+
+.official-sponsors-title {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+  margin-bottom: 10px;
+}
+
+.official-sponsors-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+@media (min-width: 560px) {
+  .official-sponsors-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 960px) {
+  .official-sponsors-grid {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+  }
+}
+
+.official-sponsor-slot {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  background: rgba(8, 16, 11, 0.35);
+  min-height: 64px;
+  padding: 10px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.official-sponsor-placeholder {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-align: center;
+  line-height: 1.35;
+}
+
+.sponsor-official-img {
+  max-width: 100%;
+  max-height: 36px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  object-position: center;
+  transform-origin: center;
+}
+
+.sponsor-official-img--zoom-md {
+  transform: scale(1.12);
+}
+
+.sponsor-official-img--zoom-lg {
+  transform: scale(1.28);
+}
+
+@media (min-width: 720px) {
+  .sponsor-official-img {
+    max-height: 40px;
+  }
+}
+
 /* Footer */
 .site-footer {
   margin-top: 26px;
