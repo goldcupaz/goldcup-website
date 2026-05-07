@@ -1,33 +1,220 @@
+import { useMemo } from "react";
 import { Link } from "react-router-dom";
 
+import { useTournament } from "../context/TournamentContext";
+import type { Database } from "../lib/database.types";
+import { formatKickoff, statusLabel } from "../lib/format";
+import { isMatchInPlayOrBreak } from "../lib/matchStatus";
+import { computeStandingsForGroup } from "../lib/standings";
+import { formatTimelineLine, sortMatchEvents } from "../lib/timeline";
+
+type MatchRow = Database["public"]["Tables"]["matches"]["Row"];
+
+const GROUP_LETTERS = ["A", "B", "C", "D"] as const;
+const UPCOMING_LIMIT = 10;
+const TIMELINE_PREVIEW = 6;
+
+function teamName(map: Map<string, string>, id: string | null) {
+  if (!id) return "TBD";
+  return map.get(id) ?? "TBD";
+}
+
+function matchLabel(m: MatchRow): string {
+  if (m.stage === "group") return `Group ${m.group_letter ?? "?"} · ${m.slot_code ?? ""}`;
+  return m.slot_code ?? m.stage;
+}
+
+function sortByKickoff(a: MatchRow, b: MatchRow): number {
+  const ta = a.scheduled_at ? new Date(a.scheduled_at).getTime() : Number.POSITIVE_INFINITY;
+  const tb = b.scheduled_at ? new Date(b.scheduled_at).getTime() : Number.POSITIVE_INFINITY;
+  if (ta !== tb) return ta - tb;
+  return a.sort_order - b.sort_order;
+}
+
 export function Home() {
+  const { teams, matches, matchEvents, currentLiveMatchId, loading, error } = useTournament();
+
+  const nameById = useMemo(() => new Map(teams.map((t) => [t.id, t.name] as const)), [teams]);
+
+  const liveCard = useMemo(() => {
+    if (currentLiveMatchId) {
+      const m = matches.find((x) => x.id === currentLiveMatchId);
+      if (m) return { mode: "featured" as const, match: m };
+    }
+    const upcoming = matches.filter((m) => m.status === "not_started").sort(sortByKickoff);
+    const now = Date.now();
+    const withTime = upcoming.filter((m) => m.scheduled_at && new Date(m.scheduled_at).getTime() >= now);
+    const next = withTime[0] ?? upcoming[0] ?? null;
+    if (next) return { mode: "next" as const, match: next };
+    return { mode: "none" as const, match: null };
+  }, [currentLiveMatchId, matches]);
+
+  const timelinePreview = useMemo(() => {
+    if (liveCard.mode === "none" || !liveCard.match) return [];
+    const all = sortMatchEvents(matchEvents.filter((e) => e.match_id === liveCard.match.id));
+    return all.slice(-TIMELINE_PREVIEW);
+  }, [liveCard, matchEvents]);
+
+  const upcomingList = useMemo(() => {
+    return matches
+      .filter((m) => m.status === "not_started" && (!currentLiveMatchId || m.id !== currentLiveMatchId))
+      .sort(sortByKickoff)
+      .slice(0, UPCOMING_LIMIT);
+  }, [matches, currentLiveMatchId]);
+
+  const standingsByGroup = useMemo(() => {
+    return GROUP_LETTERS.map((L) => ({
+      letter: L,
+      rows: computeStandingsForGroup(L, teams, matches),
+    }));
+  }, [teams, matches]);
+
+  const showLivePulse =
+    liveCard.mode === "featured" && liveCard.match && isMatchInPlayOrBreak(liveCard.match.status);
+
+  if (loading && teams.length === 0) return <p className="empty">Loading…</p>;
+
   return (
-    <main>
-      <h1 className="page-title">Gold Cup</h1>
-      <p className="subtitle">
-        Official tournament hub — groups, live scores, fixtures, and the knockout path. Updates are stored in the cloud so
-        every fan sees the same match state.
-      </p>
-      <div className="grid-2">
-        <div className="card">
-          <h2 style={{ marginTop: 0, fontSize: 14, letterSpacing: "0.16em", textTransform: "uppercase" }}>Live</h2>
-          <p className="muted">Follow the featured match with score, status, and goal scorers.</p>
-          <Link to="/live" className="btn btn-primary" style={{ display: "inline-block", marginTop: 12 }}>
-            Open live match
-          </Link>
+    <main className="home-page">
+      <header className="home-hero">
+        <h1 className="page-title home-title">Gold Cup</h1>
+        <p className="subtitle home-subtitle">
+          Live scores, fixtures, and group tables — one place for fans. Data syncs from Supabase in real time.
+        </p>
+      </header>
+      {error && <div className="alert warn">{error}</div>}
+
+      <div className="home-dashboard">
+        <div className="home-col home-col--primary">
+          <section className="card home-live-card">
+            <div className="home-section-head">
+              <h2 className="home-section-title">
+                {liveCard.mode === "featured"
+                  ? "Featured match"
+                  : liveCard.mode === "next"
+                    ? "Next up"
+                    : "Live match"}
+              </h2>
+              {liveCard.match && (
+                <Link to="/live" className="home-link-more">
+                  Full live →
+                </Link>
+              )}
+            </div>
+
+            {!liveCard.match ? (
+              <p className="muted" style={{ margin: 0 }}>
+                No upcoming matches scheduled yet. Check back after the draw.
+              </p>
+            ) : (
+              <>
+                <div className="home-live-meta muted">{matchLabel(liveCard.match)}</div>
+                <div className="home-live-teams">
+                  <span className="home-live-team">{teamName(nameById, liveCard.match.home_team_id)}</span>
+                  <div className="home-live-center">
+                    <span className="home-live-score">
+                      {liveCard.match.home_score} – {liveCard.match.away_score}
+                    </span>
+                    <span className={`home-live-status${showLivePulse ? " home-live-status--pulse" : ""}`}>
+                      {liveCard.mode === "featured" ? statusLabel(liveCard.match.status) : "Not started"}
+                    </span>
+                  </div>
+                  <span className="home-live-team">{teamName(nameById, liveCard.match.away_team_id)}</span>
+                </div>
+                {liveCard.match.scheduled_at && liveCard.mode === "next" && (
+                  <p className="muted home-live-kickoff">{formatKickoff(liveCard.match.scheduled_at)}</p>
+                )}
+                {timelinePreview.length > 0 ? (
+                  <div className="home-timeline-preview">
+                    <span className="home-timeline-label">Timeline</span>
+                    <ul className="home-timeline-list">
+                      {timelinePreview.map((ev) => (
+                        <li key={ev.id}>{formatTimelineLine(ev, nameById)}</li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : (
+                  <p className="muted home-timeline-empty">No timeline events yet.</p>
+                )}
+              </>
+            )}
+          </section>
+
+          <section className="card home-fixtures-card">
+            <div className="home-section-head">
+              <h2 className="home-section-title">Upcoming fixtures</h2>
+              <Link to="/fixtures" className="home-link-more">
+                All fixtures →
+              </Link>
+            </div>
+            {upcomingList.length === 0 ? (
+              <p className="muted" style={{ margin: 0 }}>
+                No scheduled not-started matches.
+              </p>
+            ) : (
+              <ul className="home-fixture-list">
+                {upcomingList.map((m) => (
+                  <li key={m.id} className="home-fixture-row">
+                    <div className="home-fixture-line1">
+                      <span className="home-fixture-when">{m.scheduled_at ? formatKickoff(m.scheduled_at) : "TBD"}</span>
+                      <span className="home-fixture-meta">{matchLabel(m)}</span>
+                    </div>
+                    <div className="home-fixture-teams">
+                      {teamName(nameById, m.home_team_id)} <span className="muted">vs</span>{" "}
+                      {teamName(nameById, m.away_team_id)}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
         </div>
-        <div className="card">
-          <h2 style={{ marginTop: 0, fontSize: 14, letterSpacing: "0.16em", textTransform: "uppercase" }}>
-            Fixtures & standings
-          </h2>
-          <p className="muted">Group stage results feed the standings table automatically.</p>
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 12 }}>
-            <Link to="/fixtures" className="btn">
-              Fixtures
+
+        <div className="home-col home-col--standings">
+          <div className="home-section-head home-standings-head">
+            <h2 className="home-section-title">Standings</h2>
+            <Link to="/standings" className="home-link-more">
+              Details →
             </Link>
-            <Link to="/standings" className="btn">
-              Standings
-            </Link>
+          </div>
+          <div className="home-standings-grid">
+            {standingsByGroup.map(({ letter, rows }) => (
+              <section key={letter} className="home-group-card">
+                <div className="home-group-badge">Group {letter}</div>
+                <div className="table-wrap home-standings-wrap">
+                  <table className="home-standings-table">
+                    <thead>
+                      <tr>
+                        <th>#</th>
+                        <th>Team</th>
+                        <th>P</th>
+                        <th>W</th>
+                        <th>D</th>
+                        <th>L</th>
+                        <th>GD</th>
+                        <th className="home-th-pts">PTS</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {rows.map((r, i) => (
+                        <tr key={r.team.id}>
+                          <td>{i + 1}</td>
+                          <td className="home-td-team">{r.team.name}</td>
+                          <td>{r.played}</td>
+                          <td>{r.wins}</td>
+                          <td>{r.draws}</td>
+                          <td>{r.losses}</td>
+                          <td>
+                            {r.gd > 0 ? `+${r.gd}` : `${r.gd}`}
+                          </td>
+                          <td className="home-td-pts">{r.pts}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+            ))}
           </div>
         </div>
       </div>

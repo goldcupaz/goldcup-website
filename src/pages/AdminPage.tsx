@@ -14,6 +14,7 @@ import { winnerId } from "../lib/bracket";
 
 type MatchRow = Database["public"]["Tables"]["matches"]["Row"];
 type MatchEventRow = Database["public"]["Tables"]["match_events"]["Row"];
+type PlayerRow = Database["public"]["Tables"]["players"]["Row"];
 type MatchStatus = Database["public"]["Tables"]["matches"]["Row"]["status"];
 
 const STATUSES: MatchStatus[] = [
@@ -322,6 +323,7 @@ where id = 'YOUR_USER_UUID';`}
               key={liveMatch.id}
               match={liveMatch}
               teams={teams}
+              players={players}
               events={sortMatchEvents(matchEvents.filter((e) => e.match_id === liveMatch.id))}
               onSave={(p) => void saveMatch(p)}
               onAddEvent={(row) => void addMatchEvent(liveMatch.id, row)}
@@ -617,9 +619,12 @@ function QfRow({
   );
 }
 
+const MANUAL_PLAYER_VALUE = "__manual__";
+
 function LiveEditor({
   match,
   teams,
+  players,
   events,
   onSave,
   onAddEvent,
@@ -627,6 +632,7 @@ function LiveEditor({
 }: {
   match: MatchRow;
   teams: Database["public"]["Tables"]["teams"]["Row"][];
+  players: PlayerRow[];
   events: MatchEventRow[];
   onSave: (p: Partial<MatchRow> & { id: string }) => void;
   onAddEvent: (row: {
@@ -640,27 +646,40 @@ function LiveEditor({
   const [as, setAs] = useState(String(match.away_score));
   const [evType, setEvType] = useState<MatchEventType>("goal");
   const [side, setSide] = useState<"home" | "away">("home");
-  const [playerName, setPlayerName] = useState("");
+  const [selectedPlayerId, setSelectedPlayerId] = useState("");
+  const [manualName, setManualName] = useState("");
 
   useEffect(() => {
     setHs(String(match.home_score));
     setAs(String(match.away_score));
     setEvType("goal");
     setSide("home");
-    setPlayerName("");
+    setSelectedPlayerId("");
+    setManualName("");
   }, [match.id, match.home_score, match.away_score, match.home_team_id, match.away_team_id]);
+
+  useEffect(() => {
+    setSelectedPlayerId("");
+    setManualName("");
+  }, [evType, side]);
 
   const homeTeam = teams.find((t) => t.id === match.home_team_id);
   const awayTeam = teams.find((t) => t.id === match.away_team_id);
   const teamNameById = useMemo(() => new Map(teams.map((t) => [t.id, t.name] as const)), [teams]);
 
+  function pickTeamId(): string | null {
+    return side === "home" ? match.home_team_id : match.away_team_id;
+  }
+
+  const roster = useMemo(() => {
+    const tid = pickTeamId();
+    if (!tid) return [];
+    return players.filter((p) => p.team_id === tid).sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name));
+  }, [players, side, match.home_team_id, match.away_team_id]);
+
   function submitScore(e: FormEvent) {
     e.preventDefault();
     onSave({ id: match.id, home_score: Number(hs), away_score: Number(as) });
-  }
-
-  function pickTeamId(): string | null {
-    return side === "home" ? match.home_team_id : match.away_team_id;
   }
 
   const needsDetail = TIMELINE_EVENT_OPTIONS.find((o) => o.value === evType)?.needsTeamPlayer ?? false;
@@ -669,12 +688,29 @@ function LiveEditor({
     e.preventDefault();
     if (needsDetail) {
       const tid = pickTeamId();
-      if (!tid || !playerName.trim()) return;
-      onAddEvent({ event_type: evType, team_id: tid, player_name: playerName.trim() });
+      if (!tid) return;
+
+      let nameOut: string | null = null;
+      if (roster.length === 0) {
+        if (!manualName.trim()) return;
+        nameOut = manualName.trim();
+      } else if (selectedPlayerId === MANUAL_PLAYER_VALUE) {
+        if (!manualName.trim()) return;
+        nameOut = manualName.trim();
+      } else if (selectedPlayerId) {
+        const pl = roster.find((p) => p.id === selectedPlayerId);
+        if (!pl) return;
+        nameOut = pl.name;
+      } else {
+        return;
+      }
+
+      onAddEvent({ event_type: evType, team_id: tid, player_name: nameOut });
     } else {
       onAddEvent({ event_type: evType, team_id: null, player_name: null });
     }
-    setPlayerName("");
+    setSelectedPlayerId("");
+    setManualName("");
   }
 
   function setStatus(next: MatchStatus) {
@@ -755,16 +791,41 @@ function LiveEditor({
             ))}
           </select>
           {needsDetail && (
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "end" }}>
-              <select value={side} onChange={(e) => setSide(e.target.value as "home" | "away")}>
-                <option value="home">{homeTeam?.name ?? "Home"}</option>
-                <option value="away">{awayTeam?.name ?? "Away"}</option>
-              </select>
-              <input
-                placeholder="Player name"
-                value={playerName}
-                onChange={(e) => setPlayerName(e.target.value)}
-              />
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <div className="form-row" style={{ marginBottom: 0 }}>
+                <label>Team</label>
+                <select value={side} onChange={(e) => setSide(e.target.value as "home" | "away")}>
+                  <option value="home">{homeTeam?.name ?? "Home"}</option>
+                  <option value="away">{awayTeam?.name ?? "Away"}</option>
+                </select>
+              </div>
+              {roster.length > 0 ? (
+                <div className="form-row" style={{ marginBottom: 0 }}>
+                  <label>Player</label>
+                  <select
+                    value={selectedPlayerId}
+                    onChange={(e) => setSelectedPlayerId(e.target.value)}
+                  >
+                    <option value="">Select player…</option>
+                    {roster.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name}
+                      </option>
+                    ))}
+                    <option value={MANUAL_PLAYER_VALUE}>Other — type name</option>
+                  </select>
+                </div>
+              ) : null}
+              {(roster.length === 0 || selectedPlayerId === MANUAL_PLAYER_VALUE) && (
+                <div className="form-row" style={{ marginBottom: 0 }}>
+                  <label>{roster.length === 0 ? "Player name (no roster)" : "Manual name"}</label>
+                  <input
+                    placeholder="Player name"
+                    value={manualName}
+                    onChange={(e) => setManualName(e.target.value)}
+                  />
+                </div>
+              )}
             </div>
           )}
           <button type="submit" className="btn btn-primary">
