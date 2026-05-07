@@ -12,13 +12,19 @@ export function SponsorsPage() {
         <h2 className="section-title">Main Sponsors</h2>
         <div className="main-sponsor-grid">
           <div className="sponsor-logo-tile sponsor-logo-tile--main">
-            <img className="sponsor-logo" src={azersunLogo} alt="Azersun logo" />
+            <div className="sponsor-logo-chip">
+              <img className="sponsor-logo" src={azersunLogo} alt="Azersun logo" />
+            </div>
           </div>
           <div className="sponsor-logo-tile sponsor-logo-tile--main">
-            <img className="sponsor-logo" src={dreamFestLogo} alt="Dream Fest logo" />
+            <div className="sponsor-logo-chip">
+              <img className="sponsor-logo" src={dreamFestLogo} alt="Dream Fest logo" />
+            </div>
           </div>
           <div className="sponsor-logo-tile sponsor-logo-tile--main">
-            <img className="sponsor-logo" src={starCollegesLogo} alt="Star Colleges logo" />
+            <div className="sponsor-logo-chip">
+              <img className="sponsor-logo" src={starCollegesLogo} alt="Star Colleges logo" />
+            </div>
           </div>
         </div>
       </section>

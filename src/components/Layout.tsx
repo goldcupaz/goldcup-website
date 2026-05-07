@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { isSupabaseConfigured } from "../lib/supabase";
 import { Footer } from "./Footer";
-import logo from "../assets/goldcup-logo.svg";
+import logo from "../assets/goldcup-logo.png";
 
 export function Layout() {
   const { session } = useAuth();

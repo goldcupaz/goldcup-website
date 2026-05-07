@@ -7,7 +7,7 @@ import { formatKickoff, statusLabel } from "../lib/format";
 import { isMatchInPlayOrBreak } from "../lib/matchStatus";
 import { computeStandingsForGroup } from "../lib/standings";
 import { formatTimelineLine, sortMatchEvents } from "../lib/timeline";
-import logo from "../assets/goldcup-logo.svg";
+import logo from "../assets/goldcup-logo.png";
 import azersunLogo from "../assets/sponsors/azersun.png";
 import dreamFestLogo from "../assets/sponsors/dreamfest.png";
 import starCollegesLogo from "../assets/sponsors/star-colleges.png";
@@ -90,6 +90,32 @@ export function Home() {
         </div>
       </header>
       {error && <div className="alert warn">{error}</div>}
+
+      <section className="card home-main-sponsors-card">
+        <div className="home-section-head">
+          <h2 className="home-section-title">Main Sponsors</h2>
+          <Link to="/sponsors" className="home-link-more">
+            Sponsors →
+          </Link>
+        </div>
+        <div className="main-sponsor-grid">
+          <div className="sponsor-logo-tile sponsor-logo-tile--main">
+            <div className="sponsor-logo-chip">
+              <img className="sponsor-logo" src={azersunLogo} alt="Azersun logo" />
+            </div>
+          </div>
+          <div className="sponsor-logo-tile sponsor-logo-tile--main">
+            <div className="sponsor-logo-chip">
+              <img className="sponsor-logo" src={dreamFestLogo} alt="Dream Fest logo" />
+            </div>
+          </div>
+          <div className="sponsor-logo-tile sponsor-logo-tile--main">
+            <div className="sponsor-logo-chip">
+              <img className="sponsor-logo" src={starCollegesLogo} alt="Star Colleges logo" />
+            </div>
+          </div>
+        </div>
+      </section>
 
       <section className="card home-live-card">
         <div className="home-section-head">
@@ -216,29 +242,6 @@ export function Home() {
         </div>
       </section>
 
-      <section className="card home-sponsors-card">
-        <div className="home-section-head">
-          <h2 className="home-section-title">Sponsors</h2>
-          <Link to="/sponsors" className="home-link-more">
-            Details →
-          </Link>
-        </div>
-        <div className="home-sponsor-block">
-          <div className="home-sponsor-head">Main Sponsors</div>
-          <div className="main-sponsor-grid">
-            <div className="sponsor-logo-tile sponsor-logo-tile--main">
-              <img className="sponsor-logo" src={azersunLogo} alt="Azersun logo" />
-            </div>
-            <div className="sponsor-logo-tile sponsor-logo-tile--main">
-              <img className="sponsor-logo" src={dreamFestLogo} alt="Dream Fest logo" />
-            </div>
-            <div className="sponsor-logo-tile sponsor-logo-tile--main">
-              <img className="sponsor-logo" src={starCollegesLogo} alt="Star Colleges logo" />
-            </div>
-          </div>
-        </div>
-      </section>
-
       <section className="card home-about-card">
         <div className="home-section-head">
           <h2 className="home-section-title">About Gold Cup</h2>
@@ -250,6 +253,29 @@ export function Home() {
           Gold Cup is a youth football tournament created to bring competition, atmosphere, and community together. Our
           goal is to give teams a professional tournament experience both on and off the pitch.
         </p>
+      </section>
+
+      <section className="card home-sponsors-partners-card">
+        <div className="home-section-head">
+          <h2 className="home-section-title">Sponsors & Partners</h2>
+        </div>
+        <div className="sponsor-row" aria-label="Sponsor logos">
+          <div className="sponsor-row-item">
+            <div className="sponsor-logo-chip">
+              <img className="sponsor-logo" src={azersunLogo} alt="Azersun logo" />
+            </div>
+          </div>
+          <div className="sponsor-row-item">
+            <div className="sponsor-logo-chip">
+              <img className="sponsor-logo" src={dreamFestLogo} alt="Dream Fest logo" />
+            </div>
+          </div>
+          <div className="sponsor-row-item">
+            <div className="sponsor-logo-chip">
+              <img className="sponsor-logo" src={starCollegesLogo} alt="Star Colleges logo" />
+            </div>
+          </div>
+        </div>
       </section>
     </main>
   );
