@@ -8,9 +8,6 @@ import { isMatchInPlayOrBreak } from "../lib/matchStatus";
 import { computeStandingsForGroup } from "../lib/standings";
 import { formatTimelineLine, sortMatchEvents } from "../lib/timeline";
 import logo from "../assets/goldcup-logo.png";
-import azersunLogo from "../assets/sponsors/azersun.png";
-import dreamFestLogo from "../assets/sponsors/dreamfest.png";
-import starCollegesLogo from "../assets/sponsors/star-colleges.png";
 
 type MatchRow = Database["public"]["Tables"]["matches"]["Row"];
 
@@ -213,38 +210,6 @@ export function Home() {
               </div>
             </section>
           ))}
-        </div>
-      </section>
-
-      <section className="card home-about-card">
-        <div className="home-section-head">
-          <h2 className="home-section-title">About Gold Cup</h2>
-          <Link to="/about" className="home-link-more">
-            Read more →
-          </Link>
-        </div>
-        <p className="muted" style={{ margin: 0 }}>
-          Gold Cup is a youth football tournament created to bring competition, atmosphere, and community together. Our
-          goal is to give teams a professional tournament experience both on and off the pitch.
-        </p>
-      </section>
-
-      <section className="card home-sponsors-partners-card">
-        <div className="home-section-head">
-          <h2 className="home-section-title">Sponsors & Partners</h2>
-        </div>
-        <div className="sponsor-row" aria-label="Sponsor logos">
-          <div className="sponsor-row-item">
-            <img className="sponsor-logo sponsor-logo--free" src={azersunLogo} alt="Azersun logo" />
-          </div>
-          <div className="sponsor-row-item">
-            <img className="sponsor-logo sponsor-logo--free" src={dreamFestLogo} alt="Dream Fest logo" />
-          </div>
-          <div className="sponsor-row-item">
-            <div className="sponsor-logo-chip">
-              <img className="sponsor-logo sponsor-logo--star" src={starCollegesLogo} alt="Star Colleges logo" />
-            </div>
-          </div>
         </div>
       </section>
     </main>
