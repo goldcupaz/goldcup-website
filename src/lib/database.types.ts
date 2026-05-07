@@ -1,5 +1,18 @@
 export type MatchStage = "group" | "qf" | "sf" | "final" | "third";
-export type MatchStatus = "not_started" | "live" | "half_time" | "full_time";
+export type MatchStatus =
+  | "not_started"
+  | "live_first_half"
+  | "half_time"
+  | "live_second_half"
+  | "full_time";
+
+export type MatchEventType =
+  | "match_started"
+  | "goal"
+  | "half_time"
+  | "yellow_card"
+  | "red_card"
+  | "full_time";
 
 export type Database = {
   public: {
@@ -119,6 +132,32 @@ export type Database = {
           match_id?: string;
           team_id?: string;
           scorer_name?: string;
+        };
+      };
+      match_events: {
+        Row: {
+          id: string;
+          match_id: string;
+          event_type: MatchEventType;
+          team_id: string | null;
+          player_name: string | null;
+          event_order: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          match_id: string;
+          event_type: MatchEventType;
+          team_id?: string | null;
+          player_name?: string | null;
+          event_order?: number;
+        };
+        Update: {
+          match_id?: string;
+          event_type?: MatchEventType;
+          team_id?: string | null;
+          player_name?: string | null;
+          event_order?: number;
         };
       };
       site_settings: {

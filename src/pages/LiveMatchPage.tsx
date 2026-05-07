@@ -3,26 +3,18 @@ import { useMemo } from "react";
 import { useTournament } from "../context/TournamentContext";
 import type { Database } from "../lib/database.types";
 import { formatKickoff, statusLabel } from "../lib/format";
+import { formatTimelineLine, sortMatchEvents } from "../lib/timeline";
 
 type MatchRow = Database["public"]["Tables"]["matches"]["Row"];
+type MatchEventRow = Database["public"]["Tables"]["match_events"]["Row"];
 
 function teamName(map: Map<string, string>, id: string | null) {
   if (!id) return "TBD";
   return map.get(id) ?? "TBD";
 }
 
-function goalsForMatch(
-  match: MatchRow,
-  goals: Database["public"]["Tables"]["match_goals"]["Row"][],
-): { home: string[]; away: string[] } {
-  const mg = goals.filter((g) => g.match_id === match.id);
-  const home: string[] = [];
-  const away: string[] = [];
-  for (const g of mg) {
-    if (g.team_id === match.home_team_id) home.push(g.scorer_name);
-    else if (g.team_id === match.away_team_id) away.push(g.scorer_name);
-  }
-  return { home, away };
+function eventsForMatch(events: MatchEventRow[], matchId: string): MatchEventRow[] {
+  return sortMatchEvents(events.filter((e) => e.match_id === matchId));
 }
 
 function matchLabel(m: MatchRow): string {
@@ -31,7 +23,7 @@ function matchLabel(m: MatchRow): string {
 }
 
 export function LiveMatchPage() {
-  const { matches, goals, teams, currentLiveMatchId, loading, error } = useTournament();
+  const { matches, matchEvents, teams, currentLiveMatchId, loading, error } = useTournament();
 
   const nameById = useMemo(() => new Map(teams.map((t) => [t.id, t.name] as const)), [teams]);
 
@@ -40,10 +32,10 @@ export function LiveMatchPage() {
     return matches.find((m) => m.id === currentLiveMatchId) ?? null;
   }, [matches, currentLiveMatchId]);
 
-  const featuredGoals = useMemo(() => {
-    if (!liveMatch) return { home: [] as string[], away: [] as string[] };
-    return goalsForMatch(liveMatch, goals);
-  }, [liveMatch, goals]);
+  const featuredTimeline = useMemo(() => {
+    if (!liveMatch) return [] as MatchEventRow[];
+    return eventsForMatch(matchEvents, liveMatch.id);
+  }, [liveMatch, matchEvents]);
 
   const finishedArchive = useMemo(() => {
     const list = matches.filter((m) => m.status === "full_time");
@@ -62,7 +54,7 @@ export function LiveMatchPage() {
     <main className="live-page">
       <h1 className="page-title">Live match</h1>
       <p className="subtitle">
-        Featured match from the tournament feed, then recent full-time results with scorers.
+        Featured match with live score, status, and timeline; then recent full-time results with their timelines.
       </p>
       {error && <div className="alert warn">{error}</div>}
 
@@ -77,18 +69,9 @@ export function LiveMatchPage() {
         ) : (
           <div className="live-board live-featured-card">
             <div className="live-meta muted">{matchLabel(liveMatch)}</div>
-            <div className="live-score-row">
+            <div className="live-score-row live-score-row-compact">
               <div className="live-side">
                 <div className="live-name">{teamName(nameById, liveMatch.home_team_id)}</div>
-                <div className="live-goals">
-                  Goal scorers
-                  <ul>
-                    {featuredGoals.home.map((n, i) => (
-                      <li key={`fh${i}`}>{n}</li>
-                    ))}
-                    {featuredGoals.home.length === 0 && <li className="muted">—</li>}
-                  </ul>
-                </div>
               </div>
               <div className="live-center">
                 <div className="live-score">
@@ -98,17 +81,18 @@ export function LiveMatchPage() {
               </div>
               <div className="live-side">
                 <div className="live-name">{teamName(nameById, liveMatch.away_team_id)}</div>
-                <div className="live-goals">
-                  Goal scorers
-                  <ul>
-                    {featuredGoals.away.map((n, i) => (
-                      <li key={`fa${i}`}>{n}</li>
-                    ))}
-                    {featuredGoals.away.length === 0 && <li className="muted">—</li>}
-                  </ul>
-                </div>
               </div>
             </div>
+            {featuredTimeline.length > 0 && (
+              <div className="live-timeline-block">
+                <h3 className="live-timeline-title">Timeline</h3>
+                <ul className="live-timeline">
+                  {featuredTimeline.map((ev) => (
+                    <li key={ev.id}>{formatTimelineLine(ev, nameById)}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
         )}
       </section>
@@ -120,7 +104,7 @@ export function LiveMatchPage() {
         ) : (
           <div className="live-archive">
             {finishedArchive.map((m) => {
-              const g = goalsForMatch(m, goals);
+              const evs = eventsForMatch(matchEvents, m.id);
               const hn = teamName(nameById, m.home_team_id);
               const an = teamName(nameById, m.away_team_id);
               return (
@@ -132,12 +116,6 @@ export function LiveMatchPage() {
                   <div className="live-finished-score-row">
                     <div className="live-finished-side">
                       <div className="live-finished-team">{hn}</div>
-                      <ul className="live-finished-goals">
-                        {g.home.map((n, i) => (
-                          <li key={`${m.id}h${i}`}>{n}</li>
-                        ))}
-                        {g.home.length === 0 && <li className="muted">—</li>}
-                      </ul>
                     </div>
                     <div className="live-finished-center">
                       <span className="live-finished-score">
@@ -147,14 +125,15 @@ export function LiveMatchPage() {
                     </div>
                     <div className="live-finished-side">
                       <div className="live-finished-team">{an}</div>
-                      <ul className="live-finished-goals">
-                        {g.away.map((n, i) => (
-                          <li key={`${m.id}a${i}`}>{n}</li>
-                        ))}
-                        {g.away.length === 0 && <li className="muted">—</li>}
-                      </ul>
                     </div>
                   </div>
+                  {evs.length > 0 && (
+                    <ul className="live-timeline live-timeline-archive">
+                      {evs.map((ev) => (
+                        <li key={ev.id}>{formatTimelineLine(ev, nameById)}</li>
+                      ))}
+                    </ul>
+                  )}
                 </article>
               );
             })}

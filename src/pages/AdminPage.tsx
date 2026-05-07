@@ -3,8 +3,9 @@ import { Link } from "react-router-dom";
 
 import { useAuth } from "../context/AuthContext";
 import { useTournament } from "../context/TournamentContext";
-import type { Database } from "../lib/database.types";
-import { statusLabel } from "../lib/format";
+import type { Database, MatchEventType } from "../lib/database.types";
+import { statusOptionLabel } from "../lib/format";
+import { formatTimelineLine, sortMatchEvents } from "../lib/timeline";
 import { sortMatchesForAdminPicker } from "../lib/matchSort";
 import { qualifiedPot } from "../lib/pots";
 import { supabase } from "../lib/supabase";
@@ -12,13 +13,37 @@ import { finalComputed, getBySlot, thirdComputed } from "../lib/knockoutResolve"
 import { winnerId } from "../lib/bracket";
 
 type MatchRow = Database["public"]["Tables"]["matches"]["Row"];
+type MatchEventRow = Database["public"]["Tables"]["match_events"]["Row"];
 type MatchStatus = Database["public"]["Tables"]["matches"]["Row"]["status"];
 
-const STATUSES: MatchStatus[] = ["not_started", "live", "half_time", "full_time"];
+const STATUSES: MatchStatus[] = [
+  "not_started",
+  "live_first_half",
+  "half_time",
+  "live_second_half",
+  "full_time",
+];
+
+const LIVE_STATUS_STRIP: { value: MatchStatus; label: string; title?: string }[] = [
+  { value: "not_started", label: "Not Started" },
+  { value: "live_first_half", label: "Live", title: "First half" },
+  { value: "half_time", label: "Half Time" },
+  { value: "live_second_half", label: "Live", title: "Second half" },
+  { value: "full_time", label: "Full Time" },
+];
+
+const TIMELINE_EVENT_OPTIONS: { value: MatchEventType; label: string; needsTeamPlayer: boolean }[] = [
+  { value: "match_started", label: "Match started", needsTeamPlayer: false },
+  { value: "goal", label: "Goal", needsTeamPlayer: true },
+  { value: "half_time", label: "Half time", needsTeamPlayer: false },
+  { value: "yellow_card", label: "Yellow card", needsTeamPlayer: true },
+  { value: "red_card", label: "Red card", needsTeamPlayer: true },
+  { value: "full_time", label: "Full time", needsTeamPlayer: false },
+];
 
 export function AdminPage() {
   const { session, isAdmin, loading: authLoading, signOut } = useAuth();
-  const { teams, matches, goals, players, currentLiveMatchId, refresh } = useTournament();
+  const { teams, matches, matchEvents, players, currentLiveMatchId, refresh } = useTournament();
   const [tab, setTab] = useState<"live" | "matches" | "qf" | "teams" | "bracket">("live");
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -94,20 +119,27 @@ where id = 'YOUR_USER_UUID';`}
     else await notify("Match saved.");
   }
 
-  async function addGoal(matchId: string, teamId: string, scorerName: string) {
-    const { error } = await supabase.from("match_goals").insert({
+  async function addMatchEvent(
+    matchId: string,
+    row: { event_type: MatchEventType; team_id?: string | null; player_name?: string | null },
+  ) {
+    const existing = matchEvents.filter((e) => e.match_id === matchId);
+    const nextOrder = existing.length === 0 ? 0 : Math.max(...existing.map((e) => e.event_order)) + 1;
+    const { error } = await supabase.from("match_events").insert({
       match_id: matchId,
-      team_id: teamId,
-      scorer_name: scorerName.trim(),
+      event_type: row.event_type,
+      team_id: row.team_id ?? null,
+      player_name: row.player_name?.trim() ? row.player_name.trim() : null,
+      event_order: nextOrder,
     });
     if (error) await notify("", error.message);
-    else await notify("Goal added.");
+    else await notify("Timeline event added.");
   }
 
-  async function deleteGoal(goalId: string) {
-    const { error } = await supabase.from("match_goals").delete().eq("id", goalId);
+  async function deleteMatchEvent(eventId: string) {
+    const { error } = await supabase.from("match_events").delete().eq("id", eventId);
     if (error) await notify("", error.message);
-    else await notify("Goal removed.");
+    else await notify("Timeline event removed.");
   }
 
   function sameGroup(aid: string | null, bid: string | null) {
@@ -290,10 +322,10 @@ where id = 'YOUR_USER_UUID';`}
               key={liveMatch.id}
               match={liveMatch}
               teams={teams}
-              goals={goals.filter((g) => g.match_id === liveMatch.id)}
+              events={sortMatchEvents(matchEvents.filter((e) => e.match_id === liveMatch.id))}
               onSave={(p) => void saveMatch(p)}
-              onAddGoal={(teamId, name) => void addGoal(liveMatch.id, teamId, name)}
-              onDeleteGoal={(id) => void deleteGoal(id)}
+              onAddEvent={(row) => void addMatchEvent(liveMatch.id, row)}
+              onDeleteEvent={(id) => void deleteMatchEvent(id)}
             />
           )}
         </section>
@@ -414,6 +446,12 @@ function GroupMatchRow({
   const [st, setSt] = useState<MatchStatus>(m.status);
   const [when, setWhen] = useState(m.scheduled_at ? m.scheduled_at.slice(0, 16) : "");
 
+  useEffect(() => {
+    setSt(m.status);
+    setHs(String(m.home_score));
+    setAs(String(m.away_score));
+  }, [m.id, m.status, m.home_score, m.away_score]);
+
   function submit(e: FormEvent) {
     e.preventDefault();
     onSave({
@@ -447,7 +485,7 @@ function GroupMatchRow({
         <select value={st} onChange={(e) => setSt(e.target.value as MatchStatus)}>
           {STATUSES.map((s) => (
             <option key={s} value={s}>
-              {statusLabel(s)}
+              {statusOptionLabel(s)}
             </option>
           ))}
         </select>
@@ -474,6 +512,12 @@ function KoMatchRow({
   const [as, setAs] = useState(String(m.away_score));
   const [st, setSt] = useState<MatchStatus>(m.status);
   const [when, setWhen] = useState(m.scheduled_at ? m.scheduled_at.slice(0, 16) : "");
+
+  useEffect(() => {
+    setSt(m.status);
+    setHs(String(m.home_score));
+    setAs(String(m.away_score));
+  }, [m.id, m.status, m.home_score, m.away_score]);
 
   function submit(e: FormEvent) {
     e.preventDefault();
@@ -504,7 +548,7 @@ function KoMatchRow({
         <select value={st} onChange={(e) => setSt(e.target.value as MatchStatus)}>
           {STATUSES.map((s) => (
             <option key={s} value={s}>
-              {statusLabel(s)}
+              {statusOptionLabel(s)}
             </option>
           ))}
         </select>
@@ -576,47 +620,65 @@ function QfRow({
 function LiveEditor({
   match,
   teams,
-  goals,
+  events,
   onSave,
-  onAddGoal,
-  onDeleteGoal,
+  onAddEvent,
+  onDeleteEvent,
 }: {
   match: MatchRow;
   teams: Database["public"]["Tables"]["teams"]["Row"][];
-  goals: Database["public"]["Tables"]["match_goals"]["Row"][];
+  events: MatchEventRow[];
   onSave: (p: Partial<MatchRow> & { id: string }) => void;
-  onAddGoal: (teamId: string, name: string) => void;
-  onDeleteGoal: (id: string) => void;
+  onAddEvent: (row: {
+    event_type: MatchEventType;
+    team_id?: string | null;
+    player_name?: string | null;
+  }) => void;
+  onDeleteEvent: (id: string) => void;
 }) {
-  const [st, setSt] = useState<MatchStatus>(match.status);
   const [hs, setHs] = useState(String(match.home_score));
   const [as, setAs] = useState(String(match.away_score));
-  const [scorer, setScorer] = useState("");
+  const [evType, setEvType] = useState<MatchEventType>("goal");
   const [side, setSide] = useState<"home" | "away">("home");
+  const [playerName, setPlayerName] = useState("");
 
   useEffect(() => {
-    setSt(match.status);
     setHs(String(match.home_score));
     setAs(String(match.away_score));
-    setScorer("");
+    setEvType("goal");
     setSide("home");
-  }, [match.id, match.status, match.home_score, match.away_score, match.home_team_id, match.away_team_id]);
+    setPlayerName("");
+  }, [match.id, match.home_score, match.away_score, match.home_team_id, match.away_team_id]);
 
   const homeTeam = teams.find((t) => t.id === match.home_team_id);
   const awayTeam = teams.find((t) => t.id === match.away_team_id);
+  const teamNameById = useMemo(() => new Map(teams.map((t) => [t.id, t.name] as const)), [teams]);
 
   function submitScore(e: FormEvent) {
     e.preventDefault();
-    onSave({ id: match.id, status: st, home_score: Number(hs), away_score: Number(as) });
+    onSave({ id: match.id, home_score: Number(hs), away_score: Number(as) });
   }
 
-  function add(e: FormEvent) {
+  function pickTeamId(): string | null {
+    return side === "home" ? match.home_team_id : match.away_team_id;
+  }
+
+  const needsDetail = TIMELINE_EVENT_OPTIONS.find((o) => o.value === evType)?.needsTeamPlayer ?? false;
+
+  function addTimeline(e: FormEvent) {
     e.preventDefault();
-    const tid =
-      side === "home" ? match.home_team_id : match.away_team_id;
-    if (!tid || !scorer.trim()) return;
-    onAddGoal(tid, scorer.trim());
-    setScorer("");
+    if (needsDetail) {
+      const tid = pickTeamId();
+      if (!tid || !playerName.trim()) return;
+      onAddEvent({ event_type: evType, team_id: tid, player_name: playerName.trim() });
+    } else {
+      onAddEvent({ event_type: evType, team_id: null, player_name: null });
+    }
+    setPlayerName("");
+  }
+
+  function setStatus(next: MatchStatus) {
+    onSave({ id: match.id, status: next });
   }
 
   return (
@@ -624,18 +686,27 @@ function LiveEditor({
       <h2 style={{ marginTop: 0, fontSize: 14, letterSpacing: "0.12em", textTransform: "uppercase" }}>
         {homeTeam?.name ?? "Home"} vs {awayTeam?.name ?? "Away"}
       </h2>
-      <form onSubmit={submitScore} style={{ marginBottom: 16 }}>
+      <div style={{ marginBottom: 14 }}>
+        <div className="muted" style={{ fontSize: 12, marginBottom: 8 }}>
+          Match status
+        </div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+          {LIVE_STATUS_STRIP.map((s) => (
+            <button
+              key={s.value}
+              type="button"
+              title={s.title}
+              className={match.status === s.value ? "btn btn-primary" : "btn"}
+              onClick={() => setStatus(s.value)}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <form onSubmit={submitScore} style={{ marginBottom: 20 }}>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "end" }}>
-          <div className="form-row" style={{ marginBottom: 0 }}>
-            <label>Status</label>
-            <select value={st} onChange={(e) => setSt(e.target.value as MatchStatus)}>
-              {STATUSES.map((s) => (
-                <option key={s} value={s}>
-                  {statusLabel(s)}
-                </option>
-              ))}
-            </select>
-          </div>
           <div className="form-row" style={{ marginBottom: 0 }}>
             <label>Score</label>
             <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
@@ -645,37 +716,62 @@ function LiveEditor({
             </div>
           </div>
           <button type="submit" className="btn btn-primary">
-            Update score / status
+            Update score
           </button>
         </div>
       </form>
 
-      <div className="form-row">
-        <label>Add goal scorer</label>
-        <form onSubmit={add} style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "end" }}>
-          <select value={side} onChange={(e) => setSide(e.target.value as "home" | "away")}>
-            <option value="home">{homeTeam?.name ?? "Home"}</option>
-            <option value="away">{awayTeam?.name ?? "Away"}</option>
-          </select>
-          <input placeholder="Player name" value={scorer} onChange={(e) => setScorer(e.target.value)} />
-          <button type="submit" className="btn">
-            Add
-          </button>
-        </form>
-      </div>
-
-      <ul style={{ listStyle: "none", padding: 0 }}>
-        {goals.map((g) => (
-          <li key={g.id} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0" }}>
-            <span>
-              <strong>{teams.find((t) => t.id === g.team_id)?.name}</strong> — {g.scorer_name}
-            </span>
-            <button type="button" className="btn" onClick={() => onDeleteGoal(g.id)}>
-              Remove
+      <h3 style={{ fontSize: 13, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>Timeline</h3>
+      <ul style={{ listStyle: "none", padding: 0, margin: "0 0 16px" }}>
+        {events.map((ev) => (
+          <li
+            key={ev.id}
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              gap: 12,
+              padding: "8px 0",
+              borderBottom: "1px solid rgba(255,255,255,0.06)",
+            }}
+          >
+            <span style={{ flex: 1 }}>{formatTimelineLine(ev, teamNameById)}</span>
+            <button type="button" className="btn" onClick={() => onDeleteEvent(ev.id)}>
+              Delete
             </button>
           </li>
         ))}
+        {events.length === 0 && <li className="muted">No events yet.</li>}
       </ul>
+
+      <div className="form-row">
+        <label>Add timeline event</label>
+        <form onSubmit={addTimeline} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <select value={evType} onChange={(e) => setEvType(e.target.value as MatchEventType)}>
+            {TIMELINE_EVENT_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+          {needsDetail && (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "end" }}>
+              <select value={side} onChange={(e) => setSide(e.target.value as "home" | "away")}>
+                <option value="home">{homeTeam?.name ?? "Home"}</option>
+                <option value="away">{awayTeam?.name ?? "Away"}</option>
+              </select>
+              <input
+                placeholder="Player name"
+                value={playerName}
+                onChange={(e) => setPlayerName(e.target.value)}
+              />
+            </div>
+          )}
+          <button type="submit" className="btn btn-primary">
+            Add event
+          </button>
+        </form>
+      </div>
     </div>
   );
 }

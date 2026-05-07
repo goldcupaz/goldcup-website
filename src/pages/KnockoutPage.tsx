@@ -3,6 +3,7 @@ import { useMemo } from "react";
 import { useTournament } from "../context/TournamentContext";
 import type { Database } from "../lib/database.types";
 import { formatKickoff, statusLabel } from "../lib/format";
+import { isMatchInPlayOrBreak } from "../lib/matchStatus";
 import {
   finalComputed,
   getBySlot,
@@ -148,7 +149,7 @@ function MatchCard(props: {
       )}
       <div className="match-line">
         <span>{h}</span>
-        {m && (m.status === "full_time" || m.status === "live" || m.status === "half_time") ? (
+        {m && (m.status === "full_time" || isMatchInPlayOrBreak(m.status)) ? (
           <span className="match-score">
             {m.home_score} – {m.away_score}
           </span>

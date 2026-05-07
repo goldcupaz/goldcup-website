@@ -6,3 +6,4 @@ alter publication supabase_realtime add table public.match_goals;
 alter publication supabase_realtime add table public.site_settings;
 alter publication supabase_realtime add table public.teams;
 alter publication supabase_realtime add table public.players;
+alter publication supabase_realtime add table public.match_events;

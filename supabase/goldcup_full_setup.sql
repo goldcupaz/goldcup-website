@@ -2,7 +2,7 @@
 -- Gold Cup — full schema + seed (paste entire file into Supabase SQL Editor → Run)
 --
 -- Safe to re-run for schema/policies (idempotent drops). The SEED section DELETES
--- all rows in match_goals, matches, players, teams and re-inserts Gold Cup data.
+-- all rows in match_events, match_goals, matches, players, teams and re-inserts Gold Cup data.
 -- Does not delete auth users or profiles.
 --
 -- Tables:
@@ -10,7 +10,8 @@
 --   public.teams        — clubs; GROUPS are modeled as teams.group_letter ∈ {A,B,C,D} (no separate groups table)
 --   public.players      — roster per team (shown on Teams tab)
 --   public.matches      — group stage + knockout (QF/SF/Final/3rd); STANDINGS are computed in the app from these rows
---   public.match_goals  — goal scorers / live scorer list (linked to match + team)
+--   public.match_goals  — legacy goal rows (optional; Live tab uses match_events)
+--   public.match_events — ordered timeline per match (goals, cards, match started / half / full time)
 --   public.site_settings — featured live match id (JSON {"id":"<uuid>"} or {"id":null})
 --
 -- After running: refresh the website. Optionally run supabase/migrations/20260107000001_realtime.sql for realtime.
@@ -104,7 +105,15 @@ create table if not exists public.matches (
   away_team_id uuid references public.teams (id) on delete set null,
   scheduled_at timestamptz,
   status text not null default 'not_started'
-    check (status in ('not_started', 'live', 'half_time', 'full_time')),
+    check (
+      status in (
+        'not_started',
+        'live_first_half',
+        'half_time',
+        'live_second_half',
+        'full_time'
+      )
+    ),
   home_score int not null default 0 check (home_score >= 0),
   away_score int not null default 0 check (away_score >= 0),
   sort_order int not null default 0,
@@ -145,6 +154,40 @@ create policy "match_goals_select_public" on public.match_goals for select using
 
 drop policy if exists "match_goals_write_admin" on public.match_goals;
 create policy "match_goals_write_admin" on public.match_goals for all
+  using (exists (select 1 from public.profiles p where p.id = auth.uid() and p.is_admin = true))
+  with check (exists (select 1 from public.profiles p where p.id = auth.uid() and p.is_admin = true));
+
+/* ---------------------------------------------------------------------------
+   match_events (ordered live timeline)
+--------------------------------------------------------------------------- */
+create table if not exists public.match_events (
+  id uuid primary key default gen_random_uuid(),
+  match_id uuid not null references public.matches (id) on delete cascade,
+  event_type text not null check (
+    event_type in (
+      'match_started',
+      'goal',
+      'half_time',
+      'yellow_card',
+      'red_card',
+      'full_time'
+    )
+  ),
+  team_id uuid references public.teams (id) on delete set null,
+  player_name text,
+  event_order int not null default 0,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists match_events_match_order_idx on public.match_events (match_id, event_order, created_at);
+
+alter table public.match_events enable row level security;
+
+drop policy if exists "match_events_select_public" on public.match_events;
+create policy "match_events_select_public" on public.match_events for select using (true);
+
+drop policy if exists "match_events_write_admin" on public.match_events;
+create policy "match_events_write_admin" on public.match_events for all
   using (exists (select 1 from public.profiles p where p.id = auth.uid() and p.is_admin = true))
   with check (exists (select 1 from public.profiles p where p.id = auth.uid() and p.is_admin = true));
 
@@ -214,6 +257,7 @@ create trigger on_auth_user_created
      D1 Star Eagles · D2 EAS Saints · D3 Shusha Falcons
    =========================================================================== */
 
+delete from public.match_events;
 delete from public.match_goals;
 delete from public.matches;
 delete from public.players;

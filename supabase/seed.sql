@@ -4,6 +4,7 @@
 
 begin;
 
+delete from public.match_events;
 delete from public.match_goals;
 delete from public.matches;
 delete from public.players;

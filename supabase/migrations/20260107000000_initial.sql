@@ -77,7 +77,15 @@ create table if not exists public.matches (
   away_team_id uuid references public.teams (id) on delete set null,
   scheduled_at timestamptz,
   status text not null default 'not_started'
-    check (status in ('not_started', 'live', 'half_time', 'full_time')),
+    check (
+      status in (
+        'not_started',
+        'live_first_half',
+        'half_time',
+        'live_second_half',
+        'full_time'
+      )
+    ),
   home_score int not null default 0 check (home_score >= 0),
   away_score int not null default 0 check (away_score >= 0),
   sort_order int not null default 0,
@@ -114,6 +122,38 @@ alter table public.match_goals enable row level security;
 create policy "match_goals_select_public" on public.match_goals for select using (true);
 
 create policy "match_goals_write_admin" on public.match_goals for all using (
+  exists (select 1 from public.profiles p where p.id = auth.uid() and p.is_admin = true)
+) with check (
+  exists (select 1 from public.profiles p where p.id = auth.uid() and p.is_admin = true)
+);
+
+-- Match timeline events
+create table if not exists public.match_events (
+  id uuid primary key default gen_random_uuid(),
+  match_id uuid not null references public.matches (id) on delete cascade,
+  event_type text not null check (
+    event_type in (
+      'match_started',
+      'goal',
+      'half_time',
+      'yellow_card',
+      'red_card',
+      'full_time'
+    )
+  ),
+  team_id uuid references public.teams (id) on delete set null,
+  player_name text,
+  event_order int not null default 0,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists match_events_match_order_idx on public.match_events (match_id, event_order, created_at);
+
+alter table public.match_events enable row level security;
+
+create policy "match_events_select_public" on public.match_events for select using (true);
+
+create policy "match_events_write_admin" on public.match_events for all using (
   exists (select 1 from public.profiles p where p.id = auth.uid() and p.is_admin = true)
 ) with check (
   exists (select 1 from public.profiles p where p.id = auth.uid() and p.is_admin = true)

@@ -16,6 +16,7 @@ import { isSupabaseConfigured, supabase } from "../lib/supabase";
 type TeamRow = Database["public"]["Tables"]["teams"]["Row"];
 type MatchRow = Database["public"]["Tables"]["matches"]["Row"];
 type GoalRow = Database["public"]["Tables"]["match_goals"]["Row"];
+type MatchEventRow = Database["public"]["Tables"]["match_events"]["Row"];
 type PlayerRow = Database["public"]["Tables"]["players"]["Row"];
 
 export type TournamentContextValue = {
@@ -24,6 +25,7 @@ export type TournamentContextValue = {
   teams: TeamRow[];
   matches: MatchRow[];
   goals: GoalRow[];
+  matchEvents: MatchEventRow[];
   players: PlayerRow[];
   currentLiveMatchId: string | null;
   refresh: () => Promise<void>;
@@ -48,6 +50,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
   const [teams, setTeams] = useState<TeamRow[]>([]);
   const [matches, setMatches] = useState<MatchRow[]>([]);
   const [goals, setGoals] = useState<GoalRow[]>([]);
+  const [matchEvents, setMatchEvents] = useState<MatchEventRow[]>([]);
   const [players, setPlayers] = useState<PlayerRow[]>([]);
   const [currentLiveMatchId, setCurrentLiveMatchId] = useState<string | null>(null);
 
@@ -59,10 +62,11 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
     }
     setError(null);
     try {
-      const [tRes, mRes, gRes, pRes, sRes] = await Promise.all([
+      const [tRes, mRes, gRes, evRes, pRes, sRes] = await Promise.all([
         supabase.from("teams").select("*").order("group_letter").order("group_order"),
         supabase.from("matches").select("*").order("sort_order"),
         supabase.from("match_goals").select("*").order("created_at"),
+        supabase.from("match_events").select("*").order("event_order").order("created_at"),
         supabase.from("players").select("*").order("sort_order"),
         supabase.from("site_settings").select("*").eq("key", "current_live_match_id").maybeSingle(),
       ]);
@@ -70,12 +74,14 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
       if (tRes.error) setError(tRes.error.message);
       else if (mRes.error) setError(mRes.error.message);
       else if (gRes.error) setError(gRes.error.message);
+      else if (evRes.error) setError(evRes.error.message);
       else if (pRes.error) setError(pRes.error.message);
       else if (sRes.error) setError(sRes.error.message);
 
       if (tRes.data) setTeams(tRes.data as TeamRow[]);
       if (mRes.data) setMatches(mRes.data as MatchRow[]);
       if (gRes.data) setGoals(gRes.data as GoalRow[]);
+      if (evRes.data) setMatchEvents(evRes.data as MatchEventRow[]);
       if (pRes.data) setPlayers(pRes.data as PlayerRow[]);
 
       if (sRes.data?.value !== undefined) setCurrentLiveMatchId(parseLiveId(sRes.data.value));
@@ -100,6 +106,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
         .channel("tournament-live")
         .on("postgres_changes", { event: "*", schema: "public", table: "matches" }, () => void refresh())
         .on("postgres_changes", { event: "*", schema: "public", table: "match_goals" }, () => void refresh())
+        .on("postgres_changes", { event: "*", schema: "public", table: "match_events" }, () => void refresh())
         .on("postgres_changes", { event: "*", schema: "public", table: "site_settings" }, () => void refresh())
         .on("postgres_changes", { event: "*", schema: "public", table: "teams" }, () => void refresh())
         .on("postgres_changes", { event: "*", schema: "public", table: "players" }, () => void refresh());
@@ -121,11 +128,12 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
       teams,
       matches,
       goals,
+      matchEvents,
       players,
       currentLiveMatchId,
       refresh,
     }),
-    [loading, error, teams, matches, goals, players, currentLiveMatchId, refresh],
+    [loading, error, teams, matches, goals, matchEvents, players, currentLiveMatchId, refresh],
   );
 
   return <TournamentContext.Provider value={value}>{children}</TournamentContext.Provider>;

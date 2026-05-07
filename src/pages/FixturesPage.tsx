@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { useTournament } from "../context/TournamentContext";
 import type { Database } from "../lib/database.types";
 import { formatKickoff, statusLabel } from "../lib/format";
+import { isMatchInPlayOrBreak } from "../lib/matchStatus";
 
 type MatchRow = Database["public"]["Tables"]["matches"]["Row"];
 
@@ -176,7 +177,7 @@ export function FixturesPage() {
                 </thead>
                 <tbody>
                   {bucket.matches.map((m) => {
-                    const live = m.status === "live" || m.status === "half_time";
+                    const live = isMatchInPlayOrBreak(m.status);
                     const finished = m.status === "full_time";
                     return (
                       <tr key={m.id}>

@@ -289,6 +289,49 @@ th {
   color: var(--gold);
 }
 
+.live-score-row-compact .live-side {
+  flex: 0 1 auto;
+  min-width: 120px;
+}
+
+.live-timeline-block {
+  margin-top: 8px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+.live-timeline-title {
+  margin: 0 0 10px;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.live-timeline {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.live-timeline li {
+  padding: 4px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.live-timeline li:last-child {
+  border-bottom: none;
+}
+
+.live-timeline-archive {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
 .form-row {
   display: grid;
   gap: 8px;

@@ -1,10 +1,12 @@
 import type { MatchStatus } from "./database.types";
 
+/** Short label for public UI (both half-live states show as "Live"). */
 export function statusLabel(s: MatchStatus): string {
   switch (s) {
     case "not_started":
       return "Not Started";
-    case "live":
+    case "live_first_half":
+    case "live_second_half":
       return "Live";
     case "half_time":
       return "Half Time";
@@ -12,6 +14,18 @@ export function statusLabel(s: MatchStatus): string {
       return "Full Time";
     default:
       return s;
+  }
+}
+
+/** Fixture / admin dropdown: distinguish the two "Live" phases. */
+export function statusOptionLabel(s: MatchStatus): string {
+  switch (s) {
+    case "live_first_half":
+      return "Live (1st half)";
+    case "live_second_half":
+      return "Live (2nd half)";
+    default:
+      return statusLabel(s);
   }
 }
 
