@@ -9,14 +9,58 @@ import officialNeonNLogo from "../assets/sponsors/official-neon-n.png";
 import officialAllSportsLogo from "../assets/sponsors/official-all-sports.png";
 import officialTimsportLogo from "../assets/sponsors/official-timsport.png";
 
-const OFFICIAL_SPONSOR_SLOTS = [
-  { kind: "img" as const, src: officialHividoLogo, alt: "HIVideo", zoomClass: "sponsor-official-img--zoom-lg" },
-  { kind: "img" as const, src: officialNeonNLogo, alt: "Partner logo", zoomClass: "sponsor-official-img--zoom-lg" },
-  { kind: "img" as const, src: officialAllSportsLogo, alt: "All Sports", zoomClass: "sponsor-official-img--zoom-md" },
-  { kind: "img" as const, src: officialTimsportLogo, alt: "TIMSPORT", zoomClass: "sponsor-official-img--zoom-md" },
-  { kind: "placeholder" as const },
-  { kind: "placeholder" as const },
-  { kind: "placeholder" as const },
+type OfficialSlot =
+  | { kind: "placeholder" }
+  | {
+      kind: "img";
+      src: string;
+      alt: string;
+      zoomClass: string;
+      href?: string;
+      slotClass?: string;
+    };
+
+const EXTERNAL_REL = "noopener noreferrer";
+
+const AZERSUN_URL = "https://azersun.com/az";
+const DREAMFEST_URL = "https://dreammusicfest.com/";
+const STAR_COLLEGES_URL = "https://star.edu.az/";
+const HIVIDEO_URL = "https://hivideo.az/";
+const NOOSHCARD_URL = "https://www.instagram.com/nooshcard?igsh=MWN1bWI0Y2oxcGM3aQ==";
+const TIMSPORT_URL = "https://timsport.az/en";
+
+const OFFICIAL_SPONSOR_SLOTS: OfficialSlot[] = [
+  {
+    kind: "img",
+    src: officialHividoLogo,
+    alt: "HIVideo",
+    zoomClass: "sponsor-official-img--zoom-lg",
+    href: HIVIDEO_URL,
+    slotClass: "official-sponsor-slot--light",
+  },
+  {
+    kind: "img",
+    src: officialNeonNLogo,
+    alt: "Nooshcard",
+    zoomClass: "sponsor-official-img--zoom-lg",
+    href: NOOSHCARD_URL,
+  },
+  {
+    kind: "img",
+    src: officialAllSportsLogo,
+    alt: "All Sports",
+    zoomClass: "sponsor-official-img--zoom-xl",
+  },
+  {
+    kind: "img",
+    src: officialTimsportLogo,
+    alt: "TIMSPORT",
+    zoomClass: "sponsor-official-img--zoom-md",
+    href: TIMSPORT_URL,
+  },
+  { kind: "placeholder" },
+  { kind: "placeholder" },
+  { kind: "placeholder" },
 ];
 
 export function Footer() {
@@ -61,23 +105,47 @@ export function Footer() {
         </div>
         <div className="sponsor-row sponsor-row--footer" aria-label="Sponsor logos">
           <div className="sponsor-row-item">
-            <img
-              className="sponsor-logo sponsor-logo--free sponsor-logo--footer-azersun"
-              src={azersunLogo}
-              alt="Azersun logo"
-            />
+            <a
+              className="footer-sponsor-link"
+              href={AZERSUN_URL}
+              target="_blank"
+              rel={EXTERNAL_REL}
+              aria-label="Azersun — opens in a new tab"
+            >
+              <img
+                className="sponsor-logo sponsor-logo--free sponsor-logo--footer-azersun"
+                src={azersunLogo}
+                alt=""
+              />
+            </a>
           </div>
           <div className="sponsor-row-item">
-            <img
-              className="sponsor-logo sponsor-logo--free sponsor-logo--footer-dreamfest"
-              src={dreamFestLogo}
-              alt="Dream Fest logo"
-            />
+            <a
+              className="footer-sponsor-link"
+              href={DREAMFEST_URL}
+              target="_blank"
+              rel={EXTERNAL_REL}
+              aria-label="Dream Fest — opens in a new tab"
+            >
+              <img
+                className="sponsor-logo sponsor-logo--free sponsor-logo--footer-dreamfest"
+                src={dreamFestLogo}
+                alt=""
+              />
+            </a>
           </div>
           <div className="sponsor-row-item">
-            <div className="sponsor-logo-chip">
-              <img className="sponsor-logo sponsor-logo--star" src={starCollegesLogo} alt="Star Colleges logo" />
-            </div>
+            <a
+              className="footer-sponsor-link footer-sponsor-link--star"
+              href={STAR_COLLEGES_URL}
+              target="_blank"
+              rel={EXTERNAL_REL}
+              aria-label="Star Colleges — opens in a new tab"
+            >
+              <div className="sponsor-logo-chip">
+                <img className="sponsor-logo sponsor-logo--star" src={starCollegesLogo} alt="" />
+              </div>
+            </a>
           </div>
         </div>
 
@@ -85,11 +153,24 @@ export function Footer() {
           <div className="official-sponsors-title">Official Sponsors</div>
           <div className="official-sponsors-grid" aria-label="Official sponsor logos">
             {OFFICIAL_SPONSOR_SLOTS.map((slot, i) => (
-              <div key={i} className="official-sponsor-slot">
+              <div
+                key={i}
+                className={`official-sponsor-slot${slot.kind === "img" && slot.slotClass ? ` ${slot.slotClass}` : ""}`}
+              >
                 {slot.kind === "placeholder" ? (
                   <span className="official-sponsor-placeholder">Sponsor Logo</span>
+                ) : slot.href ? (
+                  <a
+                    className="official-sponsor-link"
+                    href={slot.href}
+                    target="_blank"
+                    rel={EXTERNAL_REL}
+                    aria-label={`${slot.alt} — opens in a new tab`}
+                  >
+                    <img className={`sponsor-official-img ${slot.zoomClass}`} src={slot.src} alt="" />
+                  </a>
                 ) : (
-                  <img className={`sponsor-official-img ${slot.zoomClass}`} src={slot.src} alt={slot.alt} />
+                  <img className={`sponsor-official-img ${slot.zoomClass}`} src={slot.src} alt="" />
                 )}
               </div>
             ))}
@@ -104,4 +185,3 @@ export function Footer() {
     </footer>
   );
 }
-

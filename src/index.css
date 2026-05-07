@@ -710,13 +710,29 @@ button {
   transform-origin: center;
 }
 
+.sponsor-row--footer .footer-sponsor-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  text-decoration: none;
+  color: inherit;
+}
+
+.sponsor-row--footer .footer-sponsor-link:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 3px;
+  border-radius: 10px;
+}
+
 .sponsor-row--footer .sponsor-logo--footer-dreamfest {
-  padding: 8px 10px;
+  padding: 6px 8px;
   max-height: 76px;
   width: 100%;
   height: auto;
   object-fit: contain;
-  transform: scale(1.1);
+  transform: scale(1.32);
   transform-origin: center;
 }
 
@@ -764,6 +780,28 @@ button {
   overflow: hidden;
 }
 
+.official-sponsor-slot--light {
+  background: #ffffff;
+  border-color: rgba(212, 175, 55, 0.28);
+}
+
+.official-sponsor-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  min-height: 44px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.official-sponsor-link:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
 .official-sponsor-placeholder {
   font-size: 9px;
   font-weight: 800;
@@ -792,9 +830,18 @@ button {
   transform: scale(1.28);
 }
 
+/* All Sports — stronger zoom inside same card height */
+.sponsor-official-img--zoom-xl {
+  transform: scale(1.72);
+}
+
 @media (min-width: 720px) {
   .sponsor-official-img {
     max-height: 40px;
+  }
+
+  .sponsor-official-img--zoom-xl {
+    transform: scale(1.65);
   }
 }
 
