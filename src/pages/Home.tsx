@@ -9,6 +9,8 @@ import { computeStandingsForGroup } from "../lib/standings";
 import { formatTimelineLine, sortMatchEvents } from "../lib/timeline";
 import logo from "../assets/goldcup-logo.svg";
 import azersunLogo from "../assets/sponsors/azersun.png";
+import dreamFestLogo from "../assets/sponsors/dreamfest.png";
+import starCollegesLogo from "../assets/sponsors/star-colleges.png";
 
 type MatchRow = Database["public"]["Tables"]["matches"]["Row"];
 
@@ -227,8 +229,12 @@ export function Home() {
             <div className="sponsor-logo-tile sponsor-logo-tile--main">
               <img className="sponsor-logo" src={azersunLogo} alt="Azersun logo" />
             </div>
-            <div className="sponsor-logo-tile sponsor-logo-tile--main">Sponsor Logo</div>
-            <div className="sponsor-logo-tile sponsor-logo-tile--main">Sponsor Logo</div>
+            <div className="sponsor-logo-tile sponsor-logo-tile--main">
+              <img className="sponsor-logo" src={dreamFestLogo} alt="Dream Fest logo" />
+            </div>
+            <div className="sponsor-logo-tile sponsor-logo-tile--main">
+              <img className="sponsor-logo" src={starCollegesLogo} alt="Star Colleges logo" />
+            </div>
           </div>
         </div>
       </section>
