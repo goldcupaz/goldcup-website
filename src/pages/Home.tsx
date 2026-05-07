@@ -91,32 +91,6 @@ export function Home() {
       </header>
       {error && <div className="alert warn">{error}</div>}
 
-      <section className="card home-main-sponsors-card">
-        <div className="home-section-head">
-          <h2 className="home-section-title">Main Sponsors</h2>
-          <Link to="/sponsors" className="home-link-more">
-            Sponsors →
-          </Link>
-        </div>
-        <div className="main-sponsor-grid">
-          <div className="sponsor-logo-tile sponsor-logo-tile--main">
-            <div className="sponsor-logo-chip">
-              <img className="sponsor-logo" src={azersunLogo} alt="Azersun logo" />
-            </div>
-          </div>
-          <div className="sponsor-logo-tile sponsor-logo-tile--main">
-            <div className="sponsor-logo-chip">
-              <img className="sponsor-logo" src={dreamFestLogo} alt="Dream Fest logo" />
-            </div>
-          </div>
-          <div className="sponsor-logo-tile sponsor-logo-tile--main">
-            <div className="sponsor-logo-chip">
-              <img className="sponsor-logo" src={starCollegesLogo} alt="Star Colleges logo" />
-            </div>
-          </div>
-        </div>
-      </section>
-
       <section className="card home-live-card">
         <div className="home-section-head">
           <h2 className="home-section-title">
@@ -261,18 +235,14 @@ export function Home() {
         </div>
         <div className="sponsor-row" aria-label="Sponsor logos">
           <div className="sponsor-row-item">
-            <div className="sponsor-logo-chip">
-              <img className="sponsor-logo" src={azersunLogo} alt="Azersun logo" />
-            </div>
+            <img className="sponsor-logo sponsor-logo--free" src={azersunLogo} alt="Azersun logo" />
+          </div>
+          <div className="sponsor-row-item">
+            <img className="sponsor-logo sponsor-logo--free" src={dreamFestLogo} alt="Dream Fest logo" />
           </div>
           <div className="sponsor-row-item">
             <div className="sponsor-logo-chip">
-              <img className="sponsor-logo" src={dreamFestLogo} alt="Dream Fest logo" />
-            </div>
-          </div>
-          <div className="sponsor-row-item">
-            <div className="sponsor-logo-chip">
-              <img className="sponsor-logo" src={starCollegesLogo} alt="Star Colleges logo" />
+              <img className="sponsor-logo sponsor-logo--star" src={starCollegesLogo} alt="Star Colleges logo" />
             </div>
           </div>
         </div>

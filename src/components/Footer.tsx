@@ -1,6 +1,9 @@
 import { Link } from "react-router-dom";
 
 import logo from "../assets/goldcup-logo.png";
+import azersunLogo from "../assets/sponsors/azersun.png";
+import dreamFestLogo from "../assets/sponsors/dreamfest.png";
+import starCollegesLogo from "../assets/sponsors/star-colleges.png";
 
 export function Footer() {
   return (
@@ -34,6 +37,25 @@ export function Footer() {
             <Link className="site-footer-link" to="/about">
               About
             </Link>
+          </div>
+        </div>
+      </div>
+
+      <div className="site-footer-sponsorbar">
+        <div className="site-footer-head" style={{ marginBottom: 10 }}>
+          Sponsors & Partners
+        </div>
+        <div className="sponsor-row sponsor-row--footer" aria-label="Sponsor logos">
+          <div className="sponsor-row-item">
+            <img className="sponsor-logo sponsor-logo--free" src={azersunLogo} alt="Azersun logo" />
+          </div>
+          <div className="sponsor-row-item">
+            <img className="sponsor-logo sponsor-logo--free" src={dreamFestLogo} alt="Dream Fest logo" />
+          </div>
+          <div className="sponsor-row-item">
+            <div className="sponsor-logo-chip">
+              <img className="sponsor-logo sponsor-logo--star" src={starCollegesLogo} alt="Star Colleges logo" />
+            </div>
           </div>
         </div>
       </div>
