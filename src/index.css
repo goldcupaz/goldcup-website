@@ -591,12 +591,15 @@ button {
   width: 100%;
   height: 100%;
   object-fit: contain;
-  padding: 14px;
+  padding: 12px;
   max-height: none;
 }
 
 .sponsor-logo--star {
-  max-height: 92px;
+  /* keep chip size; zoom into logo itself */
+  max-height: 78px;
+  transform: scale(1.45);
+  transform-origin: center;
 }
 
 .sponsor-tile {
@@ -659,7 +662,7 @@ button {
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 16px;
   background: rgba(8, 16, 11, 0.35);
-  padding: 12px;
+  padding: 10px;
   scroll-snap-align: start;
   display: grid;
   place-items: center;
@@ -677,12 +680,27 @@ button {
 
 .site-footer-sponsorbar {
   margin-top: 16px;
-  padding-top: 14px;
+  padding-top: 12px;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .sponsor-row--footer {
   padding-bottom: 0;
+  gap: 10px;
+}
+
+/* Footer-specific sizing (smaller, cleaner tiles) */
+.sponsor-row--footer .sponsor-row-item {
+  flex-basis: 190px;
+  padding: 10px;
+}
+
+.sponsor-row--footer .sponsor-logo-chip {
+  padding: 12px;
+}
+
+.sponsor-row--footer .sponsor-logo {
+  max-height: 64px;
 }
 
 /* Footer */
