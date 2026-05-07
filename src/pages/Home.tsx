@@ -7,6 +7,7 @@ import { formatKickoff, statusLabel } from "../lib/format";
 import { isMatchInPlayOrBreak } from "../lib/matchStatus";
 import { computeStandingsForGroup } from "../lib/standings";
 import { formatTimelineLine, sortMatchEvents } from "../lib/timeline";
+import logo from "../assets/goldcup-logo.svg";
 
 type MatchRow = Database["public"]["Tables"]["matches"]["Row"];
 
@@ -77,147 +78,186 @@ export function Home() {
   return (
     <main className="home-page">
       <header className="home-hero">
-        <h1 className="page-title home-title">Gold Cup</h1>
-        <p className="subtitle home-subtitle">
-          Live scores, fixtures, and group tables — one place for fans. Data syncs from Supabase in real time.
-        </p>
+        <div className="home-hero-row">
+          <img className="home-hero-logo" src={logo} alt="Gold Cup logo" />
+          <div>
+            <h1 className="page-title home-title">Gold Cup</h1>
+            <p className="subtitle home-subtitle">More than a game — a tournament experience.</p>
+          </div>
+        </div>
       </header>
       {error && <div className="alert warn">{error}</div>}
 
-      <div className="home-dashboard">
-        <div className="home-col home-col--primary">
-          <section className="card home-live-card">
-            <div className="home-section-head">
-              <h2 className="home-section-title">
-                {liveCard.mode === "featured"
-                  ? "Featured match"
-                  : liveCard.mode === "next"
-                    ? "Next up"
-                    : "Live match"}
-              </h2>
-              {liveCard.match && (
-                <Link to="/live" className="home-link-more">
-                  Full live →
-                </Link>
-              )}
-            </div>
-
-            {!liveCard.match ? (
-              <p className="muted" style={{ margin: 0 }}>
-                No upcoming matches scheduled yet. Check back after the draw.
-              </p>
-            ) : (
-              <>
-                <div className="home-live-meta muted">{matchLabel(liveCard.match)}</div>
-                <div className="home-live-teams">
-                  <span className="home-live-team">{teamName(nameById, liveCard.match.home_team_id)}</span>
-                  <div className="home-live-center">
-                    <span className="home-live-score">
-                      {liveCard.match.home_score} – {liveCard.match.away_score}
-                    </span>
-                    <span className={`home-live-status${showLivePulse ? " home-live-status--pulse" : ""}`}>
-                      {liveCard.mode === "featured" ? statusLabel(liveCard.match.status) : "Not started"}
-                    </span>
-                  </div>
-                  <span className="home-live-team">{teamName(nameById, liveCard.match.away_team_id)}</span>
-                </div>
-                {liveCard.match.scheduled_at && liveCard.mode === "next" && (
-                  <p className="muted home-live-kickoff">{formatKickoff(liveCard.match.scheduled_at)}</p>
-                )}
-                {timelinePreview.length > 0 ? (
-                  <div className="home-timeline-preview">
-                    <span className="home-timeline-label">Timeline</span>
-                    <ul className="home-timeline-list">
-                      {timelinePreview.map((ev) => (
-                        <li key={ev.id}>{formatTimelineLine(ev, nameById)}</li>
-                      ))}
-                    </ul>
-                  </div>
-                ) : (
-                  <p className="muted home-timeline-empty">No timeline events yet.</p>
-                )}
-              </>
-            )}
-          </section>
-
-          <section className="card home-fixtures-card">
-            <div className="home-section-head">
-              <h2 className="home-section-title">Upcoming fixtures</h2>
-              <Link to="/fixtures" className="home-link-more">
-                All fixtures →
-              </Link>
-            </div>
-            {upcomingList.length === 0 ? (
-              <p className="muted" style={{ margin: 0 }}>
-                No scheduled not-started matches.
-              </p>
-            ) : (
-              <ul className="home-fixture-list">
-                {upcomingList.map((m) => (
-                  <li key={m.id} className="home-fixture-row">
-                    <div className="home-fixture-line1">
-                      <span className="home-fixture-when">{m.scheduled_at ? formatKickoff(m.scheduled_at) : "TBD"}</span>
-                      <span className="home-fixture-meta">{matchLabel(m)}</span>
-                    </div>
-                    <div className="home-fixture-teams">
-                      {teamName(nameById, m.home_team_id)} <span className="muted">vs</span>{" "}
-                      {teamName(nameById, m.away_team_id)}
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-        </div>
-
-        <div className="home-col home-col--standings">
-          <div className="home-section-head home-standings-head">
-            <h2 className="home-section-title">Standings</h2>
-            <Link to="/standings" className="home-link-more">
-              Details →
+      <section className="card home-live-card">
+        <div className="home-section-head">
+          <h2 className="home-section-title">
+            {liveCard.mode === "featured" ? "Live match" : liveCard.mode === "next" ? "Next match" : "Live match"}
+          </h2>
+          {liveCard.match && (
+            <Link to="/live" className="home-link-more">
+              Live tab →
             </Link>
-          </div>
-          <div className="home-standings-grid">
-            {standingsByGroup.map(({ letter, rows }) => (
-              <section key={letter} className="home-group-card">
-                <div className="home-group-badge">Group {letter}</div>
-                <div className="table-wrap home-standings-wrap">
-                  <table className="home-standings-table">
-                    <thead>
-                      <tr>
-                        <th>#</th>
-                        <th>Team</th>
-                        <th>P</th>
-                        <th>W</th>
-                        <th>D</th>
-                        <th>L</th>
-                        <th>GD</th>
-                        <th className="home-th-pts">PTS</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {rows.map((r, i) => (
-                        <tr key={r.team.id}>
-                          <td>{i + 1}</td>
-                          <td className="home-td-team">{r.team.name}</td>
-                          <td>{r.played}</td>
-                          <td>{r.wins}</td>
-                          <td>{r.draws}</td>
-                          <td>{r.losses}</td>
-                          <td>
-                            {r.gd > 0 ? `+${r.gd}` : `${r.gd}`}
-                          </td>
-                          <td className="home-td-pts">{r.pts}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+          )}
+        </div>
+
+        {!liveCard.match ? (
+          <p className="muted" style={{ margin: 0 }}>
+            No upcoming matches scheduled yet.
+          </p>
+        ) : (
+          <>
+            <div className="home-live-meta muted">{matchLabel(liveCard.match)}</div>
+            <div className="home-live-teams">
+              <span className="home-live-team">{teamName(nameById, liveCard.match.home_team_id)}</span>
+              <div className="home-live-center">
+                <span className="home-live-score">
+                  {liveCard.match.home_score} – {liveCard.match.away_score}
+                </span>
+                <span className={`home-live-status${showLivePulse ? " home-live-status--pulse" : ""}`}>
+                  {liveCard.mode === "featured" ? statusLabel(liveCard.match.status) : "Not started"}
+                </span>
+              </div>
+              <span className="home-live-team">{teamName(nameById, liveCard.match.away_team_id)}</span>
+            </div>
+            {liveCard.match.scheduled_at && liveCard.mode === "next" && (
+              <p className="muted home-live-kickoff">{formatKickoff(liveCard.match.scheduled_at)}</p>
+            )}
+            {timelinePreview.length > 0 ? (
+              <div className="home-timeline-preview">
+                <span className="home-timeline-label">Latest</span>
+                <ul className="home-timeline-list">
+                  {timelinePreview.map((ev) => (
+                    <li key={ev.id}>{formatTimelineLine(ev, nameById)}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : (
+              <p className="muted home-timeline-empty">No timeline events yet.</p>
+            )}
+          </>
+        )}
+      </section>
+
+      <section className="card home-fixtures-card">
+        <div className="home-section-head">
+          <h2 className="home-section-title">Upcoming fixtures</h2>
+          <Link to="/fixtures" className="home-link-more">
+            All matches →
+          </Link>
+        </div>
+        {upcomingList.length === 0 ? (
+          <p className="muted" style={{ margin: 0 }}>
+            No scheduled not-started matches.
+          </p>
+        ) : (
+          <ul className="home-fixture-list">
+            {upcomingList.map((m) => (
+              <li key={m.id} className="home-fixture-row">
+                <div className="home-fixture-line1">
+                  <span className="home-fixture-when">{m.scheduled_at ? formatKickoff(m.scheduled_at) : "TBD"}</span>
+                  <span className="home-fixture-meta">{matchLabel(m)}</span>
                 </div>
-              </section>
+                <div className="home-fixture-teams">
+                  {teamName(nameById, m.home_team_id)} <span className="muted">vs</span>{" "}
+                  {teamName(nameById, m.away_team_id)}
+                </div>
+              </li>
             ))}
+          </ul>
+        )}
+      </section>
+
+      <section className="home-standings-preview">
+        <div className="home-section-head">
+          <h2 className="home-section-title">Standings</h2>
+          <Link to="/standings" className="home-link-more">
+            Full tables →
+          </Link>
+        </div>
+        <div className="home-standings-grid">
+          {standingsByGroup.map(({ letter, rows }) => (
+            <section key={letter} className="home-group-card">
+              <div className="home-group-badge">Group {letter}</div>
+              <div className="table-wrap home-standings-wrap">
+                <table className="home-standings-table">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Team</th>
+                      <th>P</th>
+                      <th>W</th>
+                      <th>D</th>
+                      <th>L</th>
+                      <th>GD</th>
+                      <th className="home-th-pts">PTS</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rows.map((r, i) => (
+                      <tr key={r.team.id}>
+                        <td>{i + 1}</td>
+                        <td className="home-td-team">{r.team.name}</td>
+                        <td>{r.played}</td>
+                        <td>{r.wins}</td>
+                        <td>{r.draws}</td>
+                        <td>{r.losses}</td>
+                        <td>{r.gd > 0 ? `+${r.gd}` : `${r.gd}`}</td>
+                        <td className="home-td-pts">{r.pts}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          ))}
+        </div>
+      </section>
+
+      <section className="card home-sponsors-card">
+        <div className="home-section-head">
+          <h2 className="home-section-title">Sponsors</h2>
+          <Link to="/sponsors" className="home-link-more">
+            Details →
+          </Link>
+        </div>
+        <div className="home-sponsor-block">
+          <div className="home-sponsor-head">Main Sponsor</div>
+          <div className="sponsor-hero">Main Sponsor Logo</div>
+        </div>
+        <div className="home-sponsor-split">
+          <div className="home-sponsor-block">
+            <div className="home-sponsor-head">Official Sponsors</div>
+            <div className="sponsor-grid">
+              <div className="sponsor-tile">Logo</div>
+              <div className="sponsor-tile">Logo</div>
+              <div className="sponsor-tile">Logo</div>
+              <div className="sponsor-tile">Logo</div>
+            </div>
+          </div>
+          <div className="home-sponsor-block">
+            <div className="home-sponsor-head">Partners</div>
+            <div className="sponsor-grid">
+              <div className="sponsor-tile">Logo</div>
+              <div className="sponsor-tile">Logo</div>
+              <div className="sponsor-tile">Logo</div>
+              <div className="sponsor-tile">Logo</div>
+            </div>
           </div>
         </div>
-      </div>
+      </section>
+
+      <section className="card home-about-card">
+        <div className="home-section-head">
+          <h2 className="home-section-title">About Gold Cup</h2>
+          <Link to="/about" className="home-link-more">
+            Read more →
+          </Link>
+        </div>
+        <p className="muted" style={{ margin: 0 }}>
+          Gold Cup is a youth football tournament created to bring competition, atmosphere, and community together. Our
+          goal is to give teams a professional tournament experience both on and off the pitch.
+        </p>
+      </section>
     </main>
   );
 }

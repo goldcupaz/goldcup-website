@@ -10,8 +10,10 @@ import { GroupsPage } from "./pages/GroupsPage";
 import { Home } from "./pages/Home";
 import { KnockoutPage } from "./pages/KnockoutPage";
 import { LiveMatchPage } from "./pages/LiveMatchPage";
+import { SponsorsPage } from "./pages/SponsorsPage";
 import { StandingsPage } from "./pages/StandingsPage";
 import { TeamsPage } from "./pages/TeamsPage";
+import { AboutPage } from "./pages/AboutPage";
 
 export default function App() {
   return (
@@ -27,6 +29,8 @@ export default function App() {
               <Route path="live" element={<LiveMatchPage />} />
               <Route path="teams" element={<TeamsPage />} />
               <Route path="knockout" element={<KnockoutPage />} />
+              <Route path="sponsors" element={<SponsorsPage />} />
+              <Route path="about" element={<AboutPage />} />
               <Route path="admin" element={<AdminEntry />} />
             </Route>
             <Route path="/admin/login" element={<AdminLogin />} />
