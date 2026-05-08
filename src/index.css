@@ -193,6 +193,21 @@ main {
     0 16px 60px rgba(0, 0, 0, 0.55),
     0 0 0 1px rgba(0, 0, 0, 0.35);
   z-index: 12050;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(-6px);
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease,
+    visibility 0.2s;
+}
+
+.nav-more-menu--open {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateY(0);
 }
 
 .nav-more-item {
@@ -606,19 +621,7 @@ main {
 }
 
 .sponsor-grid--logos {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-@media (min-width: 720px) {
-  .sponsor-grid--logos {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
-@media (min-width: 1100px) {
-  .sponsor-grid--logos {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-  }
+  grid-template-columns: repeat(auto-fill, minmax(min(140px, 100%), 1fr));
 }
 
 .sponsor-logo--official {
@@ -653,8 +656,37 @@ main {
   padding: 12px;
 }
 
+.sponsor-page-main-link,
+.sponsor-page-official-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  min-height: 44px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.sponsor-page-main-link:focus-visible,
+.sponsor-page-official-link:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 3px;
+  border-radius: 12px;
+}
+
+.sponsor-logo--sponsors-main-azersun {
+  transform: scale(1.12);
+  transform-origin: center;
+}
+
+.sponsor-logo--sponsors-main-dreamfest {
+  transform: scale(1.1);
+  transform-origin: center;
+}
+
 .sponsor-logo--sponsors-main-star {
-  transform: scale(1.14);
+  transform: scale(1.22);
   transform-origin: center;
 }
 
@@ -665,21 +697,31 @@ main {
 }
 
 .sponsor-logo--page-hivido {
-  transform: scale(1.06);
+  transform: scale(1.2);
 }
 
 .sponsor-logo--page-noosh {
-  transform: scale(1.12);
+  transform: scale(1.28);
 }
 
-/* Allsports — strong zoom; stays inside white tile */
+/* Allsports — contained inside white tile (zoomed out vs prior) */
 .sponsor-logo--page-allsports.sponsor-logo--allsports-xl {
-  transform: scale(2.65);
+  transform: scale(2.05);
   max-height: 70px;
 }
 
 .sponsor-logo--page-timsport {
-  transform: scale(1.32);
+  transform: scale(1.45);
+}
+
+.sponsor-logo--page-lumi {
+  transform: scale(1.06);
+  max-height: 72px;
+}
+
+.sponsor-logo--page-buyukfirat {
+  transform: scale(1.02);
+  max-height: 68px;
 }
 
 /* Bona Dea — fit wide mark fully inside card */
@@ -969,24 +1011,24 @@ main {
 }
 
 .sponsor-official-img--zoom-lg {
-  transform: scale(1.28);
+  transform: scale(1.36);
 }
 
-/* HIVideo — clearer on dark card (same dimensions as other slots) */
+/* Footer official row (these classes are footer-only) */
 .sponsor-official-img--hivido-footer {
-  transform: scale(1.22);
+  transform: scale(1.38);
   filter: none;
 }
 
 .sponsor-official-img--timsport-footer {
-  transform: scale(1.42);
-  max-height: 34px;
+  transform: scale(1.58);
+  max-height: 36px;
 }
 
 @media (min-width: 720px) {
   .sponsor-official-img--timsport-footer {
-    max-height: 40px;
-    transform: scale(1.38);
+    max-height: 42px;
+    transform: scale(1.52);
   }
 }
 
@@ -996,9 +1038,9 @@ main {
   transform: scale(1.06);
 }
 
-/* All Sports — strong zoom inside same card height */
+/* All Sports — footer official row (zoomed out vs prior) */
 .sponsor-official-img--zoom-xl {
-  transform: scale(2.18);
+  transform: scale(1.82);
 }
 
 @media (min-width: 720px) {
@@ -1012,8 +1054,18 @@ main {
   }
 
   .sponsor-official-img--zoom-xl {
-    transform: scale(2.08);
+    transform: scale(1.72);
   }
+}
+
+.sponsor-official-img--lumi-footer {
+  max-height: 34px;
+  transform: scale(1.08);
+}
+
+.sponsor-official-img--buyukfirat-footer {
+  max-height: 34px;
+  transform: scale(1.05);
 }
 
 /* Footer */
