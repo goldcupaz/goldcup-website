@@ -1,5 +1,7 @@
 import type { Database } from "./database.types";
 
+import { countsForStandingsScore } from "./matchStatus";
+
 type TeamRow = Database["public"]["Tables"]["teams"]["Row"];
 type MatchRow = Database["public"]["Tables"]["matches"]["Row"];
 
@@ -86,7 +88,7 @@ export function computeGroupStandings(
     (m) =>
       m.stage === "group" &&
       m.group_letter === groupLetter &&
-      m.status === "full_time",
+      countsForStandingsScore(m.status),
   );
 
   for (const m of relevant) {

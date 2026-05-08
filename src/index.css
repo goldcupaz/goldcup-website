@@ -635,6 +635,55 @@ main {
   transform: scale(1.15);
 }
 
+/* Sponsors page — official grid: full white card area, logos contained */
+.sponsor-logo-tile--page-white {
+  background: #ffffff;
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+.sponsor-logo-tile--page-white .sponsor-logo--free {
+  max-height: 76px;
+  width: 100%;
+  padding: 8px;
+}
+
+.sponsor-logo--page-hivido {
+  transform: scale(1.06);
+}
+
+.sponsor-logo--page-noosh {
+  transform: scale(1.12);
+}
+
+/* Allsports — strong zoom; stays inside white tile */
+.sponsor-logo--page-allsports.sponsor-logo--allsports-xl {
+  transform: scale(2.65);
+  max-height: 70px;
+}
+
+.sponsor-logo--page-timsport {
+  transform: scale(1.05);
+}
+
+/* Bona Dea — fit wide mark fully inside card */
+.sponsor-logo--page-bona-dea {
+  transform: none;
+  max-height: 48px;
+  width: 100%;
+  max-width: 100%;
+  padding: 10px 14px;
+}
+
+@media (min-width: 960px) {
+  .sponsor-logo-tile--page-white .sponsor-logo--free {
+    max-height: 86px;
+  }
+
+  .sponsor-logo--page-bona-dea {
+    max-height: 52px;
+  }
+}
+
 .sponsor-logo-chip {
   width: 100%;
   height: 100%;
@@ -1462,8 +1511,146 @@ textarea {
 
 .team-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(200px, 100%), 1fr));
   gap: 12px;
+  max-width: 100%;
+}
+
+.team-card-link {
+  box-sizing: border-box;
+}
+
+.team-card-link.team-card-btn {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
+.teams-overview-page .teams-rankings-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 900px) {
+  .teams-overview-page .teams-rankings-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: start;
+  }
+}
+
+.teams-ranking-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.links-page .links-section + .links-section {
+  margin-top: 14px;
+}
+
+.links-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.links-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.2);
+  text-decoration: none;
+  color: var(--text);
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.links-item:hover {
+  border-color: var(--gold-dim);
+}
+
+.links-item-arrow {
+  color: var(--gold);
+  font-size: 16px;
+}
+
+.team-detail-page .team-detail-back {
+  margin-bottom: 12px;
+}
+
+.team-detail-block + .team-detail-block {
+  margin-top: 14px;
+}
+
+.team-detail-roster {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.team-detail-player {
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.18);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+}
+
+.team-detail-player--gk {
+  border-color: rgba(212, 175, 55, 0.4);
+  background: rgba(212, 175, 55, 0.1);
+  box-shadow: inset 3px 0 0 var(--gold);
+}
+
+.team-match-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.team-match-row {
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.team-match-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.team-match-scoreline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 6px;
+  font-weight: 800;
+}
+
+.team-match-score {
+  font-variant-numeric: tabular-nums;
+  color: var(--gold);
+}
+
+.team-scorers-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
 }
 
 .team-card-btn {
@@ -1829,6 +2016,23 @@ select {
   align-items: center;
   gap: 8px;
   font-weight: 800;
+}
+
+.admin-player-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.admin-player-edit {
+  width: 100%;
+}
+
+.admin-player-edit-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
 }
 
 .check-row {

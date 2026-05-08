@@ -21,8 +21,9 @@ export function StandingsPage() {
     <main>
       <h1 className="page-title">Standings</h1>
       <p className="subtitle">
-        Calculated from final group-stage results. Tiebreak: points, head-to-head, goal difference, goals scored, goals
-        conceded (lower is better), then draw.
+        Group standings use current scores for live matches and half-time (points, GF/GA/GD update in real time) and lock
+        in when each match finishes. Tiebreak: points, head-to-head (among finished fixtures), goal difference, goals scored,
+        goals conceded (lower is better), then draw.
       </p>
       {error && <div className="alert warn">{error}</div>}
       <div className="grid-2">

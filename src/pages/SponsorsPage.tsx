@@ -15,11 +15,36 @@ type SponsorGridItem = {
 };
 
 const OFFICIAL_AND_PARTNERS: SponsorGridItem[] = [
-  { name: "HIVideo", src: officialHividoLogo, tileClassName: "sponsor-logo-tile--img-white", imgClassName: "sponsor-logo--official" },
-  { name: "Nooshcard", src: officialNeonNLogo, imgClassName: "sponsor-logo--official" },
-  { name: "Allsports", src: officialAllSportsLogo, imgClassName: "sponsor-logo--official sponsor-logo--allsports-xl" },
-  { name: "TIMsport", src: officialTimsportLogo, imgClassName: "sponsor-logo--official" },
-  { name: "Bona Dea · Liv Hospital", src: officialBonaDeaLivLogo, imgClassName: "sponsor-logo--official sponsor-logo--bona-dea" },
+  {
+    name: "HIVideo",
+    src: officialHividoLogo,
+    tileClassName: "sponsor-logo-tile--page-white",
+    imgClassName: "sponsor-logo--official sponsor-logo--page-hivido",
+  },
+  {
+    name: "Nooshcard",
+    src: officialNeonNLogo,
+    tileClassName: "sponsor-logo-tile--page-white",
+    imgClassName: "sponsor-logo--official sponsor-logo--page-noosh",
+  },
+  {
+    name: "Allsports",
+    src: officialAllSportsLogo,
+    tileClassName: "sponsor-logo-tile--page-white",
+    imgClassName: "sponsor-logo--official sponsor-logo--allsports-xl sponsor-logo--page-allsports",
+  },
+  {
+    name: "TIMsport",
+    src: officialTimsportLogo,
+    tileClassName: "sponsor-logo-tile--page-white",
+    imgClassName: "sponsor-logo--official sponsor-logo--page-timsport",
+  },
+  {
+    name: "Bona Dea · Liv Hospital",
+    src: officialBonaDeaLivLogo,
+    tileClassName: "sponsor-logo-tile--page-white",
+    imgClassName: "sponsor-logo--official sponsor-logo--page-bona-dea",
+  },
 ];
 
 export function SponsorsPage() {

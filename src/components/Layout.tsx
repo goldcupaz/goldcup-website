@@ -91,6 +91,9 @@ export function Layout() {
                 <NavLink to="/about" className="nav-more-item" onClick={() => (setMoreOpen(false), setMenuOpen(false))}>
                   About
                 </NavLink>
+                <NavLink to="/links" className="nav-more-item" onClick={() => (setMoreOpen(false), setMenuOpen(false))}>
+                  Links
+                </NavLink>
                 {isSupabaseConfigured && (
                   <NavLink
                     to="/admin"

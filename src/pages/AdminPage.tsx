@@ -414,7 +414,7 @@ where id = 'YOUR_USER_UUID';`}
         </section>
       )}
 
-      {tab === "teams" && <TeamsEditor teams={teams} players={players} refresh={refresh} />}
+      {tab === "teams" && <TeamsEditor teams={teams} players={players} onAdminNotify={notify} />}
 
       {tab === "bracket" && (
         <section className="card">
@@ -840,11 +840,11 @@ function LiveEditor({
 function TeamsEditor({
   teams,
   players,
-  refresh,
+  onAdminNotify,
 }: {
   teams: Database["public"]["Tables"]["teams"]["Row"][];
   players: Database["public"]["Tables"]["players"]["Row"][];
-  refresh: () => Promise<void>;
+  onAdminNotify: (msg: string, error?: string | null) => Promise<void>;
 }) {
   const [selected, setSelected] = useState(teams[0]?.id ?? "");
   const [teamEdit, setTeamEdit] = useState({
@@ -854,6 +854,13 @@ function TeamsEditor({
     manager1: "",
     manager2: "",
   });
+
+  useEffect(() => {
+    if (teams.length === 0) return;
+    if (!selected || !teams.some((x) => x.id === selected)) {
+      setSelected(teams[0]!.id);
+    }
+  }, [teams, selected]);
 
   useEffect(() => {
     const t = teams.find((x) => x.id === selected);
@@ -867,50 +874,168 @@ function TeamsEditor({
       });
   }, [selected, teams]);
 
-  const roster = players.filter((p) => p.team_id === selected);
+  const roster = players.filter((p) => p.team_id === selected).sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name));
   const [name, setName] = useState("");
   const [isGk, setIsGk] = useState(false);
+  const [playerErr, setPlayerErr] = useState<string | null>(null);
+  const [playerOk, setPlayerOk] = useState<string | null>(null);
+  const [teamErr, setTeamErr] = useState<string | null>(null);
+
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editGk, setEditGk] = useState(false);
+
+  function isSchemaOrMissingColumn(error: { message?: string; code?: string } | null) {
+    if (!error) return false;
+    if (error.code === "42703" || error.code === "PGRST204") return true;
+    const msg = error.message ?? "";
+    return (
+      /is_goalkeeper|manager_1|manager_2/i.test(msg) ||
+      msg.includes("42703") ||
+      msg.includes("column") ||
+      msg.includes("schema cache")
+    );
+  }
 
   async function addPlayer(e: FormEvent) {
     e.preventDefault();
-    if (!selected || !name.trim()) return;
-    const { error } = await supabase.from("players").insert({
+    setPlayerErr(null);
+    setPlayerOk(null);
+    if (!selected || !teams.some((x) => x.id === selected)) {
+      const err = !teams.length ? "No teams loaded yet." : "Select a team first.";
+      setPlayerErr(err);
+      await onAdminNotify("", err);
+      return;
+    }
+    if (!name.trim()) {
+      const err = "Enter a player name.";
+      setPlayerErr(err);
+      return;
+    }
+
+    const base = {
       team_id: selected,
       name: name.trim(),
       sort_order: roster.length,
-      is_goalkeeper: isGk,
-    });
-    if (!error) {
-      setName("");
-      setIsGk(false);
-      void refresh();
+    };
+
+    let { error } = await supabase.from("players").insert({ ...base, is_goalkeeper: isGk });
+    if (error && isSchemaOrMissingColumn(error)) {
+      const retry = await supabase.from("players").insert(base);
+      error = retry.error;
+      if (!error && isGk) {
+        setPlayerOk("Player added without GK flag — enable is_goalkeeper in Supabase (see migration).");
+        setName("");
+        setIsGk(false);
+        await onAdminNotify(
+          "Player saved. GK not stored: add is_goalkeeper column (run latest migration).",
+          null,
+        );
+        return;
+      }
     }
+
+    if (error) {
+      const msg =
+        `${error.message}. If this persists, check Supabase RLS policies and that the players table migration is applied.`;
+      setPlayerErr(msg);
+      await onAdminNotify("", msg);
+      return;
+    }
+
+    setName("");
+    setIsGk(false);
+    setPlayerOk("Player added.");
+    await onAdminNotify("Player added.", null);
   }
 
   async function updateTeam(e: FormEvent) {
     e.preventDefault();
     const t = teams.find((x) => x.id === selected);
     if (!t) return;
-    const { error } = await supabase
-      .from("teams")
-      .update({
-        name: teamEdit.name,
-        group_letter: teamEdit.letter,
-        group_order: teamEdit.order,
-        manager_1: teamEdit.manager1.trim() ? teamEdit.manager1.trim() : null,
-        manager_2: teamEdit.manager2.trim() ? teamEdit.manager2.trim() : null,
-      })
-      .eq("id", t.id);
-    if (!error) void refresh();
+    setTeamErr(null);
+
+    const withManagers = {
+      name: teamEdit.name,
+      group_letter: teamEdit.letter,
+      group_order: teamEdit.order,
+      manager_1: teamEdit.manager1.trim() ? teamEdit.manager1.trim() : null,
+      manager_2: teamEdit.manager2.trim() ? teamEdit.manager2.trim() : null,
+    };
+
+    let { error } = await supabase.from("teams").update(withManagers).eq("id", t.id);
+    if (error && isSchemaOrMissingColumn(error)) {
+      const { error: e2 } = await supabase
+        .from("teams")
+        .update({
+          name: teamEdit.name,
+          group_letter: teamEdit.letter,
+          group_order: teamEdit.order,
+        })
+        .eq("id", t.id);
+      error = e2;
+      if (!error) {
+        await onAdminNotify(
+          "Team saved without managers — add manager_1/manager_2 columns (run latest migration).",
+          null,
+        );
+        return;
+      }
+    }
+
+    if (error) {
+      const msg = error.message ?? "Could not save team.";
+      setTeamErr(msg);
+      await onAdminNotify("", msg);
+      return;
+    }
+    await onAdminNotify("Team saved.", null);
   }
 
   async function deletePlayer(playerId: string) {
     const { error } = await supabase.from("players").delete().eq("id", playerId);
     if (error) {
-      console.error(error);
+      await onAdminNotify("", error.message);
       return;
     }
-    void refresh();
+    await onAdminNotify("Player removed.", null);
+  }
+
+  async function saveEditedPlayer(original: PlayerRow) {
+    setPlayerErr(null);
+    setPlayerOk(null);
+    const trimmed = editName.trim();
+    if (!trimmed) {
+      setPlayerErr("Name cannot be empty.");
+      return;
+    }
+
+    let { error } = await supabase
+      .from("players")
+      .update({ name: trimmed, is_goalkeeper: editGk })
+      .eq("id", original.id);
+
+    let gkDropped = false;
+    if (error && isSchemaOrMissingColumn(error)) {
+      const r2 = await supabase.from("players").update({ name: trimmed }).eq("id", original.id);
+      error = r2.error;
+      if (!error && editGk) gkDropped = true;
+    }
+
+    if (error) {
+      setPlayerErr(error.message);
+      await onAdminNotify("", error.message);
+      return;
+    }
+    setEditingId(null);
+    if (gkDropped) {
+      await onAdminNotify(
+        "",
+        "Name saved; GK flag skipped — add players.is_goalkeeper column (run latest migration).",
+      );
+    } else {
+      await onAdminNotify("Player updated.", null);
+    }
   }
 
   return (
@@ -928,6 +1053,12 @@ function TeamsEditor({
           ))}
         </select>
       </div>
+
+      {teamErr && (
+        <div className="alert warn" style={{ marginTop: 12 }}>
+          {teamErr}
+        </div>
+      )}
 
       {selected && (
         <div className="teams-editor-split">
@@ -995,6 +1126,8 @@ function TeamsEditor({
 
           <div className="teams-editor-panel teams-editor-panel--players">
             <div className="admin-subhead">Players</div>
+            {playerErr && <div className="alert warn">{playerErr}</div>}
+            {playerOk && <div className="alert">{playerOk}</div>}
             <form onSubmit={addPlayer}>
               <div className="form-row">
                 <label>New player</label>
@@ -1010,20 +1143,65 @@ function TeamsEditor({
             </form>
 
             <ul className="admin-player-list">
-              {roster.map((p) => (
-                <li
-                  key={p.id}
-                  className={p.is_goalkeeper ? "admin-player-row admin-player-row--gk" : "admin-player-row"}
-                >
-                  <span className="admin-player-name">
-                    {p.is_goalkeeper && <span className="gk-badge">GK</span>}
-                    {p.name}
-                  </span>
-                  <button type="button" className="btn" onClick={() => void deletePlayer(p.id)}>
-                    Remove
-                  </button>
-                </li>
-              ))}
+              {roster.map((p) => {
+                const gk = !!p.is_goalkeeper;
+                return (
+                  <li key={p.id} className={gk ? "admin-player-row admin-player-row--gk" : "admin-player-row"}>
+                    {editingId === p.id ? (
+                      <div className="admin-player-edit">
+                        <div className="form-row" style={{ marginBottom: 0 }}>
+                          <label>Name</label>
+                          <input value={editName} onChange={(e) => setEditName(e.target.value)} />
+                        </div>
+                        <label className="check-row" style={{ marginTop: 8 }}>
+                          <input type="checkbox" checked={editGk} onChange={(e) => setEditGk(e.target.checked)} />
+                          <span>Goalkeeper (GK)</span>
+                        </label>
+                        <div className="admin-player-edit-actions">
+                          <button type="button" className="btn btn-primary" onClick={() => void saveEditedPlayer(p)}>
+                            Save
+                          </button>
+                          <button
+                            type="button"
+                            className="btn"
+                            onClick={() => {
+                              setEditingId(null);
+                              setPlayerErr(null);
+                            }}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <span className="admin-player-name">
+                          {gk && <span className="gk-badge">GK</span>}
+                          {p.name}
+                        </span>
+                        <div className="admin-player-actions">
+                          <button
+                            type="button"
+                            className="btn"
+                            onClick={() => {
+                              setEditingId(p.id);
+                              setEditName(p.name);
+                              setEditGk(gk);
+                              setPlayerErr(null);
+                              setPlayerOk(null);
+                            }}
+                          >
+                            Edit
+                          </button>
+                          <button type="button" className="btn" onClick={() => void deletePlayer(p.id)}>
+                            Remove
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
           </div>
         </div>

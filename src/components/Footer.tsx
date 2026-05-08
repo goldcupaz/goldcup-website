@@ -96,6 +96,9 @@ export function Footer() {
         <div className="site-footer-sponsors">
           <div className="site-footer-head">Links</div>
           <div className="site-footer-links">
+            <Link className="site-footer-link" to="/links">
+              Social & registration
+            </Link>
             <Link className="site-footer-link" to="/sponsors">
               Sponsors
             </Link>
