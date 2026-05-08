@@ -697,7 +697,7 @@ main {
 }
 
 .sponsor-logo--page-hivido {
-  transform: scale(1.2);
+  transform: scale(1.36);
 }
 
 .sponsor-logo--page-noosh {
@@ -711,17 +711,17 @@ main {
 }
 
 .sponsor-logo--page-timsport {
-  transform: scale(1.45);
+  transform: scale(1.58);
 }
 
 .sponsor-logo--page-lumi {
-  transform: scale(1.06);
-  max-height: 72px;
+  transform: scale(1.22);
+  max-height: 76px;
 }
 
 .sponsor-logo--page-buyukfirat {
-  transform: scale(1.02);
-  max-height: 68px;
+  transform: scale(1.18);
+  max-height: 72px;
 }
 
 /* Bona Dea — fit wide mark fully inside card */
@@ -1016,19 +1016,19 @@ main {
 
 /* Footer official row (these classes are footer-only) */
 .sponsor-official-img--hivido-footer {
-  transform: scale(1.38);
+  transform: scale(1.52);
   filter: none;
 }
 
 .sponsor-official-img--timsport-footer {
-  transform: scale(1.58);
+  transform: scale(1.72);
   max-height: 36px;
 }
 
 @media (min-width: 720px) {
   .sponsor-official-img--timsport-footer {
     max-height: 42px;
-    transform: scale(1.52);
+    transform: scale(1.66);
   }
 }
 
@@ -1059,13 +1059,25 @@ main {
 }
 
 .sponsor-official-img--lumi-footer {
-  max-height: 34px;
-  transform: scale(1.08);
+  max-height: 36px;
+  transform: scale(1.22);
 }
 
 .sponsor-official-img--buyukfirat-footer {
-  max-height: 34px;
-  transform: scale(1.05);
+  max-height: 36px;
+  transform: scale(1.2);
+}
+
+@media (min-width: 720px) {
+  .sponsor-official-img--lumi-footer {
+    max-height: 40px;
+    transform: scale(1.18);
+  }
+
+  .sponsor-official-img--buyukfirat-footer {
+    max-height: 40px;
+    transform: scale(1.16);
+  }
 }
 
 /* Footer */
