@@ -40,11 +40,6 @@ export function TeamDetailPage() {
       .sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name));
   }, [players, teamId]);
 
-  const managers = useMemo(() => {
-    if (!team) return [];
-    return [team.manager_1, team.manager_2].filter((x): x is string => !!(x && x.trim()));
-  }, [team]);
-
   const teamMatches = useMemo(() => {
     if (!teamId) return [];
     return matches
@@ -86,18 +81,19 @@ export function TeamDetailPage() {
       {error && <div className="alert warn">{error}</div>}
 
       <>
-          {managers.length > 0 && (
-            <section className="card team-detail-block">
-              <h2 className="section-title">Managers / Coaches</h2>
-              <div className="team-managers-list">
-                {managers.map((m, i) => (
-                  <span key={`${m}-${i}`} className="team-manager-pill">
-                    {m}
-                  </span>
-                ))}
+          <section className="card team-detail-block">
+            <h2 className="section-title">Managers / Coaches</h2>
+            <dl className="team-managers-dl">
+              <div className="team-managers-dl-row">
+                <dt>Manager 1</dt>
+                <dd>{team.manager_1?.trim() || "—"}</dd>
               </div>
-            </section>
-          )}
+              <div className="team-managers-dl-row">
+                <dt>Manager 2</dt>
+                <dd>{team.manager_2?.trim() || "—"}</dd>
+              </div>
+            </dl>
+          </section>
 
           <section className="card team-detail-block">
             <h2 className="section-title">Squad</h2>
@@ -106,7 +102,7 @@ export function TeamDetailPage() {
             ) : (
               <ul className="team-detail-roster">
                 {roster.map((p) => {
-                  const gk = !!p.is_goalkeeper;
+                  const gk = p.is_goalkeeper === true;
                   return (
                     <li key={p.id} className={gk ? "team-detail-player team-detail-player--gk" : "team-detail-player"}>
                       {gk && <span className="gk-badge">GK</span>}

@@ -29,6 +29,8 @@ export type TournamentContextValue = {
   players: PlayerRow[];
   currentLiveMatchId: string | null;
   refresh: () => Promise<void>;
+  /** Refetch teams + players only — fast update after roster/staff edits. */
+  refreshTeamsAndPlayers: () => Promise<void>;
 };
 
 const TournamentContext = createContext<TournamentContextValue | null>(null);
@@ -53,6 +55,28 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
   const [matchEvents, setMatchEvents] = useState<MatchEventRow[]>([]);
   const [players, setPlayers] = useState<PlayerRow[]>([]);
   const [currentLiveMatchId, setCurrentLiveMatchId] = useState<string | null>(null);
+
+  const refreshTeamsAndPlayers = useCallback(async () => {
+    if (!isSupabaseConfigured) return;
+    try {
+      const [tRes, pRes] = await Promise.all([
+        supabase.from("teams").select("*").order("group_letter").order("group_order"),
+        supabase.from("players").select("*").order("sort_order"),
+      ]);
+      if (tRes.error) console.error("[refreshTeamsAndPlayers] teams", tRes.error);
+      else if (tRes.data) setTeams(tRes.data as TeamRow[]);
+      if (pRes.error) console.error("[refreshTeamsAndPlayers] players", pRes.error);
+      else if (pRes.data)
+        setPlayers(
+          (pRes.data as PlayerRow[]).map((p) => ({
+            ...p,
+            is_goalkeeper: (p as PlayerRow & { is_goalkeeper?: boolean }).is_goalkeeper === true,
+          })),
+        );
+    } catch (e) {
+      console.error("[TournamentProvider] refreshTeamsAndPlayers", e);
+    }
+  }, []);
 
   const refresh = useCallback(async () => {
     if (!isSupabaseConfigured) {
@@ -82,7 +106,13 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
       if (mRes.data) setMatches(mRes.data as MatchRow[]);
       if (gRes.data) setGoals(gRes.data as GoalRow[]);
       if (evRes.data) setMatchEvents(evRes.data as MatchEventRow[]);
-      if (pRes.data) setPlayers(pRes.data as PlayerRow[]);
+      if (pRes.data)
+        setPlayers(
+          (pRes.data as PlayerRow[]).map((p) => ({
+            ...p,
+            is_goalkeeper: (p as PlayerRow & { is_goalkeeper?: boolean }).is_goalkeeper === true,
+          })),
+        );
 
       if (sRes.data?.value !== undefined) setCurrentLiveMatchId(parseLiveId(sRes.data.value));
     } catch (e) {
@@ -132,8 +162,9 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
       players,
       currentLiveMatchId,
       refresh,
+      refreshTeamsAndPlayers,
     }),
-    [loading, error, teams, matches, goals, matchEvents, players, currentLiveMatchId, refresh],
+    [loading, error, teams, matches, goals, matchEvents, players, currentLiveMatchId, refresh, refreshTeamsAndPlayers],
   );
 
   return <TournamentContext.Provider value={value}>{children}</TournamentContext.Provider>;

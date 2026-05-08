@@ -44,7 +44,8 @@ const TIMELINE_EVENT_OPTIONS: { value: MatchEventType; label: string; needsTeamP
 
 export function AdminPage() {
   const { session, isAdmin, loading: authLoading, signOut } = useAuth();
-  const { teams, matches, matchEvents, players, currentLiveMatchId, refresh } = useTournament();
+  const { teams, matches, matchEvents, players, currentLiveMatchId, refresh, refreshTeamsAndPlayers } =
+    useTournament();
   const [tab, setTab] = useState<"live" | "matches" | "qf" | "teams" | "bracket">("live");
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -414,7 +415,14 @@ where id = 'YOUR_USER_UUID';`}
         </section>
       )}
 
-      {tab === "teams" && <TeamsEditor teams={teams} players={players} onAdminNotify={notify} />}
+      {tab === "teams" && (
+        <TeamsEditor
+          teams={teams}
+          players={players}
+          onAdminNotify={notify}
+          refreshTeamsAndPlayers={refreshTeamsAndPlayers}
+        />
+      )}
 
       {tab === "bracket" && (
         <section className="card">
@@ -809,7 +817,7 @@ function LiveEditor({
                     <option value="">Select player…</option>
                     {roster.map((p) => (
                       <option key={p.id} value={p.id}>
-                        {p.name}
+                        {p.is_goalkeeper ? `${p.name} (GK)` : p.name}
                       </option>
                     ))}
                     <option value={MANUAL_PLAYER_VALUE}>Other — type name</option>
@@ -841,10 +849,12 @@ function TeamsEditor({
   teams,
   players,
   onAdminNotify,
+  refreshTeamsAndPlayers,
 }: {
   teams: Database["public"]["Tables"]["teams"]["Row"][];
   players: Database["public"]["Tables"]["players"]["Row"][];
   onAdminNotify: (msg: string, error?: string | null) => Promise<void>;
+  refreshTeamsAndPlayers: () => Promise<void>;
 }) {
   const [selected, setSelected] = useState(teams[0]?.id ?? "");
   const [teamEdit, setTeamEdit] = useState({
@@ -885,16 +895,18 @@ function TeamsEditor({
   const [editName, setEditName] = useState("");
   const [editGk, setEditGk] = useState(false);
 
+  /** Only true when the failure is clearly missing DB columns — avoids false retries that drop GK/managers. */
   function isSchemaOrMissingColumn(error: { message?: string; code?: string } | null) {
     if (!error) return false;
-    if (error.code === "42703" || error.code === "PGRST204") return true;
+    const c = error.code;
+    if (c === "42703" || c === "PGRST204") return true;
     const msg = error.message ?? "";
-    return (
-      /is_goalkeeper|manager_1|manager_2/i.test(msg) ||
-      msg.includes("42703") ||
-      msg.includes("column") ||
-      msg.includes("schema cache")
-    );
+    const low = msg.toLowerCase();
+    if (/is_goalkeeper|manager_1|manager_2/i.test(msg)) return true;
+    if (low.includes("schema cache")) return true;
+    if ((low.includes("column") || low.includes("field")) && (low.includes("does not exist") || low.includes("unknown")))
+      return true;
+    return false;
   }
 
   async function addPlayer(e: FormEvent) {
@@ -927,6 +939,7 @@ function TeamsEditor({
         setPlayerOk("Player added without GK flag — enable is_goalkeeper in Supabase (see migration).");
         setName("");
         setIsGk(false);
+        await refreshTeamsAndPlayers();
         await onAdminNotify(
           "Player saved. GK not stored: add is_goalkeeper column (run latest migration).",
           null,
@@ -946,6 +959,7 @@ function TeamsEditor({
     setName("");
     setIsGk(false);
     setPlayerOk("Player added.");
+    await refreshTeamsAndPlayers();
     await onAdminNotify("Player added.", null);
   }
 
@@ -975,6 +989,7 @@ function TeamsEditor({
         .eq("id", t.id);
       error = e2;
       if (!error) {
+        await refreshTeamsAndPlayers();
         await onAdminNotify(
           "Team saved without managers — add manager_1/manager_2 columns (run latest migration).",
           null,
@@ -989,6 +1004,7 @@ function TeamsEditor({
       await onAdminNotify("", msg);
       return;
     }
+    await refreshTeamsAndPlayers();
     await onAdminNotify("Team saved.", null);
   }
 
@@ -998,6 +1014,7 @@ function TeamsEditor({
       await onAdminNotify("", error.message);
       return;
     }
+    await refreshTeamsAndPlayers();
     await onAdminNotify("Player removed.", null);
   }
 
@@ -1028,6 +1045,7 @@ function TeamsEditor({
       return;
     }
     setEditingId(null);
+    await refreshTeamsAndPlayers();
     if (gkDropped) {
       await onAdminNotify(
         "",
@@ -1144,7 +1162,7 @@ function TeamsEditor({
 
             <ul className="admin-player-list">
               {roster.map((p) => {
-                const gk = !!p.is_goalkeeper;
+                const gk = p.is_goalkeeper === true;
                 return (
                   <li key={p.id} className={gk ? "admin-player-row admin-player-row--gk" : "admin-player-row"}>
                     {editingId === p.id ? (

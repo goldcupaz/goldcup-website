@@ -576,6 +576,7 @@ main {
   display: grid;
   place-items: center;
   min-height: 110px;
+  overflow: hidden;
 }
 
 .sponsor-logo-tile--main {
@@ -641,6 +642,22 @@ main {
   border-color: rgba(0, 0, 0, 0.1);
 }
 
+.sponsors-page-main .sponsor-logo-tile--sponsors-main-white {
+  background: #ffffff;
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+.sponsors-page-main .sponsor-logo-chip--sponsors-main {
+  background: transparent;
+  box-shadow: none;
+  padding: 12px;
+}
+
+.sponsor-logo--sponsors-main-star {
+  transform: scale(1.14);
+  transform-origin: center;
+}
+
 .sponsor-logo-tile--page-white .sponsor-logo--free {
   max-height: 76px;
   width: 100%;
@@ -662,7 +679,7 @@ main {
 }
 
 .sponsor-logo--page-timsport {
-  transform: scale(1.05);
+  transform: scale(1.32);
 }
 
 /* Bona Dea — fit wide mark fully inside card */
@@ -783,6 +800,12 @@ main {
   place-items: center;
 }
 
+.site-footer .sponsor-row-item {
+  background: #ffffff;
+  border-color: rgba(0, 0, 0, 0.12);
+  overflow: hidden;
+}
+
 @media (min-width: 960px) {
   .sponsor-row {
     overflow-x: visible;
@@ -895,6 +918,15 @@ main {
   overflow: hidden;
 }
 
+.site-footer .official-sponsor-slot {
+  background: #ffffff;
+  border-color: rgba(0, 0, 0, 0.12);
+}
+
+.site-footer .official-sponsor-placeholder {
+  color: rgba(0, 0, 0, 0.42);
+}
+
 .official-sponsor-link {
   display: flex;
   align-items: center;
@@ -942,8 +974,20 @@ main {
 
 /* HIVideo — clearer on dark card (same dimensions as other slots) */
 .sponsor-official-img--hivido-footer {
-  transform: scale(1.36);
-  filter: brightness(1.08) contrast(1.05);
+  transform: scale(1.22);
+  filter: none;
+}
+
+.sponsor-official-img--timsport-footer {
+  transform: scale(1.42);
+  max-height: 34px;
+}
+
+@media (min-width: 720px) {
+  .sponsor-official-img--timsport-footer {
+    max-height: 40px;
+    transform: scale(1.38);
+  }
 }
 
 /* Bona Dea · Liv Hospital — horizontal mark, balanced in grid cell */
@@ -1612,6 +1656,31 @@ textarea {
   border-color: rgba(212, 175, 55, 0.4);
   background: rgba(212, 175, 55, 0.1);
   box-shadow: inset 3px 0 0 var(--gold);
+}
+
+.team-managers-dl {
+  margin: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.team-managers-dl-row {
+  display: grid;
+  gap: 4px;
+}
+
+.team-managers-dl-row dt {
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+.team-managers-dl-row dd {
+  margin: 0;
+  font-weight: 700;
+  font-size: 15px;
 }
 
 .team-match-list {

@@ -130,14 +130,22 @@ export function TeamsPage() {
           {players.length} player{players.length === 1 ? "" : "s"} registered · open a team for full roster and fixtures.
         </p>
         <div className="team-grid">
-          {teams.map((t) => (
-            <Link key={t.id} className="team-card-btn team-card-link" to={`/teams/${t.id}`}>
-              {t.name}
-              <span className="muted" style={{ display: "block", fontWeight: 600, fontSize: 12, marginTop: 4 }}>
-                Group {t.group_letter}
-              </span>
-            </Link>
-          ))}
+          {teams.map((t) => {
+            const staff = [t.manager_1, t.manager_2].filter((x): x is string => !!(x && String(x).trim()));
+            return (
+              <Link key={t.id} className="team-card-btn team-card-link" to={`/teams/${t.id}`}>
+                {t.name}
+                <span className="muted" style={{ display: "block", fontWeight: 600, fontSize: 12, marginTop: 4 }}>
+                  Group {t.group_letter}
+                </span>
+                {staff.length > 0 && (
+                  <span className="muted teams-card-staff" style={{ display: "block", fontSize: 11, marginTop: 6 }}>
+                    {staff.slice(0, 2).join(" · ")}
+                  </span>
+                )}
+              </Link>
+            );
+          })}
         </div>
       </section>
     </main>

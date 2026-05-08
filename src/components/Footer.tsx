@@ -56,7 +56,7 @@ const OFFICIAL_SPONSOR_SLOTS: OfficialSlot[] = [
     kind: "img",
     src: officialTimsportLogo,
     alt: "TIMSPORT",
-    zoomClass: "sponsor-official-img--zoom-md",
+    zoomClass: "sponsor-official-img--timsport-footer",
     href: TIMSPORT_URL,
   },
   {

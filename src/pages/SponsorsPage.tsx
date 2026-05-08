@@ -53,22 +53,26 @@ export function SponsorsPage() {
       <h1 className="page-title">Sponsors</h1>
       <p className="subtitle">Thank you to our sponsors and partners for supporting Gold Cup.</p>
 
-      <section className="card">
+      <section className="card sponsors-page-main">
         <h2 className="section-title">Main Sponsors</h2>
         <div className="main-sponsor-grid">
-          <div className="sponsor-logo-tile sponsor-logo-tile--main">
-            <div className="sponsor-logo-chip">
+          <div className="sponsor-logo-tile sponsor-logo-tile--main sponsor-logo-tile--sponsors-main-white">
+            <div className="sponsor-logo-chip sponsor-logo-chip--sponsors-main">
               <img className="sponsor-logo" src={azersunLogo} alt="Azersun logo" />
             </div>
           </div>
-          <div className="sponsor-logo-tile sponsor-logo-tile--main">
-            <div className="sponsor-logo-chip">
+          <div className="sponsor-logo-tile sponsor-logo-tile--main sponsor-logo-tile--sponsors-main-white">
+            <div className="sponsor-logo-chip sponsor-logo-chip--sponsors-main">
               <img className="sponsor-logo" src={dreamFestLogo} alt="Dream Fest logo" />
             </div>
           </div>
-          <div className="sponsor-logo-tile sponsor-logo-tile--main">
-            <div className="sponsor-logo-chip">
-              <img className="sponsor-logo" src={starCollegesLogo} alt="Star Colleges logo" />
+          <div className="sponsor-logo-tile sponsor-logo-tile--main sponsor-logo-tile--sponsors-main-white">
+            <div className="sponsor-logo-chip sponsor-logo-chip--sponsors-main">
+              <img
+                className="sponsor-logo sponsor-logo--sponsors-main-star"
+                src={starCollegesLogo}
+                alt="Star Colleges logo"
+              />
             </div>
           </div>
         </div>
