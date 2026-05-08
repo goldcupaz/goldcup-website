@@ -930,92 +930,104 @@ function TeamsEditor({
       </div>
 
       {selected && (
-        <form onSubmit={updateTeam} style={{ marginBottom: 20 }}>
-          <div className="grid-2">
-            <div className="form-row">
-              <label>Team name</label>
-              <input
-                value={teamEdit.name}
-                onChange={(e) => setTeamEdit((o) => ({ ...o, name: e.target.value }))}
-              />
+        <div className="teams-editor-split">
+          <form onSubmit={updateTeam} className="teams-editor-panel">
+            <div className="admin-subhead">Team details</div>
+            <div className="grid-2 teams-editor-fields">
+              <div className="form-row">
+                <label>Team name</label>
+                <input
+                  value={teamEdit.name}
+                  onChange={(e) => setTeamEdit((o) => ({ ...o, name: e.target.value }))}
+                />
+              </div>
+              <div className="form-row">
+                <label>Group</label>
+                <select
+                  value={teamEdit.letter}
+                  onChange={(e) => setTeamEdit((o) => ({ ...o, letter: e.target.value as "A" | "B" | "C" | "D" }))}
+                >
+                  {(["A", "B", "C", "D"] as const).map((L) => (
+                    <option key={L} value={L}>
+                      {L}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-row teams-editor-span-2">
+                <label>Order in group (1–3)</label>
+                <input
+                  type="number"
+                  min={1}
+                  max={3}
+                  value={teamEdit.order}
+                  onChange={(e) => setTeamEdit((o) => ({ ...o, order: Number(e.target.value) }))}
+                />
+              </div>
             </div>
-            <div className="form-row">
-              <label>Group</label>
-              <select
-                value={teamEdit.letter}
-                onChange={(e) => setTeamEdit((o) => ({ ...o, letter: e.target.value as "A" | "B" | "C" | "D" }))}
-              >
-                {(["A", "B", "C", "D"] as const).map((L) => (
-                  <option key={L} value={L}>
-                    {L}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="form-row">
-              <label>Order in group (1–3)</label>
-              <input
-                type="number"
-                min={1}
-                max={3}
-                value={teamEdit.order}
-                onChange={(e) => setTeamEdit((o) => ({ ...o, order: Number(e.target.value) }))}
-              />
-            </div>
-            <div className="form-row">
-              <label>Manager 1</label>
-              <input
-                value={teamEdit.manager1}
-                onChange={(e) => setTeamEdit((o) => ({ ...o, manager1: e.target.value }))}
-                placeholder="Manager / Coach name"
-              />
-            </div>
-            <div className="form-row">
-              <label>Manager 2</label>
-              <input
-                value={teamEdit.manager2}
-                onChange={(e) => setTeamEdit((o) => ({ ...o, manager2: e.target.value }))}
-                placeholder="Manager / Coach name"
-              />
-            </div>
-          </div>
-          <button type="submit" className="btn">
-            Save team
-          </button>
-        </form>
-      )}
 
-      <form onSubmit={addPlayer}>
-        <div className="form-row">
-          <label>New player</label>
-          <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Player name" />
-        </div>
-        <label className="check-row">
-          <input type="checkbox" checked={isGk} onChange={(e) => setIsGk(e.target.checked)} />
-          <span>Goalkeeper (GK)</span>
-        </label>
-        <button type="submit" className="btn btn-primary">
-          Add player
-        </button>
-      </form>
+            <div className="admin-subhead" style={{ marginTop: 16 }}>
+              Managers / Coaches
+            </div>
+            <div className="grid-2 teams-editor-fields">
+              <div className="form-row">
+                <label>Manager 1</label>
+                <input
+                  value={teamEdit.manager1}
+                  onChange={(e) => setTeamEdit((o) => ({ ...o, manager1: e.target.value }))}
+                  placeholder="Manager / Coach name"
+                />
+              </div>
+              <div className="form-row">
+                <label>Manager 2</label>
+                <input
+                  value={teamEdit.manager2}
+                  onChange={(e) => setTeamEdit((o) => ({ ...o, manager2: e.target.value }))}
+                  placeholder="Manager / Coach name"
+                />
+              </div>
+            </div>
 
-      <ul className="admin-player-list">
-        {roster.map((p) => (
-          <li key={p.id} className="admin-player-row">
-            <span className="admin-player-name">
-              {p.is_goalkeeper && <span className="gk-badge">GK</span>}
-              {p.name}
-            </span>
-            <button
-              type="button"
-              className="btn"
-              onClick={() => void deletePlayer(p.id)}
-            >
-              Remove
+            <button type="submit" className="btn teams-editor-save" style={{ marginTop: 12 }}>
+              Save team
             </button>
-          </li>
-        ))}
-      </ul>
+          </form>
+
+          <div className="teams-editor-panel teams-editor-panel--players">
+            <div className="admin-subhead">Players</div>
+            <form onSubmit={addPlayer}>
+              <div className="form-row">
+                <label>New player</label>
+                <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Player name" />
+              </div>
+              <label className="check-row">
+                <input type="checkbox" checked={isGk} onChange={(e) => setIsGk(e.target.checked)} />
+                <span>Goalkeeper (GK)</span>
+              </label>
+              <button type="submit" className="btn btn-primary teams-editor-add-player">
+                Add player
+              </button>
+            </form>
+
+            <ul className="admin-player-list">
+              {roster.map((p) => (
+                <li
+                  key={p.id}
+                  className={p.is_goalkeeper ? "admin-player-row admin-player-row--gk" : "admin-player-row"}
+                >
+                  <span className="admin-player-name">
+                    {p.is_goalkeeper && <span className="gk-badge">GK</span>}
+                    {p.name}
+                  </span>
+                  <button type="button" className="btn" onClick={() => void deletePlayer(p.id)}>
+                    Remove
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

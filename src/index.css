@@ -49,6 +49,13 @@ button {
   padding: clamp(12px, 3vw, 24px);
 }
 
+/* Avoid rare horizontal scroll / paint overlap on narrow viewports */
+.shell,
+main {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
 .topbar {
   display: flex;
   flex-wrap: wrap;
@@ -62,8 +69,9 @@ button {
   backdrop-filter: blur(12px);
   box-shadow: var(--shadow-glow);
   margin-bottom: 18px;
-  position: relative;
-  z-index: 1000;
+  position: sticky;
+  top: 0;
+  z-index: 12000;
   isolation: isolate;
 }
 
@@ -179,10 +187,12 @@ button {
   padding: 10px;
   border-radius: 14px;
   border: 1px solid var(--line);
-  background: rgba(8, 18, 12, 0.995);
+  background: rgba(8, 18, 12, 1);
   backdrop-filter: blur(12px);
-  box-shadow: 0 16px 60px rgba(0, 0, 0, 0.45);
-  z-index: 1100;
+  box-shadow:
+    0 16px 60px rgba(0, 0, 0, 0.55),
+    0 0 0 1px rgba(0, 0, 0, 0.35);
+  z-index: 12050;
 }
 
 .nav-more-item {
@@ -616,7 +626,7 @@ button {
 
 /* Allsports — zoom much more, keep within same card size */
 .sponsor-logo--allsports-xl {
-  transform: scale(2.45);
+  transform: scale(2.92);
 }
 
 /* Bona Dea / Liv Hospital is wide, keep it readable */
@@ -1151,8 +1161,12 @@ button {
   }
 
   .nav-more-menu {
-    position: static;
-    margin-top: 8px;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: calc(100% + 8px);
+    margin-top: 0;
+    z-index: 12050;
   }
 }
 
@@ -1488,7 +1502,7 @@ select {
   align-items: center;
   justify-content: center;
   padding: 20px;
-  z-index: 100;
+  z-index: 20000;
 }
 
 .modal {
@@ -1529,6 +1543,17 @@ select {
 .players li {
   padding: 6px 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.players .player-row--gk {
+  list-style: none;
+  margin-left: -12px;
+  padding: 8px 10px 8px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  border-bottom: 1px solid rgba(212, 175, 55, 0.35);
+  background: rgba(212, 175, 55, 0.08);
+  box-shadow: inset 3px 0 0 var(--gold);
 }
 
 .blocked {
@@ -1746,6 +1771,57 @@ select {
   border-radius: 12px;
   margin-bottom: 8px;
   background: rgba(0, 0, 0, 0.22);
+}
+
+.admin-player-row--gk {
+  border-color: rgba(212, 175, 55, 0.45);
+  background: linear-gradient(90deg, rgba(212, 175, 55, 0.14), rgba(0, 0, 0, 0.22));
+  box-shadow: inset 4px 0 0 rgba(212, 175, 55, 0.9);
+}
+
+.teams-editor-split {
+  display: grid;
+  gap: 16px;
+}
+
+@media (min-width: 720px) {
+  .teams-editor-split {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
+    gap: 18px;
+  }
+}
+
+.teams-editor-panel {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.16);
+}
+
+.teams-editor-panel--players .admin-player-list {
+  margin-top: 12px;
+}
+
+.admin-subhead {
+  margin: 0 0 10px;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+.teams-editor-fields .teams-editor-span-2 {
+  grid-column: 1 / -1;
+}
+
+.teams-editor-save {
+  width: 100%;
+}
+
+.teams-editor-add-player {
+  width: 100%;
 }
 
 .admin-player-name {

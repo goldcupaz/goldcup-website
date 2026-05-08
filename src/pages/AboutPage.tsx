@@ -50,6 +50,10 @@ export function AboutPage() {
           coverage, visuals, and live match moments shared throughout the event, Gold Cup feels like a real stage — where
           players can be proud of their performance and families can follow the tournament journey.
         </p>
+        <p className="muted" style={{ marginTop: 10 }}>
+          Highlights, photography, and storytelling extend the weekend beyond the pitch — giving clubs visibility and
+          helping the wider community connect with the tournament narrative as it unfolds.
+        </p>
       </section>
     </main>
   );
