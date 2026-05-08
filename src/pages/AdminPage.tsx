@@ -851,6 +851,8 @@ function TeamsEditor({
     name: "",
     letter: "A" as "A" | "B" | "C" | "D",
     order: 1,
+    manager1: "",
+    manager2: "",
   });
 
   useEffect(() => {
@@ -860,11 +862,14 @@ function TeamsEditor({
         name: t.name,
         letter: t.group_letter as "A" | "B" | "C" | "D",
         order: t.group_order,
+        manager1: t.manager_1 ?? "",
+        manager2: t.manager_2 ?? "",
       });
   }, [selected, teams]);
 
   const roster = players.filter((p) => p.team_id === selected);
   const [name, setName] = useState("");
+  const [isGk, setIsGk] = useState(false);
 
   async function addPlayer(e: FormEvent) {
     e.preventDefault();
@@ -873,9 +878,11 @@ function TeamsEditor({
       team_id: selected,
       name: name.trim(),
       sort_order: roster.length,
+      is_goalkeeper: isGk,
     });
     if (!error) {
       setName("");
+      setIsGk(false);
       void refresh();
     }
   }
@@ -890,6 +897,8 @@ function TeamsEditor({
         name: teamEdit.name,
         group_letter: teamEdit.letter,
         group_order: teamEdit.order,
+        manager_1: teamEdit.manager1.trim() ? teamEdit.manager1.trim() : null,
+        manager_2: teamEdit.manager2.trim() ? teamEdit.manager2.trim() : null,
       })
       .eq("id", t.id);
     if (!error) void refresh();
@@ -953,6 +962,22 @@ function TeamsEditor({
                 onChange={(e) => setTeamEdit((o) => ({ ...o, order: Number(e.target.value) }))}
               />
             </div>
+            <div className="form-row">
+              <label>Manager 1</label>
+              <input
+                value={teamEdit.manager1}
+                onChange={(e) => setTeamEdit((o) => ({ ...o, manager1: e.target.value }))}
+                placeholder="Manager / Coach name"
+              />
+            </div>
+            <div className="form-row">
+              <label>Manager 2</label>
+              <input
+                value={teamEdit.manager2}
+                onChange={(e) => setTeamEdit((o) => ({ ...o, manager2: e.target.value }))}
+                placeholder="Manager / Coach name"
+              />
+            </div>
           </div>
           <button type="submit" className="btn">
             Save team
@@ -965,6 +990,10 @@ function TeamsEditor({
           <label>New player</label>
           <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Player name" />
         </div>
+        <label className="check-row">
+          <input type="checkbox" checked={isGk} onChange={(e) => setIsGk(e.target.checked)} />
+          <span>Goalkeeper (GK)</span>
+        </label>
         <button type="submit" className="btn btn-primary">
           Add player
         </button>
@@ -973,7 +1002,10 @@ function TeamsEditor({
       <ul className="admin-player-list">
         {roster.map((p) => (
           <li key={p.id} className="admin-player-row">
-            <span>{p.name}</span>
+            <span className="admin-player-name">
+              {p.is_goalkeeper && <span className="gk-badge">GK</span>}
+              {p.name}
+            </span>
             <button
               type="button"
               className="btn"

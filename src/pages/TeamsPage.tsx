@@ -21,6 +21,10 @@ export function TeamsPage() {
 
   const openTeam = openId ? teams.find((t) => t.id === openId) : null;
   const roster = openId ? byTeam.get(openId) ?? [] : [];
+  const managers =
+    openTeam && (openTeam.manager_1 || openTeam.manager_2)
+      ? [openTeam.manager_1, openTeam.manager_2].filter(Boolean)
+      : [];
 
   return (
     <main>
@@ -55,12 +59,26 @@ export function TeamsPage() {
               </button>
             </header>
             <div className="body">
+              {managers.length > 0 && (
+                <div className="team-managers">
+                  <div className="team-managers-title">Managers / Coaches</div>
+                  <div className="team-managers-list">
+                    {managers.map((m) => (
+                      <span key={m} className="team-manager-pill">
+                        {m}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
               {roster.length === 0 ? (
                 <p className="muted">No players listed yet. Admins can add names in the admin panel.</p>
               ) : (
                 <ul className="players" style={{ margin: 0, paddingLeft: 18 }}>
                   {roster.map((p) => (
-                    <li key={p.id}>{p.name}</li>
+                    <li key={p.id} className={p.is_goalkeeper ? "player-row player-row--gk" : "player-row"}>
+                      {p.is_goalkeeper && <span className="gk-badge">GK</span>} {p.name}
+                    </li>
                   ))}
                 </ul>
               )}

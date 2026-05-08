@@ -38,6 +38,8 @@ export type Database = {
           name: string;
           group_letter: string;
           group_order: number;
+          manager_1: string | null;
+          manager_2: string | null;
           created_at: string;
         };
         Insert: {
@@ -45,11 +47,15 @@ export type Database = {
           name: string;
           group_letter: string;
           group_order: number;
+          manager_1?: string | null;
+          manager_2?: string | null;
         };
         Update: {
           name?: string;
           group_letter?: string;
           group_order?: number;
+          manager_1?: string | null;
+          manager_2?: string | null;
         };
       };
       players: {
@@ -58,6 +64,7 @@ export type Database = {
           team_id: string;
           name: string;
           sort_order: number;
+          is_goalkeeper: boolean;
           created_at: string;
         };
         Insert: {
@@ -65,11 +72,13 @@ export type Database = {
           team_id: string;
           name: string;
           sort_order?: number;
+          is_goalkeeper?: boolean;
         };
         Update: {
           team_id?: string;
           name?: string;
           sort_order?: number;
+          is_goalkeeper?: boolean;
         };
       };
       matches: {
