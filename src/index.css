@@ -2355,6 +2355,15 @@ select {
   gap: 8px;
 }
 
+.admin-volunteer-subtitle {
+  margin: 18px 0 8px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gold-dim);
+}
+
 .admin-tab-bar {
   display: flex;
   flex-wrap: nowrap;

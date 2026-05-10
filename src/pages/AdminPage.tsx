@@ -7,6 +7,7 @@ import type { Database, MatchEventType } from "../lib/database.types";
 import { statusOptionLabel } from "../lib/format";
 import { AdminMatchEventModal, type MatchEventEditPayload } from "../components/AdminMatchEventModal";
 import { PeopleCounterWidget } from "../components/PeopleCounterWidget";
+import { VolunteerTeamCheck } from "../components/VolunteerTeamCheck";
 import { TIMELINE_EVENT_OPTIONS } from "../lib/matchEventTimelineOptions";
 import { formatTimelineLine, sortMatchEvents } from "../lib/timeline";
 import { sortMatchesForAdminPicker } from "../lib/matchSort";
@@ -40,7 +41,7 @@ export function AdminPage() {
   const { session, isAdmin, loading: authLoading, signOut } = useAuth();
   const { teams, matches, matchEvents, players, currentLiveMatchId, refresh, refreshTeamsAndPlayers } =
     useTournament();
-  const [tab, setTab] = useState<"live" | "matches" | "qf" | "teams" | "people" | "bracket">("live");
+  const [tab, setTab] = useState<"live" | "matches" | "qf" | "teams" | "volunteer" | "bracket">("live");
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
@@ -301,7 +302,7 @@ where id = 'YOUR_USER_UUID';`}
             ["matches", "Fixtures & results"],
             ["qf", "Quarter-finals"],
             ["teams", "Teams & players"],
-            ["people", "People counter"],
+            ["volunteer", "Volunteer Portal"],
             ["bracket", "Sync bracket"],
           ] as const
         ).map(([k, label]) => (
@@ -472,16 +473,21 @@ where id = 'YOUR_USER_UUID';`}
         />
       )}
 
-      {tab === "people" && (
+      {tab === "volunteer" && (
         <section className="card">
           <h2 style={{ marginTop: 0, fontSize: 14, letterSpacing: "0.12em", textTransform: "uppercase" }}>
-            People counter
+            Volunteer Portal
           </h2>
           <p className="muted">
-            Same live entrance count as the volunteer portal. Uses secure RPC updates and Supabase Realtime so multiple
-            devices stay in sync.
+            Entrance count and roster checks for staff. Same tools as <Link to="/volunteer">/volunteer</Link> for
+            volunteer-only logins.
           </p>
+          <h3 className="admin-volunteer-subtitle">People counter</h3>
           <PeopleCounterWidget />
+          <h3 className="admin-volunteer-subtitle" style={{ marginTop: 24 }}>
+            Team / player verification
+          </h3>
+          <VolunteerTeamCheck />
         </section>
       )}
 

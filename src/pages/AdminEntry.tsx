@@ -1,5 +1,5 @@
 import { FormEvent, useState } from "react";
-import { Link, Navigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 import { useAuth } from "../context/AuthContext";
 import { isSupabaseConfigured } from "../lib/supabase";
@@ -90,20 +90,30 @@ function AdminPasswordGate() {
   );
 }
 
-/** /admin — password gate then full admin console */
+/** /admin — password gate then full admin console (unchanged main experience for admins) */
 export function AdminEntry() {
-  const { session, loading, isAdmin, isVolunteer } = useAuth();
+  const { session, loading, isAdmin, isVolunteer, signOut } = useAuth();
 
   if (loading) return <p className="empty">Loading…</p>;
   if (session && !isAdmin) {
-    if (isVolunteer) return <Navigate to="/volunteer" replace />;
     return (
       <main className="admin-login-page">
         <h1 className="page-title">Admin</h1>
-        <p className="subtitle">This account is not an admin. Volunteers should use the volunteer portal.</p>
-        <Link to="/volunteer" className="btn btn-primary" style={{ textDecoration: "none", display: "inline-block" }}>
-          Open volunteer portal
-        </Link>
+        <p className="subtitle">
+          {isVolunteer
+            ? "Volunteer accounts use the Volunteer Portal — not this admin console."
+            : "This account does not have admin rights on this project."}
+        </p>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 12 }}>
+          {isVolunteer && (
+            <Link to="/volunteer" className="btn btn-primary" style={{ textDecoration: "none", display: "inline-block" }}>
+              Open Volunteer Portal
+            </Link>
+          )}
+          <button type="button" className="btn" onClick={() => void signOut()}>
+            Sign out
+          </button>
+        </div>
       </main>
     );
   }

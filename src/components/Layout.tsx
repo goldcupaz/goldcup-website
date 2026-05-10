@@ -113,9 +113,14 @@ export function Layout() {
                 Links
               </NavLink>
               {isSupabaseConfigured && (
-                <NavLink to="/admin" className="nav-more-item" onClick={closeMoreAndMaybeMenu}>
-                  {adminLabel}
-                </NavLink>
+                <>
+                  <NavLink to="/admin" className="nav-more-item" onClick={closeMoreAndMaybeMenu}>
+                    {adminLabel}
+                  </NavLink>
+                  <NavLink to="/volunteer" className="nav-more-item" onClick={closeMoreAndMaybeMenu}>
+                    Volunteer Portal
+                  </NavLink>
+                </>
               )}
             </div>
           </div>
