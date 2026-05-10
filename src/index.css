@@ -2680,3 +2680,207 @@ select {
   color: var(--gold);
   font-variant-numeric: tabular-nums;
 }
+
+/* ---------------------------------------------------------------------------
+   Volunteer portal + people counter
+--------------------------------------------------------------------------- */
+.volunteer-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: radial-gradient(120% 80% at 50% 0%, rgba(30, 70, 45, 0.45), transparent 55%), #050d08;
+  color: var(--text);
+}
+
+.volunteer-topbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line);
+  background: rgba(5, 14, 10, 0.92);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.volunteer-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: var(--gold);
+  text-decoration: none;
+}
+
+.volunteer-logo {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+}
+
+.volunteer-tabs {
+  display: flex;
+  gap: 8px;
+  padding: 10px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(4, 12, 8, 0.88);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.volunteer-tab {
+  flex: 1;
+  min-width: 140px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: rgba(0, 0, 0, 0.28);
+  color: var(--muted);
+  font-weight: 800;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.volunteer-tab--active {
+  border-color: rgba(212, 175, 55, 0.55);
+  color: var(--gold);
+  background: rgba(20, 48, 30, 0.55);
+}
+
+.volunteer-main {
+  flex: 1;
+  width: 100%;
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 16px 16px 28px;
+}
+
+.volunteer-panel-title {
+  font-size: clamp(1.15rem, 4vw, 1.4rem);
+}
+
+.volunteer-login-card {
+  margin-top: 12px;
+}
+
+.volunteer-login-submit {
+  width: 100%;
+  min-height: 48px;
+  font-size: 15px;
+}
+
+.people-counter {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 16px;
+  margin-top: 8px;
+}
+
+.people-counter-alert {
+  margin: 0;
+}
+
+.people-counter-total {
+  text-align: center;
+  padding: 20px 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  background: linear-gradient(165deg, rgba(14, 36, 22, 0.95), rgba(6, 16, 10, 0.98));
+}
+
+.people-counter-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.people-counter-value {
+  font-size: clamp(3rem, 14vw, 4.5rem);
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  color: var(--gold);
+  line-height: 1;
+}
+
+.people-counter-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.people-counter-btn {
+  min-height: 72px;
+  font-size: clamp(1.75rem, 8vw, 2.25rem);
+  font-weight: 900;
+  border-radius: 16px;
+}
+
+.people-counter-btn--minus {
+  border-color: rgba(200, 120, 120, 0.45);
+  color: #f5c4c4;
+}
+
+.people-counter-btn--plus {
+  border-color: rgba(120, 200, 140, 0.45);
+  color: #c8f0d0;
+}
+
+.people-counter-reset {
+  min-height: 48px;
+  font-weight: 800;
+}
+
+.volunteer-team-check {
+  margin-top: 8px;
+}
+
+.volunteer-team-hint {
+  margin-top: 12px;
+}
+
+.volunteer-roster-title {
+  margin: 16px 0 6px;
+  font-size: 17px;
+  color: var(--gold);
+}
+
+.volunteer-roster-list {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.volunteer-roster-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: rgba(0, 0, 0, 0.28);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.volunteer-roster-item--gk {
+  border-color: rgba(120, 180, 255, 0.25);
+}
+
+.volunteer-roster-name {
+  flex: 1;
+  word-break: break-word;
+}

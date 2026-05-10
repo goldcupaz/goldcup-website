@@ -6,7 +6,7 @@ import { useTournament } from "../context/TournamentContext";
 import type { Database, MatchEventType } from "../lib/database.types";
 import { statusOptionLabel } from "../lib/format";
 import { AdminMatchEventModal, type MatchEventEditPayload } from "../components/AdminMatchEventModal";
-import { computeScoresFromScoringEvents } from "../lib/matchEventScores";
+import { PeopleCounterWidget } from "../components/PeopleCounterWidget";
 import { TIMELINE_EVENT_OPTIONS } from "../lib/matchEventTimelineOptions";
 import { formatTimelineLine, sortMatchEvents } from "../lib/timeline";
 import { sortMatchesForAdminPicker } from "../lib/matchSort";
@@ -40,7 +40,7 @@ export function AdminPage() {
   const { session, isAdmin, loading: authLoading, signOut } = useAuth();
   const { teams, matches, matchEvents, players, currentLiveMatchId, refresh, refreshTeamsAndPlayers } =
     useTournament();
-  const [tab, setTab] = useState<"live" | "matches" | "qf" | "teams" | "bracket">("live");
+  const [tab, setTab] = useState<"live" | "matches" | "qf" | "teams" | "people" | "bracket">("live");
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
@@ -115,21 +115,10 @@ where id = 'YOUR_USER_UUID';`}
     else await notify("Match saved.");
   }
 
-  /** Set match score from all goal + own_goal events (timeline is source of truth for scoring). */
+  /** Server-side recompute from all goal + own_goal events (fixes type changes, e.g. goal → own goal). */
   async function syncMatchScoreToTimeline(matchId: string): Promise<string | null> {
-    const { data: m, error: e1 } = await supabase
-      .from("matches")
-      .select("id, home_team_id, away_team_id")
-      .eq("id", matchId)
-      .maybeSingle();
-    if (e1) return e1.message;
-    if (!m?.home_team_id || !m.away_team_id) return null;
-    const { data: evs, error: e2 } = await supabase.from("match_events").select("event_type, team_id").eq("match_id", matchId);
-    if (e2) return e2.message;
-    const { home, away } = computeScoresFromScoringEvents(m.home_team_id, m.away_team_id, evs ?? []);
-    const { error: e3 } = await supabase.from("matches").update({ home_score: home, away_score: away }).eq("id", matchId);
-    if (e3) return e3.message;
-    return null;
+    const { error } = await supabase.rpc("recompute_match_score_from_events", { p_match_id: matchId });
+    return error?.message ?? null;
   }
 
   async function addMatchEvent(
@@ -166,9 +155,13 @@ where id = 'YOUR_USER_UUID';`}
   }
 
   async function updateMatchEvent(eventId: string, matchId: string, patch: MatchEventEditPayload) {
-    const { error } = await supabase.from("match_events").update(patch).eq("id", eventId);
+    const { data, error } = await supabase.from("match_events").update(patch).eq("id", eventId).select("id").maybeSingle();
     if (error) {
       await notify("", error.message);
+      return;
+    }
+    if (!data) {
+      await notify("", "Event update failed (no row returned).");
       return;
     }
     const syncErr = await syncMatchScoreToTimeline(matchId);
@@ -308,6 +301,7 @@ where id = 'YOUR_USER_UUID';`}
             ["matches", "Fixtures & results"],
             ["qf", "Quarter-finals"],
             ["teams", "Teams & players"],
+            ["people", "People counter"],
             ["bracket", "Sync bracket"],
           ] as const
         ).map(([k, label]) => (
@@ -476,6 +470,19 @@ where id = 'YOUR_USER_UUID';`}
           onAdminNotify={notify}
           refreshTeamsAndPlayers={refreshTeamsAndPlayers}
         />
+      )}
+
+      {tab === "people" && (
+        <section className="card">
+          <h2 style={{ marginTop: 0, fontSize: 14, letterSpacing: "0.12em", textTransform: "uppercase" }}>
+            People counter
+          </h2>
+          <p className="muted">
+            Same live entrance count as the volunteer portal. Uses secure RPC updates and Supabase Realtime so multiple
+            devices stay in sync.
+          </p>
+          <PeopleCounterWidget />
+        </section>
       )}
 
       {tab === "bracket" && (

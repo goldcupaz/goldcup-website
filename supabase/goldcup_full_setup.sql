@@ -27,8 +27,11 @@ create extension if not exists "pgcrypto";
 create table if not exists public.profiles (
   id uuid primary key references auth.users (id) on delete cascade,
   is_admin boolean not null default false,
+  is_volunteer boolean not null default false,
   created_at timestamptz not null default now()
 );
+
+alter table public.profiles add column if not exists is_volunteer boolean not null default false;
 
 alter table public.profiles enable row level security;
 
@@ -238,8 +241,8 @@ security definer
 set search_path = public
 as $$
 begin
-  insert into public.profiles (id, is_admin)
-  values (new.id, false)
+  insert into public.profiles (id, is_admin, is_volunteer)
+  values (new.id, false, false)
   on conflict (id) do nothing;
   return new;
 end;

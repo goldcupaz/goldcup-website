@@ -13,6 +13,7 @@ import { isSupabaseConfigured, supabase } from "../lib/supabase";
 type AuthState = {
   session: Session | null;
   isAdmin: boolean;
+  isVolunteer: boolean;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
@@ -23,6 +24,7 @@ const AuthContext = createContext<AuthState | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isVolunteer, setIsVolunteer] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -37,18 +39,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const { data, error } = await supabase
           .from("profiles")
-          .select("is_admin")
+          .select("is_admin, is_volunteer")
           .eq("id", userId)
           .maybeSingle();
         if (cancelled) return;
         if (error) {
           setIsAdmin(false);
+          setIsVolunteer(false);
           return;
         }
         setIsAdmin(!!data?.is_admin);
+        setIsVolunteer(!!data?.is_volunteer);
       } catch (e) {
         console.error("[AuthProvider] loadProfile failed", e);
-        if (!cancelled) setIsAdmin(false);
+        if (!cancelled) {
+          setIsAdmin(false);
+          setIsVolunteer(false);
+        }
       }
     };
 
@@ -58,7 +65,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (cancelled) return;
         setSession(data.session ?? null);
         if (data.session?.user) void loadProfile(data.session.user.id);
-        else setIsAdmin(false);
+        else {
+          setIsAdmin(false);
+          setIsVolunteer(false);
+        }
         setLoading(false);
       })
       .catch((e) => {
@@ -71,7 +81,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } = supabase.auth.onAuthStateChange((_evt, sess) => {
       setSession(sess);
       if (sess?.user) void loadProfile(sess.user.id);
-      else setIsAdmin(false);
+      else {
+        setIsAdmin(false);
+        setIsVolunteer(false);
+      }
     });
 
     return () => {
@@ -91,8 +104,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const value = useMemo(
-    () => ({ session, isAdmin, loading, signIn, signOut }),
-    [session, isAdmin, loading],
+    () => ({ session, isAdmin, isVolunteer, loading, signIn, signOut }),
+    [session, isAdmin, isVolunteer, loading],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

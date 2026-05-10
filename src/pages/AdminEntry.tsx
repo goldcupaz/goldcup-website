@@ -1,4 +1,5 @@
 import { FormEvent, useState } from "react";
+import { Link, Navigate } from "react-router-dom";
 
 import { useAuth } from "../context/AuthContext";
 import { isSupabaseConfigured } from "../lib/supabase";
@@ -91,9 +92,21 @@ function AdminPasswordGate() {
 
 /** /admin — password gate then full admin console */
 export function AdminEntry() {
-  const { session, loading } = useAuth();
+  const { session, loading, isAdmin, isVolunteer } = useAuth();
 
   if (loading) return <p className="empty">Loading…</p>;
-  if (session) return <AdminPage />;
+  if (session && !isAdmin) {
+    if (isVolunteer) return <Navigate to="/volunteer" replace />;
+    return (
+      <main className="admin-login-page">
+        <h1 className="page-title">Admin</h1>
+        <p className="subtitle">This account is not an admin. Volunteers should use the volunteer portal.</p>
+        <Link to="/volunteer" className="btn btn-primary" style={{ textDecoration: "none", display: "inline-block" }}>
+          Open volunteer portal
+        </Link>
+      </main>
+    );
+  }
+  if (session && isAdmin) return <AdminPage />;
   return <AdminPasswordGate />;
 }

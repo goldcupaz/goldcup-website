@@ -22,15 +22,34 @@ export type Database = {
         Row: {
           id: string;
           is_admin: boolean;
+          is_volunteer: boolean;
           created_at: string;
         };
         Insert: {
           id: string;
           is_admin?: boolean;
+          is_volunteer?: boolean;
         };
         Update: {
           id?: string;
           is_admin?: boolean;
+          is_volunteer?: boolean;
+        };
+      };
+      people_counter: {
+        Row: {
+          id: string;
+          count: number;
+          updated_at: string;
+        };
+        Insert: {
+          id: string;
+          count?: number;
+          updated_at?: string;
+        };
+        Update: {
+          count?: number;
+          updated_at?: string;
         };
       };
       teams: {

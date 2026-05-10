@@ -15,6 +15,7 @@ import { SponsorsPage } from "./pages/SponsorsPage";
 import { StandingsPage } from "./pages/StandingsPage";
 import { TeamDetailPage } from "./pages/TeamDetailPage";
 import { TeamsPage } from "./pages/TeamsPage";
+import { VolunteerHub } from "./pages/VolunteerHub";
 import { LinksPage } from "./pages/LinksPage";
 import { AboutPage } from "./pages/AboutPage";
 
@@ -40,6 +41,7 @@ export default function App() {
               <Route path="admin" element={<AdminEntry />} />
             </Route>
             <Route path="/admin/login" element={<AdminLogin />} />
+            <Route path="volunteer" element={<VolunteerHub />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </TournamentProvider>
