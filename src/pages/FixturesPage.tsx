@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 import { useTournament } from "../context/TournamentContext";
 import type { Database } from "../lib/database.types";
@@ -44,7 +45,12 @@ type MatchdayBucket = {
 
 export function FixturesPage() {
   const { teams, matches, loading, error } = useTournament();
+  const navigate = useNavigate();
   const [filter, setFilter] = useState<"all" | number>(0);
+
+  function goMatch(id: string) {
+    navigate(`/matches/${id}`);
+  }
 
   const nameById = useMemo(() => new Map(teams.map((t) => [t.id, t.name] as const)), [teams]);
 
@@ -180,7 +186,20 @@ export function FixturesPage() {
                     const live = isMatchInPlayOrBreak(m.status);
                     const finished = m.status === "full_time";
                     return (
-                      <tr key={m.id}>
+                      <tr
+                        key={m.id}
+                        className="fixture-row fixture-row--clickable"
+                        tabIndex={0}
+                        role="link"
+                        aria-label={`Open match ${teamName(nameById, m.home_team_id)} vs ${teamName(nameById, m.away_team_id)}`}
+                        onClick={() => goMatch(m.id)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            goMatch(m.id);
+                          }
+                        }}
+                      >
                         <td>{formatKickoff(m.scheduled_at)}</td>
                         <td>{m.group_letter ?? "—"}</td>
                         <td style={{ fontWeight: 800 }}>{teamName(nameById, m.home_team_id)}</td>

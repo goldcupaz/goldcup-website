@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { Link } from "react-router-dom";
 
 import { useTournament } from "../context/TournamentContext";
 import type { Database } from "../lib/database.types";
@@ -137,8 +138,8 @@ function MatchCard(props: {
   const h = sideName(m, "home", teams, computedHome ?? null, phH);
   const a = sideName(m, "away", teams, computedAway ?? null, phA);
   const when = m?.scheduled_at ? formatKickoff(m.scheduled_at) : "";
-  return (
-    <div className="match-card">
+  const body = (
+    <>
       <div className="muted" style={{ fontSize: 11, marginBottom: 8, letterSpacing: "0.12em", textTransform: "uppercase" }}>
         {label}
       </div>
@@ -161,6 +162,14 @@ function MatchCard(props: {
       <div className="muted" style={{ fontSize: 11, marginTop: 6 }}>
         {m ? statusLabel(m.status) : "—"}
       </div>
-    </div>
+    </>
   );
+  if (m?.id) {
+    return (
+      <Link to={`/matches/${m.id}`} className="match-card match-card--link">
+        {body}
+      </Link>
+    );
+  }
+  return <div className="match-card">{body}</div>;
 }

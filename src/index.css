@@ -313,6 +313,14 @@ main {
   margin-bottom: 12px;
 }
 
+.home-section-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: 14px;
+}
+
 .home-section-title {
   margin: 0;
   font-size: 12px;
@@ -444,6 +452,10 @@ main {
 .home-timeline-empty {
   margin: 12px 0 0;
   font-size: 13px;
+}
+
+.home-timeline-split {
+  margin-top: 6px;
 }
 
 .home-fixture-list {
@@ -1510,6 +1522,202 @@ th {
   margin-top: 14px;
   padding-top: 12px;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.live-board-score-link {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+  border-radius: 12px;
+  padding: 4px 4px 8px;
+  margin: -4px -4px 0;
+  outline-offset: 2px;
+}
+
+.live-board-score-link:hover .live-name {
+  color: var(--gold);
+}
+
+.live-open-match-hint {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-top: 8px;
+  text-align: center;
+}
+
+.live-finished-card--link {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+  text-align: inherit;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.live-finished-card--link:hover {
+  border-color: rgba(212, 175, 55, 0.45);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+}
+
+.live-timeline-archive-wrap {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Split match timeline (home left / away right) */
+.match-timeline-split {
+  margin-top: 0;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.match-timeline-split-head {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.match-timeline-split-team {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gold-dim);
+  word-break: break-word;
+}
+
+.match-timeline-split-team--home {
+  text-align: left;
+}
+
+.match-timeline-split-team--away {
+  text-align: right;
+}
+
+.match-timeline-split-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.match-timeline-split-empty {
+  margin: 0;
+  font-size: 13px;
+  padding: 4px 0 8px;
+}
+
+.match-timeline-split-neutral {
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  padding: 6px 8px;
+  margin: 2px 0;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.match-timeline-split-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  align-items: start;
+}
+
+.match-timeline-split-cell {
+  min-width: 0;
+}
+
+.match-timeline-split-cell--home {
+  text-align: left;
+}
+
+.match-timeline-split-cell--away {
+  text-align: right;
+}
+
+.match-timeline-split-line {
+  display: inline-block;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  word-break: break-word;
+}
+
+@media (max-width: 520px) {
+  .match-timeline-split-row--home .match-timeline-split-cell--away {
+    display: none;
+  }
+
+  .match-timeline-split-row--away .match-timeline-split-cell--home {
+    display: none;
+  }
+
+  .match-timeline-split-row {
+    grid-template-columns: 1fr;
+  }
+
+  .match-timeline-split-row--away .match-timeline-split-cell--away {
+    text-align: right;
+  }
+}
+
+.match-detail-page .match-detail-back {
+  margin-bottom: 10px;
+}
+
+.match-detail-title {
+  font-size: clamp(1.1rem, 4vw, 1.45rem);
+  margin-bottom: 6px;
+}
+
+.match-detail-meta {
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.match-detail-kick {
+  margin: 0 0 14px;
+  font-size: 12px;
+}
+
+.match-detail-board {
+  margin-top: 4px;
+}
+
+.fixture-row--clickable {
+  cursor: pointer;
+}
+
+.fixture-row--clickable:hover td {
+  background: rgba(212, 175, 55, 0.06);
+}
+
+.team-match-row-link {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+
+.team-match-row-link:hover .team-match-score {
+  color: var(--text);
+}
+
+a.match-card--link {
+  color: inherit;
+  text-decoration: none;
+}
+
+a.match-card--link:hover {
+  border-color: rgba(212, 175, 55, 0.45);
 }
 
 .form-row {

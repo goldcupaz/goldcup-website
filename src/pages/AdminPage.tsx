@@ -36,6 +36,7 @@ const LIVE_STATUS_STRIP: { value: MatchStatus; label: string; title?: string }[]
 const TIMELINE_EVENT_OPTIONS: { value: MatchEventType; label: string; needsTeamPlayer: boolean }[] = [
   { value: "match_started", label: "Match started", needsTeamPlayer: false },
   { value: "goal", label: "Goal", needsTeamPlayer: true },
+  { value: "own_goal", label: "Own goal", needsTeamPlayer: true },
   { value: "half_time", label: "Half time", needsTeamPlayer: false },
   { value: "yellow_card", label: "Yellow card", needsTeamPlayer: true },
   { value: "red_card", label: "Red card", needsTeamPlayer: true },
@@ -134,13 +135,50 @@ where id = 'YOUR_USER_UUID';`}
       player_name: row.player_name?.trim() ? row.player_name.trim() : null,
       event_order: nextOrder,
     });
-    if (error) await notify("", error.message);
-    else await notify("Timeline event added.");
+    if (error) {
+      await notify("", error.message);
+      return;
+    }
+    if (row.event_type === "own_goal" && row.team_id) {
+      const m = matches.find((x) => x.id === matchId);
+      if (m?.home_team_id && m.away_team_id) {
+        let nh = Number(m.home_score) || 0;
+        let na = Number(m.away_score) || 0;
+        if (row.team_id === m.home_team_id) na += 1;
+        else if (row.team_id === m.away_team_id) nh += 1;
+        const { error: scoreErr } = await supabase
+          .from("matches")
+          .update({ home_score: nh, away_score: na })
+          .eq("id", matchId);
+        if (scoreErr) {
+          await notify("", `Own goal logged but score update failed: ${scoreErr.message}`);
+          return;
+        }
+      }
+    }
+    await notify("Timeline event added.");
   }
 
   async function deleteMatchEvent(eventId: string) {
+    const ev = matchEvents.find((e) => e.id === eventId);
     const { error } = await supabase.from("match_events").delete().eq("id", eventId);
-    if (error) await notify("", error.message);
+    if (error) {
+      await notify("", error.message);
+      return;
+    }
+    let scoreErr: string | null = null;
+    if (ev?.event_type === "own_goal" && ev.team_id) {
+      const m = matches.find((x) => x.id === ev.match_id);
+      if (m?.home_team_id && m.away_team_id) {
+        let nh = Number(m.home_score) || 0;
+        let na = Number(m.away_score) || 0;
+        if (ev.team_id === m.home_team_id) na = Math.max(0, na - 1);
+        else if (ev.team_id === m.away_team_id) nh = Math.max(0, nh - 1);
+        const { error: e2 } = await supabase.from("matches").update({ home_score: nh, away_score: na }).eq("id", m.id);
+        scoreErr = e2?.message ?? null;
+      }
+    }
+    if (scoreErr) await notify("Timeline event removed.", `Score rollback failed: ${scoreErr}`);
     else await notify("Timeline event removed.");
   }
 

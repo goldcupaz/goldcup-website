@@ -6,7 +6,8 @@ import type { Database } from "../lib/database.types";
 import { formatKickoff, statusLabel } from "../lib/format";
 import { isMatchInPlayOrBreak } from "../lib/matchStatus";
 import { computeStandingsForGroup } from "../lib/standings";
-import { formatTimelineLine, sortMatchEvents } from "../lib/timeline";
+import { MatchTimelineSplit } from "../components/MatchTimelineSplit";
+import { sortMatchEvents } from "../lib/timeline";
 import logo from "../assets/goldcup-logo.png";
 
 type MatchRow = Database["public"]["Tables"]["matches"]["Row"];
@@ -94,9 +95,14 @@ export function Home() {
             {liveCard.mode === "featured" ? "Live match" : liveCard.mode === "next" ? "Next match" : "Live match"}
           </h2>
           {liveCard.match && (
-            <Link to="/live" className="home-link-more">
-              Live tab →
-            </Link>
+            <div className="home-section-links">
+              <Link to={`/matches/${liveCard.match.id}`} className="home-link-more">
+                Match page →
+              </Link>
+              <Link to="/live" className="home-link-more">
+                Live tab →
+              </Link>
+            </div>
           )}
         </div>
 
@@ -125,11 +131,12 @@ export function Home() {
             {timelinePreview.length > 0 ? (
               <div className="home-timeline-preview">
                 <span className="home-timeline-label">Latest</span>
-                <ul className="home-timeline-list">
-                  {timelinePreview.map((ev) => (
-                    <li key={ev.id}>{formatTimelineLine(ev, nameById)}</li>
-                  ))}
-                </ul>
+                <MatchTimelineSplit
+                  className="home-timeline-split"
+                  match={liveCard.match}
+                  events={timelinePreview}
+                  teamNameById={nameById}
+                />
               </div>
             ) : (
               <p className="muted home-timeline-empty">No timeline events yet.</p>
@@ -152,15 +159,17 @@ export function Home() {
         ) : (
           <ul className="home-fixture-list">
             {upcomingList.map((m) => (
-              <li key={m.id} className="home-fixture-row">
-                <div className="home-fixture-line1">
-                  <span className="home-fixture-when">{m.scheduled_at ? formatKickoff(m.scheduled_at) : "TBD"}</span>
-                  <span className="home-fixture-meta">{matchLabel(m)}</span>
-                </div>
-                <div className="home-fixture-teams">
-                  {teamName(nameById, m.home_team_id)} <span className="muted">vs</span>{" "}
-                  {teamName(nameById, m.away_team_id)}
-                </div>
+              <li key={m.id}>
+                <Link to={`/matches/${m.id}`} className="home-fixture-row home-fixture-row--link">
+                  <div className="home-fixture-line1">
+                    <span className="home-fixture-when">{m.scheduled_at ? formatKickoff(m.scheduled_at) : "TBD"}</span>
+                    <span className="home-fixture-meta">{matchLabel(m)}</span>
+                  </div>
+                  <div className="home-fixture-teams">
+                    {teamName(nameById, m.home_team_id)} <span className="muted">vs</span>{" "}
+                    {teamName(nameById, m.away_team_id)}
+                  </div>
+                </Link>
               </li>
             ))}
           </ul>

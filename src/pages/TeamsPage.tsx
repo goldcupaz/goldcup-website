@@ -7,7 +7,7 @@ import { teamGoalsFromMatches, topGoalscorersFromEvents } from "../lib/tournamen
 export function TeamsPage() {
   const { teams, players, matches, matchEvents, loading, error } = useTournament();
 
-  const topScorers = useMemo(() => topGoalscorersFromEvents(matchEvents).slice(0, 15), [matchEvents]);
+  const topScorers = useMemo(() => topGoalscorersFromEvents(matchEvents).slice(0, 10), [matchEvents]);
 
   const teamTotals = useMemo(() => teamGoalsFromMatches(matches, teams), [matches, teams]);
 
@@ -33,7 +33,7 @@ export function TeamsPage() {
         <section className="card teams-ranking-card">
           <h2 className="section-title">Top goalscorers</h2>
           <p className="muted" style={{ fontSize: 12, marginBottom: 10 }}>
-            From timeline goal events · top 15
+            From timeline goal events · top 10
           </p>
           {topScorers.length === 0 ? (
             <p className="muted">No goals recorded yet.</p>

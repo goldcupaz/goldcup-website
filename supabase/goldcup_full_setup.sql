@@ -167,6 +167,7 @@ create table if not exists public.match_events (
     event_type in (
       'match_started',
       'goal',
+      'own_goal',
       'half_time',
       'yellow_card',
       'red_card',

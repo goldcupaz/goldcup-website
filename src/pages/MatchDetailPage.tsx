@@ -1,0 +1,104 @@
+import { useLayoutEffect, useMemo } from "react";
+import { Link, Navigate, useParams } from "react-router-dom";
+
+import { MatchTimelineSplit } from "../components/MatchTimelineSplit";
+import { useTournament } from "../context/TournamentContext";
+import type { Database } from "../lib/database.types";
+import { formatKickoff, statusLabel } from "../lib/format";
+import { isMatchInPlayOrBreak } from "../lib/matchStatus";
+
+type MatchRow = Database["public"]["Tables"]["matches"]["Row"];
+
+function teamName(map: Map<string, string>, id: string | null) {
+  if (!id) return "TBD";
+  return map.get(id) ?? "TBD";
+}
+
+function matchLabel(m: MatchRow): string {
+  if (m.stage === "group") return `Group ${m.group_letter ?? "?"} · ${m.slot_code ?? ""}`;
+  return m.slot_code ?? m.stage;
+}
+
+export function MatchDetailPage() {
+  const { matchId } = useParams<{ matchId: string }>();
+  const { matches, matchEvents, teams, loading, error } = useTournament();
+
+  const nameById = useMemo(() => new Map(teams.map((t) => [t.id, t.name] as const)), [teams]);
+
+  const match = useMemo(() => {
+    if (!matchId) return null;
+    return matches.find((m) => m.id === matchId) ?? null;
+  }, [matches, matchId]);
+
+  useLayoutEffect(() => {
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  }, [matchId]);
+
+  if (!matchId) return <Navigate to="/fixtures" replace />;
+
+  if (loading && matches.length === 0) return <p className="empty">Loading…</p>;
+
+  if (!loading && !match) {
+    return (
+      <main className="match-detail-page">
+        <p className="empty">Match not found.</p>
+        <Link to="/fixtures" className="btn">
+          Back to fixtures
+        </Link>
+      </main>
+    );
+  }
+
+  if (!match) return <p className="empty">Loading…</p>;
+
+  const live = isMatchInPlayOrBreak(match.status);
+  const finished = match.status === "full_time";
+  const showScore = finished || live;
+
+  return (
+    <main className="match-detail-page">
+      <div className="match-detail-back">
+        <Link className="muted" to="/fixtures" style={{ fontWeight: 700, textDecoration: "none" }}>
+          ← Fixtures
+        </Link>
+      </div>
+
+      <h1 className="page-title match-detail-title">
+        {teamName(nameById, match.home_team_id)}{" "}
+        <span className="muted" style={{ fontWeight: 600 }}>
+          vs
+        </span>{" "}
+        {teamName(nameById, match.away_team_id)}
+      </h1>
+
+      <div className="muted match-detail-meta">{matchLabel(match)}</div>
+      {match.scheduled_at && <p className="muted match-detail-kick">{formatKickoff(match.scheduled_at)}</p>}
+
+      {error && <div className="alert warn">{error}</div>}
+
+      <div className="card live-board live-featured-card match-detail-board">
+        <div className="live-score-row live-score-row-compact">
+          <div className="live-side">
+            <div className="live-name">{teamName(nameById, match.home_team_id)}</div>
+          </div>
+          <div className="live-center">
+            <div className="live-score">
+              {showScore ? `${match.home_score} – ${match.away_score}` : "vs"}
+            </div>
+            <div className="live-status">{statusLabel(match.status)}</div>
+          </div>
+          <div className="live-side">
+            <div className="live-name">{teamName(nameById, match.away_team_id)}</div>
+          </div>
+        </div>
+
+        <div className="live-timeline-block">
+          <h3 className="live-timeline-title">Timeline</h3>
+          <MatchTimelineSplit match={match} events={matchEvents} teamNameById={nameById} />
+        </div>
+      </div>
+    </main>
+  );
+}

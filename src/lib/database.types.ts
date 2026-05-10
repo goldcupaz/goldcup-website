@@ -9,6 +9,7 @@ export type MatchStatus =
 export type MatchEventType =
   | "match_started"
   | "goal"
+  | "own_goal"
   | "half_time"
   | "yellow_card"
   | "red_card"

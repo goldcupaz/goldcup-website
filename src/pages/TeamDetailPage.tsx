@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useLayoutEffect, useMemo } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
 
 import { useTournament } from "../context/TournamentContext";
@@ -29,6 +29,12 @@ export function TeamDetailPage() {
   const { teamId } = useParams<{ teamId: string }>();
   const { teams, matches, matchEvents, players, loading, error } = useTournament();
 
+  useLayoutEffect(() => {
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  }, [teamId]);
+
   const team = teams.find((t) => t.id === teamId);
 
   const nameById = useMemo(() => new Map(teams.map((t) => [t.id, t.name] as const)), [teams]);
@@ -58,7 +64,7 @@ export function TeamDetailPage() {
   }, [teamMatches]);
 
   const scorerRows = useMemo(
-    () => topGoalscorersFromEvents(matchEvents, { teamId: teamId ?? undefined }).slice(0, 20),
+    () => topGoalscorersFromEvents(matchEvents, { teamId: teamId ?? undefined }).slice(0, 10),
     [matchEvents, teamId],
   );
 
@@ -150,19 +156,21 @@ export function TeamDetailPage() {
               <ul className="team-match-list">
                 {previous.map((m) => (
                   <li key={m.id} className="team-match-row">
-                    <div className="team-match-meta muted">{matchLabel(m)}</div>
-                    <div className="team-match-scoreline">
-                      <span>{teamName(nameById, m.home_team_id)}</span>
-                      <strong className="team-match-score">
-                        {m.home_score}–{m.away_score}
-                      </strong>
-                      <span>{teamName(nameById, m.away_team_id)}</span>
-                    </div>
-                    {m.scheduled_at && (
-                      <div className="muted" style={{ fontSize: 12 }}>
-                        {formatKickoff(m.scheduled_at)}
+                    <Link to={`/matches/${m.id}`} className="team-match-row-link">
+                      <div className="team-match-meta muted">{matchLabel(m)}</div>
+                      <div className="team-match-scoreline">
+                        <span>{teamName(nameById, m.home_team_id)}</span>
+                        <strong className="team-match-score">
+                          {m.home_score}–{m.away_score}
+                        </strong>
+                        <span>{teamName(nameById, m.away_team_id)}</span>
                       </div>
-                    )}
+                      {m.scheduled_at && (
+                        <div className="muted" style={{ fontSize: 12 }}>
+                          {formatKickoff(m.scheduled_at)}
+                        </div>
+                      )}
+                    </Link>
                   </li>
                 ))}
               </ul>
@@ -177,22 +185,24 @@ export function TeamDetailPage() {
               <ul className="team-match-list">
                 {upcoming.map((m) => (
                   <li key={m.id} className="team-match-row">
-                    <div className="team-match-meta muted">{matchLabel(m)}</div>
-                    <div className="team-match-scoreline">
-                      <span>{teamName(nameById, m.home_team_id)}</span>
-                      <strong className="team-match-score">
-                        {m.home_score}–{m.away_score}
-                      </strong>
-                      <span>{teamName(nameById, m.away_team_id)}</span>
-                    </div>
-                    <div style={{ marginTop: 6 }}>
-                      <span className="badge">{statusLabel(m.status)}</span>
-                    </div>
-                    {m.scheduled_at && (
-                      <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>
-                        {formatKickoff(m.scheduled_at)}
+                    <Link to={`/matches/${m.id}`} className="team-match-row-link">
+                      <div className="team-match-meta muted">{matchLabel(m)}</div>
+                      <div className="team-match-scoreline">
+                        <span>{teamName(nameById, m.home_team_id)}</span>
+                        <strong className="team-match-score">
+                          {m.home_score}–{m.away_score}
+                        </strong>
+                        <span>{teamName(nameById, m.away_team_id)}</span>
                       </div>
-                    )}
+                      <div style={{ marginTop: 6 }}>
+                        <span className="badge">{statusLabel(m.status)}</span>
+                      </div>
+                      {m.scheduled_at && (
+                        <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>
+                          {formatKickoff(m.scheduled_at)}
+                        </div>
+                      )}
+                    </Link>
                   </li>
                 ))}
               </ul>

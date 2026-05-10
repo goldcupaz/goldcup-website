@@ -1,20 +1,15 @@
 import { useMemo } from "react";
+import { Link } from "react-router-dom";
 
+import { MatchTimelineSplit } from "../components/MatchTimelineSplit";
 import { useTournament } from "../context/TournamentContext";
 import type { Database } from "../lib/database.types";
 import { formatKickoff, statusLabel } from "../lib/format";
-import { formatTimelineLine, sortMatchEvents } from "../lib/timeline";
-
 type MatchRow = Database["public"]["Tables"]["matches"]["Row"];
-type MatchEventRow = Database["public"]["Tables"]["match_events"]["Row"];
 
 function teamName(map: Map<string, string>, id: string | null) {
   if (!id) return "TBD";
   return map.get(id) ?? "TBD";
-}
-
-function eventsForMatch(events: MatchEventRow[], matchId: string): MatchEventRow[] {
-  return sortMatchEvents(events.filter((e) => e.match_id === matchId));
 }
 
 function matchLabel(m: MatchRow): string {
@@ -31,11 +26,6 @@ export function LiveMatchPage() {
     if (!currentLiveMatchId) return null;
     return matches.find((m) => m.id === currentLiveMatchId) ?? null;
   }, [matches, currentLiveMatchId]);
-
-  const featuredTimeline = useMemo(() => {
-    if (!liveMatch) return [] as MatchEventRow[];
-    return eventsForMatch(matchEvents, liveMatch.id);
-  }, [liveMatch, matchEvents]);
 
   const finishedArchive = useMemo(() => {
     const list = matches.filter((m) => m.status === "full_time");
@@ -68,31 +58,28 @@ export function LiveMatchPage() {
           </div>
         ) : (
           <div className="live-board live-featured-card">
-            <div className="live-meta muted">{matchLabel(liveMatch)}</div>
-            <div className="live-score-row live-score-row-compact">
-              <div className="live-side">
-                <div className="live-name">{teamName(nameById, liveMatch.home_team_id)}</div>
-              </div>
-              <div className="live-center">
-                <div className="live-score">
-                  {liveMatch.home_score} – {liveMatch.away_score}
+            <Link to={`/matches/${liveMatch.id}`} className="live-board-score-link">
+              <div className="live-meta muted">{matchLabel(liveMatch)}</div>
+              <div className="live-score-row live-score-row-compact">
+                <div className="live-side">
+                  <div className="live-name">{teamName(nameById, liveMatch.home_team_id)}</div>
                 </div>
-                <div className="live-status">{statusLabel(liveMatch.status)}</div>
+                <div className="live-center">
+                  <div className="live-score">
+                    {liveMatch.home_score} – {liveMatch.away_score}
+                  </div>
+                  <div className="live-status">{statusLabel(liveMatch.status)}</div>
+                </div>
+                <div className="live-side">
+                  <div className="live-name">{teamName(nameById, liveMatch.away_team_id)}</div>
+                </div>
               </div>
-              <div className="live-side">
-                <div className="live-name">{teamName(nameById, liveMatch.away_team_id)}</div>
-              </div>
+              <span className="live-open-match-hint muted">Open match page →</span>
+            </Link>
+            <div className="live-timeline-block">
+              <h3 className="live-timeline-title">Timeline</h3>
+              <MatchTimelineSplit match={liveMatch} events={matchEvents} teamNameById={nameById} />
             </div>
-            {featuredTimeline.length > 0 && (
-              <div className="live-timeline-block">
-                <h3 className="live-timeline-title">Timeline</h3>
-                <ul className="live-timeline">
-                  {featuredTimeline.map((ev) => (
-                    <li key={ev.id}>{formatTimelineLine(ev, nameById)}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
           </div>
         )}
       </section>
@@ -104,11 +91,10 @@ export function LiveMatchPage() {
         ) : (
           <div className="live-archive">
             {finishedArchive.map((m) => {
-              const evs = eventsForMatch(matchEvents, m.id);
               const hn = teamName(nameById, m.home_team_id);
               const an = teamName(nameById, m.away_team_id);
               return (
-                <article key={m.id} className="card live-finished-card">
+                <Link key={m.id} to={`/matches/${m.id}`} className="card live-finished-card live-finished-card--link">
                   <div className="live-finished-head">
                     <span className="live-finished-label">{matchLabel(m)}</span>
                     <span className="muted live-finished-when">{formatKickoff(m.scheduled_at)}</span>
@@ -127,14 +113,11 @@ export function LiveMatchPage() {
                       <div className="live-finished-team">{an}</div>
                     </div>
                   </div>
-                  {evs.length > 0 && (
-                    <ul className="live-timeline live-timeline-archive">
-                      {evs.map((ev) => (
-                        <li key={ev.id}>{formatTimelineLine(ev, nameById)}</li>
-                      ))}
-                    </ul>
-                  )}
-                </article>
+                  <div className="live-timeline-archive-wrap">
+                    <MatchTimelineSplit match={m} events={matchEvents} teamNameById={nameById} />
+                  </div>
+                  <span className="live-open-match-hint muted">Open match page →</span>
+                </Link>
               );
             })}
           </div>

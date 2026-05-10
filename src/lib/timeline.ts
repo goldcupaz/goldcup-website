@@ -1,6 +1,10 @@
-import type { Database } from "./database.types";
+import type { Database, MatchEventType } from "./database.types";
 
 export type MatchEventRow = Database["public"]["Tables"]["match_events"]["Row"];
+
+export function isClockTimelineEvent(t: MatchEventType): boolean {
+  return t === "match_started" || t === "half_time" || t === "full_time";
+}
 
 export function sortMatchEvents(events: MatchEventRow[]): MatchEventRow[] {
   return [...events].sort((a, b) => {
@@ -18,6 +22,8 @@ export function formatTimelineLine(ev: MatchEventRow, teamNameById: Map<string, 
       return "Match started";
     case "goal":
       return `Goal by ${player} — ${team}`;
+    case "own_goal":
+      return player ? `Own goal by ${player}` : "Own goal";
     case "half_time":
       return "Half time";
     case "yellow_card":
