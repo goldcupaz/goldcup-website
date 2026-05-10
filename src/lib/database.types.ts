@@ -152,6 +152,8 @@ export type Database = {
           team_id: string | null;
           player_name: string | null;
           event_order: number;
+          event_minute: number | null;
+          event_note: string | null;
           created_at: string;
         };
         Insert: {
@@ -161,6 +163,8 @@ export type Database = {
           team_id?: string | null;
           player_name?: string | null;
           event_order?: number;
+          event_minute?: number | null;
+          event_note?: string | null;
         };
         Update: {
           match_id?: string;
@@ -168,6 +172,8 @@ export type Database = {
           team_id?: string | null;
           player_name?: string | null;
           event_order?: number;
+          event_minute?: number | null;
+          event_note?: string | null;
         };
       };
       site_settings: {

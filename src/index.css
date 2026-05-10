@@ -2226,6 +2226,114 @@ select {
   width: 100%;
 }
 
+.admin-timeline-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 16px;
+}
+
+.admin-timeline-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.admin-timeline-text {
+  flex: 1;
+  min-width: min(100%, 200px);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.admin-timeline-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.btn-sm {
+  padding: 6px 10px;
+  font-size: 12px;
+  border-radius: 10px;
+}
+
+.admin-event-modal-backdrop {
+  padding: 12px;
+  align-items: flex-end;
+}
+
+@media (min-width: 540px) {
+  .admin-event-modal-backdrop {
+    align-items: center;
+    padding: 20px;
+  }
+}
+
+.admin-event-modal {
+  width: min(520px, 100%);
+  max-height: min(88vh, 720px);
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(180deg, #0d1a12, #0a1610);
+}
+
+.admin-event-modal-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 12px;
+}
+
+.admin-event-modal-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+.admin-event-modal-close {
+  flex-shrink: 0;
+  min-width: 40px;
+  padding: 6px 10px;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.admin-event-modal-form {
+  padding: 14px 18px 18px;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.admin-event-modal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+  align-items: center;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.admin-event-modal-delete {
+  margin-right: auto;
+  border-color: rgba(220, 100, 100, 0.45);
+  color: #f0b0b0;
+}
+
 .admin-page-head {
   display: flex;
   flex-wrap: wrap;

@@ -177,6 +177,8 @@ create table if not exists public.match_events (
   team_id uuid references public.teams (id) on delete set null,
   player_name text,
   event_order int not null default 0,
+  event_minute int,
+  event_note text,
   created_at timestamptz not null default now()
 );
 

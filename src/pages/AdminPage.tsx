@@ -5,6 +5,9 @@ import { useAuth } from "../context/AuthContext";
 import { useTournament } from "../context/TournamentContext";
 import type { Database, MatchEventType } from "../lib/database.types";
 import { statusOptionLabel } from "../lib/format";
+import { AdminMatchEventModal, type MatchEventEditPayload } from "../components/AdminMatchEventModal";
+import { computeScoresFromScoringEvents } from "../lib/matchEventScores";
+import { TIMELINE_EVENT_OPTIONS } from "../lib/matchEventTimelineOptions";
 import { formatTimelineLine, sortMatchEvents } from "../lib/timeline";
 import { sortMatchesForAdminPicker } from "../lib/matchSort";
 import { qualifiedPot } from "../lib/pots";
@@ -31,16 +34,6 @@ const LIVE_STATUS_STRIP: { value: MatchStatus; label: string; title?: string }[]
   { value: "half_time", label: "Half Time" },
   { value: "live_second_half", label: "Live", title: "Second half" },
   { value: "full_time", label: "Full Time" },
-];
-
-const TIMELINE_EVENT_OPTIONS: { value: MatchEventType; label: string; needsTeamPlayer: boolean }[] = [
-  { value: "match_started", label: "Match started", needsTeamPlayer: false },
-  { value: "goal", label: "Goal", needsTeamPlayer: true },
-  { value: "own_goal", label: "Own goal", needsTeamPlayer: true },
-  { value: "half_time", label: "Half time", needsTeamPlayer: false },
-  { value: "yellow_card", label: "Yellow card", needsTeamPlayer: true },
-  { value: "red_card", label: "Red card", needsTeamPlayer: true },
-  { value: "full_time", label: "Full time", needsTeamPlayer: false },
 ];
 
 export function AdminPage() {
@@ -122,9 +115,32 @@ where id = 'YOUR_USER_UUID';`}
     else await notify("Match saved.");
   }
 
+  /** Set match score from all goal + own_goal events (timeline is source of truth for scoring). */
+  async function syncMatchScoreToTimeline(matchId: string): Promise<string | null> {
+    const { data: m, error: e1 } = await supabase
+      .from("matches")
+      .select("id, home_team_id, away_team_id")
+      .eq("id", matchId)
+      .maybeSingle();
+    if (e1) return e1.message;
+    if (!m?.home_team_id || !m.away_team_id) return null;
+    const { data: evs, error: e2 } = await supabase.from("match_events").select("event_type, team_id").eq("match_id", matchId);
+    if (e2) return e2.message;
+    const { home, away } = computeScoresFromScoringEvents(m.home_team_id, m.away_team_id, evs ?? []);
+    const { error: e3 } = await supabase.from("matches").update({ home_score: home, away_score: away }).eq("id", matchId);
+    if (e3) return e3.message;
+    return null;
+  }
+
   async function addMatchEvent(
     matchId: string,
-    row: { event_type: MatchEventType; team_id?: string | null; player_name?: string | null },
+    row: {
+      event_type: MatchEventType;
+      team_id?: string | null;
+      player_name?: string | null;
+      event_minute?: number | null;
+      event_note?: string | null;
+    },
   ) {
     const existing = matchEvents.filter((e) => e.match_id === matchId);
     const nextOrder = existing.length === 0 ? 0 : Math.max(...existing.map((e) => e.event_order)) + 1;
@@ -134,52 +150,51 @@ where id = 'YOUR_USER_UUID';`}
       team_id: row.team_id ?? null,
       player_name: row.player_name?.trim() ? row.player_name.trim() : null,
       event_order: nextOrder,
+      event_minute: row.event_minute ?? null,
+      event_note: row.event_note?.trim() ? row.event_note.trim() : null,
     });
     if (error) {
       await notify("", error.message);
       return;
     }
-    if (row.event_type === "own_goal" && row.team_id) {
-      const m = matches.find((x) => x.id === matchId);
-      if (m?.home_team_id && m.away_team_id) {
-        let nh = Number(m.home_score) || 0;
-        let na = Number(m.away_score) || 0;
-        if (row.team_id === m.home_team_id) na += 1;
-        else if (row.team_id === m.away_team_id) nh += 1;
-        const { error: scoreErr } = await supabase
-          .from("matches")
-          .update({ home_score: nh, away_score: na })
-          .eq("id", matchId);
-        if (scoreErr) {
-          await notify("", `Own goal logged but score update failed: ${scoreErr.message}`);
-          return;
-        }
-      }
+    const syncErr = await syncMatchScoreToTimeline(matchId);
+    if (syncErr) {
+      await notify("", syncErr);
+      return;
     }
     await notify("Timeline event added.");
   }
 
+  async function updateMatchEvent(eventId: string, matchId: string, patch: MatchEventEditPayload) {
+    const { error } = await supabase.from("match_events").update(patch).eq("id", eventId);
+    if (error) {
+      await notify("", error.message);
+      return;
+    }
+    const syncErr = await syncMatchScoreToTimeline(matchId);
+    if (syncErr) {
+      await notify("", syncErr);
+      return;
+    }
+    await notify("Timeline event updated.");
+  }
+
   async function deleteMatchEvent(eventId: string) {
     const ev = matchEvents.find((e) => e.id === eventId);
+    const mid = ev?.match_id;
     const { error } = await supabase.from("match_events").delete().eq("id", eventId);
     if (error) {
       await notify("", error.message);
       return;
     }
-    let scoreErr: string | null = null;
-    if (ev?.event_type === "own_goal" && ev.team_id) {
-      const m = matches.find((x) => x.id === ev.match_id);
-      if (m?.home_team_id && m.away_team_id) {
-        let nh = Number(m.home_score) || 0;
-        let na = Number(m.away_score) || 0;
-        if (ev.team_id === m.home_team_id) na = Math.max(0, na - 1);
-        else if (ev.team_id === m.away_team_id) nh = Math.max(0, nh - 1);
-        const { error: e2 } = await supabase.from("matches").update({ home_score: nh, away_score: na }).eq("id", m.id);
-        scoreErr = e2?.message ?? null;
+    if (mid) {
+      const syncErr = await syncMatchScoreToTimeline(mid);
+      if (syncErr) {
+        await notify("Timeline event removed.", `Score sync failed: ${syncErr}`);
+        return;
       }
     }
-    if (scoreErr) await notify("Timeline event removed.", `Score rollback failed: ${scoreErr}`);
-    else await notify("Timeline event removed.");
+    await notify("Timeline event removed.");
   }
 
   function sameGroup(aid: string | null, bid: string | null) {
@@ -366,6 +381,7 @@ where id = 'YOUR_USER_UUID';`}
               events={sortMatchEvents(matchEvents.filter((e) => e.match_id === liveMatch.id))}
               onSave={(p) => void saveMatch(p)}
               onAddEvent={(row) => void addMatchEvent(liveMatch.id, row)}
+              onUpdateEvent={(eventId, patch) => updateMatchEvent(eventId, liveMatch.id, patch)}
               onDeleteEvent={(id) => void deleteMatchEvent(id)}
             />
           )}
@@ -674,6 +690,7 @@ function LiveEditor({
   events,
   onSave,
   onAddEvent,
+  onUpdateEvent,
   onDeleteEvent,
 }: {
   match: MatchRow;
@@ -685,8 +702,11 @@ function LiveEditor({
     event_type: MatchEventType;
     team_id?: string | null;
     player_name?: string | null;
+    event_minute?: number | null;
+    event_note?: string | null;
   }) => void;
-  onDeleteEvent: (id: string) => void;
+  onUpdateEvent: (eventId: string, patch: MatchEventEditPayload) => void | Promise<void>;
+  onDeleteEvent: (id: string) => void | Promise<void>;
 }) {
   const [hs, setHs] = useState(String(match.home_score));
   const [as, setAs] = useState(String(match.away_score));
@@ -694,6 +714,9 @@ function LiveEditor({
   const [side, setSide] = useState<"home" | "away">("home");
   const [selectedPlayerId, setSelectedPlayerId] = useState("");
   const [manualName, setManualName] = useState("");
+  const [addMinuteStr, setAddMinuteStr] = useState("");
+  const [addNote, setAddNote] = useState("");
+  const [editingEvent, setEditingEvent] = useState<MatchEventRow | null>(null);
 
   useEffect(() => {
     setHs(String(match.home_score));
@@ -702,12 +725,10 @@ function LiveEditor({
     setSide("home");
     setSelectedPlayerId("");
     setManualName("");
+    setAddMinuteStr("");
+    setAddNote("");
+    setEditingEvent(null);
   }, [match.id, match.home_score, match.away_score, match.home_team_id, match.away_team_id]);
-
-  useEffect(() => {
-    setSelectedPlayerId("");
-    setManualName("");
-  }, [evType, side]);
 
   const homeTeam = teams.find((t) => t.id === match.home_team_id);
   const awayTeam = teams.find((t) => t.id === match.away_team_id);
@@ -730,8 +751,19 @@ function LiveEditor({
 
   const needsDetail = TIMELINE_EVENT_OPTIONS.find((o) => o.value === evType)?.needsTeamPlayer ?? false;
 
+  function parseAddMinute(): number | null {
+    const t = addMinuteStr.trim();
+    if (!t) return null;
+    const n = Number(t);
+    if (!Number.isFinite(n) || n < 0 || n > 200) return null;
+    return Math.floor(n);
+  }
+
   function addTimeline(e: FormEvent) {
     e.preventDefault();
+    const event_minute = parseAddMinute();
+    const event_note = addNote.trim() ? addNote.trim() : null;
+
     if (needsDetail) {
       const tid = pickTeamId();
       if (!tid) return;
@@ -751,12 +783,14 @@ function LiveEditor({
         return;
       }
 
-      onAddEvent({ event_type: evType, team_id: tid, player_name: nameOut });
+      onAddEvent({ event_type: evType, team_id: tid, player_name: nameOut, event_minute, event_note });
     } else {
-      onAddEvent({ event_type: evType, team_id: null, player_name: null });
+      onAddEvent({ event_type: evType, team_id: null, player_name: null, event_minute, event_note });
     }
     setSelectedPlayerId("");
     setManualName("");
+    setAddMinuteStr("");
+    setAddNote("");
   }
 
   function setStatus(next: MatchStatus) {
@@ -804,32 +838,54 @@ function LiveEditor({
       </form>
 
       <h3 style={{ fontSize: 13, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>Timeline</h3>
-      <ul style={{ listStyle: "none", padding: 0, margin: "0 0 16px" }}>
+      <p className="muted" style={{ fontSize: 11, margin: "0 0 10px" }}>
+        Score is kept in sync with <strong>Goal</strong> and <strong>Own goal</strong> events. Use &quot;Update score&quot; only if you need a manual override.
+      </p>
+      <ul className="admin-timeline-list">
         {events.map((ev) => (
-          <li
-            key={ev.id}
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              gap: 12,
-              padding: "8px 0",
-              borderBottom: "1px solid rgba(255,255,255,0.06)",
-            }}
-          >
-            <span style={{ flex: 1 }}>{formatTimelineLine(ev, teamNameById)}</span>
-            <button type="button" className="btn" onClick={() => onDeleteEvent(ev.id)}>
-              Delete
-            </button>
+          <li key={ev.id} className="admin-timeline-row">
+            <span className="admin-timeline-text">{formatTimelineLine(ev, teamNameById)}</span>
+            <div className="admin-timeline-actions">
+              <button type="button" className="btn btn-sm" onClick={() => setEditingEvent(ev)}>
+                Edit
+              </button>
+              <button type="button" className="btn btn-sm" onClick={() => void onDeleteEvent(ev.id)}>
+                Delete
+              </button>
+            </div>
           </li>
         ))}
         {events.length === 0 && <li className="muted">No events yet.</li>}
       </ul>
 
+      {editingEvent && (
+        <AdminMatchEventModal
+          key={editingEvent.id}
+          match={match}
+          event={editingEvent}
+          teams={teams}
+          players={players}
+          onClose={() => setEditingEvent(null)}
+          onSave={async (payload) => {
+            await onUpdateEvent(editingEvent.id, payload);
+          }}
+          onDelete={async () => {
+            await onDeleteEvent(editingEvent.id);
+          }}
+        />
+      )}
+
       <div className="form-row">
         <label>Add timeline event</label>
         <form onSubmit={addTimeline} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          <select value={evType} onChange={(e) => setEvType(e.target.value as MatchEventType)}>
+          <select
+            value={evType}
+            onChange={(e) => {
+              setEvType(e.target.value as MatchEventType);
+              setSelectedPlayerId("");
+              setManualName("");
+            }}
+          >
             {TIMELINE_EVENT_OPTIONS.map((o) => (
               <option key={o.value} value={o.value}>
                 {o.label}
@@ -840,7 +896,14 @@ function LiveEditor({
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               <div className="form-row" style={{ marginBottom: 0 }}>
                 <label>Team</label>
-                <select value={side} onChange={(e) => setSide(e.target.value as "home" | "away")}>
+                <select
+                  value={side}
+                  onChange={(e) => {
+                    setSide(e.target.value as "home" | "away");
+                    setSelectedPlayerId("");
+                    setManualName("");
+                  }}
+                >
                   <option value="home">{homeTeam?.name ?? "Home"}</option>
                   <option value="away">{awayTeam?.name ?? "Away"}</option>
                 </select>
@@ -874,6 +937,19 @@ function LiveEditor({
               )}
             </div>
           )}
+          <div className="form-row" style={{ marginBottom: 0 }}>
+            <label>Minute (optional)</label>
+            <input
+              inputMode="numeric"
+              placeholder="e.g. 34"
+              value={addMinuteStr}
+              onChange={(e) => setAddMinuteStr(e.target.value)}
+            />
+          </div>
+          <div className="form-row" style={{ marginBottom: 0 }}>
+            <label>Note (optional)</label>
+            <textarea rows={2} placeholder="Shown on public timeline" value={addNote} onChange={(e) => setAddNote(e.target.value)} />
+          </div>
           <button type="submit" className="btn btn-primary">
             Add event
           </button>

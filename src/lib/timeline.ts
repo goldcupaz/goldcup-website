@@ -8,31 +8,58 @@ export function isClockTimelineEvent(t: MatchEventType): boolean {
 
 export function sortMatchEvents(events: MatchEventRow[]): MatchEventRow[] {
   return [...events].sort((a, b) => {
+    const ma = a.event_minute ?? null;
+    const mb = b.event_minute ?? null;
+    if (ma != null && mb != null && ma !== mb) return ma - mb;
+    if (ma != null && mb == null) return -1;
+    if (ma == null && mb != null) return 1;
     if (a.event_order !== b.event_order) return a.event_order - b.event_order;
     return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
   });
 }
 
-/** Public-facing copy for a single timeline row (no minutes). */
+function minutePrefix(ev: MatchEventRow): string {
+  const m = ev.event_minute ?? null;
+  if (m == null || !Number.isFinite(m) || m < 0) return "";
+  return `${m}\u2032 `;
+}
+
+function noteSuffix(ev: MatchEventRow): string {
+  const n = (ev.event_note ?? "").trim();
+  return n ? ` · ${n}` : "";
+}
+
+/** Public-facing copy for a single timeline row (optional minute + note from admin). */
 export function formatTimelineLine(ev: MatchEventRow, teamNameById: Map<string, string>): string {
   const team = ev.team_id ? (teamNameById.get(ev.team_id) ?? "Unknown") : "";
   const player = (ev.player_name ?? "").trim();
+  const pre = minutePrefix(ev);
+  const suf = noteSuffix(ev);
+  let core: string;
   switch (ev.event_type) {
     case "match_started":
-      return "Match started";
+      core = "Match started";
+      break;
     case "goal":
-      return `Goal by ${player} — ${team}`;
+      core = `Goal by ${player} — ${team}`;
+      break;
     case "own_goal":
-      return player ? `Own goal by ${player}` : "Own goal";
+      core = player ? `Own goal by ${player}` : "Own goal";
+      break;
     case "half_time":
-      return "Half time";
+      core = "Half time";
+      break;
     case "yellow_card":
-      return `Yellow card received by ${player} — ${team}`;
+      core = `Yellow card received by ${player} — ${team}`;
+      break;
     case "red_card":
-      return `Red card received by ${player} — ${team}`;
+      core = `Red card received by ${player} — ${team}`;
+      break;
     case "full_time":
-      return "Full time";
+      core = "Full time";
+      break;
     default:
-      return ev.event_type;
+      core = ev.event_type;
   }
+  return pre + core + suf;
 }
