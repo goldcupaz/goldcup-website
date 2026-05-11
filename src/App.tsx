@@ -12,6 +12,7 @@ import { KnockoutPage } from "./pages/KnockoutPage";
 import { LiveMatchPage } from "./pages/LiveMatchPage";
 import { MatchDetailPage } from "./pages/MatchDetailPage";
 import { SponsorsPage } from "./pages/SponsorsPage";
+import { StatisticsPage } from "./pages/StatisticsPage";
 import { StandingsPage } from "./pages/StandingsPage";
 import { TeamDetailPage } from "./pages/TeamDetailPage";
 import { TeamsPage } from "./pages/TeamsPage";
@@ -37,6 +38,7 @@ export default function App() {
               <Route path="links" element={<LinksPage />} />
               <Route path="knockout" element={<KnockoutPage />} />
               <Route path="sponsors" element={<SponsorsPage />} />
+              <Route path="statistics" element={<StatisticsPage />} />
               <Route path="about" element={<AboutPage />} />
               <Route path="admin" element={<AdminEntry />} />
             </Route>

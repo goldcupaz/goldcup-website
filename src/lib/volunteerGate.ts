@@ -1,7 +1,28 @@
-/** Shared volunteer gate password (client-visible; use RLS on data). */
-export const VOLUNTEER_GATE_PASSWORD = "goldcupaz";
+/** Shared volunteer entrance password (must match DB RPC check). */
+export const VOLUNTEER_PASSWORD = "goldcupaz";
 
-export function volunteerSupabaseEmail(): string | undefined {
-  const v = import.meta.env.VITE_VOLUNTEER_EMAIL;
-  return typeof v === "string" && v.trim() !== "" ? v.trim() : undefined;
+const SESSION_KEY = "gc_volunteer_session";
+
+export function isVolunteerSessionOpen(): boolean {
+  try {
+    return localStorage.getItem(SESSION_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+export function setVolunteerSession(): void {
+  try {
+    localStorage.setItem(SESSION_KEY, "1");
+  } catch {
+    /* ignore */
+  }
+}
+
+export function clearVolunteerSession(): void {
+  try {
+    localStorage.removeItem(SESSION_KEY);
+  } catch {
+    /* ignore */
+  }
 }

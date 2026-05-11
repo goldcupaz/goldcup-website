@@ -1,68 +1,44 @@
-import { FormEvent, useState } from "react";
+import { FormEvent, useCallback, useState } from "react";
 import { Link } from "react-router-dom";
 
 import { Footer } from "../components/Footer";
 import { PeopleCounterWidget } from "../components/PeopleCounterWidget";
 import { VolunteerTeamCheck } from "../components/VolunteerTeamCheck";
-import { useAuth } from "../context/AuthContext";
-import { isSupabaseConfigured } from "../lib/supabase";
+import {
+  clearVolunteerSession,
+  isVolunteerSessionOpen,
+  setVolunteerSession,
+  VOLUNTEER_PASSWORD,
+} from "../lib/volunteerGate";
 import logo from "../assets/goldcup-logo.png";
 
 type VolTab = "counter" | "verify";
 
-function volunteerPasswordExpected(): string {
-  const v = import.meta.env.VITE_VOLUNTEER_PASSWORD;
-  return typeof v === "string" && v.length > 0 ? v : "goldcupaz";
-}
-
-function volunteerAuthEmail(): string {
-  const v = import.meta.env.VITE_VOLUNTEER_EMAIL;
-  return typeof v === "string" ? v.trim() : "";
-}
-
 export function VolunteerHub() {
-  const { session, loading, isAdmin, isVolunteer, signIn, signOut } = useAuth();
+  const [unlocked, setUnlocked] = useState(isVolunteerSessionOpen);
   const [tab, setTab] = useState<VolTab>("counter");
   const [password, setPassword] = useState("");
   const [loginErr, setLoginErr] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
 
-  const allowed = isAdmin || isVolunteer;
-
-  async function onLogin(e: FormEvent) {
+  const tryUnlock = useCallback((e: FormEvent) => {
     e.preventDefault();
     setLoginErr(null);
-    if (!isSupabaseConfigured) {
-      setLoginErr("Supabase is not configured.");
+    if (password !== VOLUNTEER_PASSWORD) {
+      setLoginErr("Incorrect password. Please try again.");
       return;
     }
-    const email = volunteerAuthEmail();
-    if (!email) {
-      setLoginErr(
-        "Volunteer login is not configured. Set VITE_VOLUNTEER_EMAIL in .env to the shared volunteer Supabase Auth user.",
-      );
-      return;
-    }
-    const expected = volunteerPasswordExpected();
-    if (password !== expected) {
-      setLoginErr("Wrong password.");
-      return;
-    }
-    setBusy(true);
-    const { error } = await signIn(email, password);
-    setBusy(false);
-    if (error) {
-      setLoginErr(
-        `${error} — Check that this email exists in Supabase Auth and the account password matches the volunteer password.`,
-      );
-      return;
-    }
+    setVolunteerSession();
+    setUnlocked(true);
     setPassword("");
+  }, [password]);
+
+  function signOutVolunteer() {
+    clearVolunteerSession();
+    setUnlocked(false);
+    setLoginErr(null);
   }
 
-  if (loading) return <p className="empty">Loading…</p>;
-
-  if (!session) {
+  if (!unlocked) {
     return (
       <div className="volunteer-shell">
         <header className="volunteer-topbar">
@@ -72,54 +48,26 @@ export function VolunteerHub() {
           </Link>
         </header>
         <main className="volunteer-main">
-          <h1 className="page-title">Volunteer entrance</h1>
-          <p className="subtitle">Password only — people counter and team check. Not the admin console.</p>
-          <form className="card volunteer-login-card" onSubmit={(e) => void onLogin(e)}>
+          <h1 className="page-title">Volunteer access</h1>
+          <p className="subtitle">Enter the gate password to open people counter and team check.</p>
+          <form className="card volunteer-login-card" onSubmit={tryUnlock}>
             <div className="form-row">
               <label htmlFor="vol-pass">Password</label>
               <input
                 id="vol-pass"
                 type="password"
                 autoComplete="off"
-                inputMode="text"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter password"
+                placeholder="Password"
                 autoFocus
               />
             </div>
             {loginErr && <div className="alert warn">{loginErr}</div>}
-            <button type="submit" className="btn btn-primary volunteer-login-submit" disabled={busy}>
-              {busy ? "Opening…" : "Continue"}
+            <button type="submit" className="btn btn-primary volunteer-login-submit">
+              Continue
             </button>
           </form>
-          <p className="muted" style={{ marginTop: 16, fontSize: 12 }}>
-            Organisers set <span className="kbd">VITE_VOLUNTEER_EMAIL</span> (hidden shared Auth user) and optionally{" "}
-            <span className="kbd">VITE_VOLUNTEER_PASSWORD</span> (defaults to <span className="kbd">goldcupaz</span>). That
-            user needs <span className="kbd">is_volunteer = true</span> on <span className="kbd">public.profiles</span>. See{" "}
-            <span className="kbd">supabase/VOLUNTEER_SETUP.md</span>.
-          </p>
-        </main>
-        <Footer />
-      </div>
-    );
-  }
-
-  if (!allowed) {
-    return (
-      <div className="volunteer-shell">
-        <header className="volunteer-topbar">
-          <Link to="/" className="volunteer-brand">
-            <img src={logo} alt="" className="volunteer-logo" />
-            <span>Gold Cup</span>
-          </Link>
-        </header>
-        <main className="volunteer-main">
-          <h1 className="page-title">Access</h1>
-          <p className="subtitle">This portal needs a volunteer-enabled account for the configured email.</p>
-          <button type="button" className="btn btn-primary" onClick={() => void signOut()}>
-            Sign out
-          </button>
         </main>
         <Footer />
       </div>
@@ -133,8 +81,8 @@ export function VolunteerHub() {
           <img src={logo} alt="" className="volunteer-logo" />
           <span>Gold Cup · Volunteers</span>
         </Link>
-        <button type="button" className="btn" onClick={() => void signOut()}>
-          Sign out
+        <button type="button" className="btn" onClick={signOutVolunteer}>
+          Lock portal
         </button>
       </header>
 
@@ -159,14 +107,14 @@ export function VolunteerHub() {
         {tab === "counter" && (
           <section className="card volunteer-panel">
             <h1 className="page-title volunteer-panel-title">People counter</h1>
-            <p className="subtitle">Pick a matchday, then use +1 / −1. Counts sync live across devices.</p>
+            <p className="subtitle">Choose a matchday, then tap +1 or −1. Totals update live for everyone at the gate.</p>
             <PeopleCounterWidget />
           </section>
         )}
         {tab === "verify" && (
           <section className="card volunteer-panel">
             <h1 className="page-title volunteer-panel-title">Team / player check</h1>
-            <p className="subtitle">Select a squad and confirm names against your list.</p>
+            <p className="subtitle">Select a team and verify names on the list.</p>
             <VolunteerTeamCheck />
           </section>
         )}

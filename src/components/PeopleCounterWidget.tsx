@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { PEOPLE_COUNTER_IDS, PEOPLE_COUNTER_MATCHDAYS } from "../lib/peopleCounterMatchdays";
 import { isSupabaseConfigured, supabase } from "../lib/supabase";
+import { VOLUNTEER_PASSWORD } from "../lib/volunteerGate";
 
 async function fetchAllCounts(): Promise<Record<string, number>> {
   if (!isSupabaseConfigured) return {};
@@ -63,6 +64,7 @@ export function PeopleCounterWidget() {
     const { data, error } = await supabase.rpc("people_counter_adjust", {
       p_counter_id: selectedId,
       p_delta: delta,
+      p_secret: VOLUNTEER_PASSWORD,
     });
     setBusy(false);
     if (error) {
