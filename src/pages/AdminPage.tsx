@@ -8,6 +8,7 @@ import { statusOptionLabel } from "../lib/format";
 import { AdminMatchEventModal, type MatchEventEditPayload } from "../components/AdminMatchEventModal";
 import { PeopleCounterWidget } from "../components/PeopleCounterWidget";
 import { VolunteerTeamCheck } from "../components/VolunteerTeamCheck";
+import { computeScoresFromScoringEvents } from "../lib/matchEventScores";
 import { TIMELINE_EVENT_OPTIONS } from "../lib/matchEventTimelineOptions";
 import { formatTimelineLine, sortMatchEvents } from "../lib/timeline";
 import { sortMatchesForAdminPicker } from "../lib/matchSort";
@@ -116,10 +117,36 @@ where id = 'YOUR_USER_UUID';`}
     else await notify("Match saved.");
   }
 
-  /** Server-side recompute from all goal + own_goal events (fixes type changes, e.g. goal → own goal). */
+  /**
+   * Recompute match score from goal + own_goal events.
+   * Prefer DB RPC; fall back to client read/update if RPC is missing or errors.
+   */
   async function syncMatchScoreToTimeline(matchId: string): Promise<string | null> {
-    const { error } = await supabase.rpc("recompute_match_score_from_events", { p_match_id: matchId });
-    return error?.message ?? null;
+    const { error: rpcErr } = await supabase.rpc("recompute_match_score_from_events", { p_match_id: matchId });
+    if (!rpcErr) return null;
+
+    const { data: m, error: e1 } = await supabase
+      .from("matches")
+      .select("id, home_team_id, away_team_id")
+      .eq("id", matchId)
+      .maybeSingle();
+    if (e1) return `Score sync: ${e1.message}`;
+    if (!m?.home_team_id || !m.away_team_id) return null;
+
+    const { data: evs, error: e2 } = await supabase
+      .from("match_events")
+      .select("event_type, team_id")
+      .eq("match_id", matchId);
+    if (e2) return `Score sync: ${e2.message}`;
+
+    const { home, away } = computeScoresFromScoringEvents(
+      m.home_team_id,
+      m.away_team_id,
+      (evs ?? []) as { event_type: MatchEventType; team_id: string | null }[],
+    );
+    const { error: e3 } = await supabase.from("matches").update({ home_score: home, away_score: away }).eq("id", matchId);
+    if (e3) return `Score sync: ${e3.message}`;
+    return null;
   }
 
   async function addMatchEvent(
@@ -134,29 +161,59 @@ where id = 'YOUR_USER_UUID';`}
   ) {
     const existing = matchEvents.filter((e) => e.match_id === matchId);
     const nextOrder = existing.length === 0 ? 0 : Math.max(...existing.map((e) => e.event_order)) + 1;
-    const { error } = await supabase.from("match_events").insert({
+    const basePayload = {
       match_id: matchId,
       event_type: row.event_type,
       team_id: row.team_id ?? null,
       player_name: row.player_name?.trim() ? row.player_name.trim() : null,
       event_order: nextOrder,
+    };
+    const fullPayload = {
+      ...basePayload,
       event_minute: row.event_minute ?? null,
       event_note: row.event_note?.trim() ? row.event_note.trim() : null,
-    });
+    };
+
+    let { error } = await supabase.from("match_events").insert(fullPayload);
+    if (error) {
+      const hint = (error.message ?? "").toLowerCase();
+      if (
+        hint.includes("column") ||
+        hint.includes("schema") ||
+        hint.includes("event_minute") ||
+        hint.includes("event_note") ||
+        hint.includes("does not exist")
+      ) {
+        ({ error } = await supabase.from("match_events").insert(basePayload));
+      }
+    }
     if (error) {
       await notify("", error.message);
       return;
     }
     const syncErr = await syncMatchScoreToTimeline(matchId);
     if (syncErr) {
-      await notify("", syncErr);
+      await notify("Timeline event added.", syncErr);
       return;
     }
     await notify("Timeline event added.");
   }
 
   async function updateMatchEvent(eventId: string, matchId: string, patch: MatchEventEditPayload) {
-    const { data, error } = await supabase.from("match_events").update(patch).eq("id", eventId).select("id").maybeSingle();
+    let { data, error } = await supabase.from("match_events").update(patch).eq("id", eventId).select("id").maybeSingle();
+    if (error) {
+      const hint = (error.message ?? "").toLowerCase();
+      if (
+        hint.includes("column") ||
+        hint.includes("schema") ||
+        hint.includes("event_minute") ||
+        hint.includes("event_note") ||
+        hint.includes("does not exist")
+      ) {
+        const { event_minute: _em, event_note: _en, ...rest } = patch;
+        ({ data, error } = await supabase.from("match_events").update(rest).eq("id", eventId).select("id").maybeSingle());
+      }
+    }
     if (error) {
       await notify("", error.message);
       return;
@@ -167,7 +224,7 @@ where id = 'YOUR_USER_UUID';`}
     }
     const syncErr = await syncMatchScoreToTimeline(matchId);
     if (syncErr) {
-      await notify("", syncErr);
+      await notify("Timeline event updated.", syncErr);
       return;
     }
     await notify("Timeline event updated.");
@@ -184,7 +241,7 @@ where id = 'YOUR_USER_UUID';`}
     if (mid) {
       const syncErr = await syncMatchScoreToTimeline(mid);
       if (syncErr) {
-        await notify("Timeline event removed.", `Score sync failed: ${syncErr}`);
+        await notify("Timeline event removed.", syncErr);
         return;
       }
     }

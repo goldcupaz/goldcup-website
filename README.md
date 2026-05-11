@@ -18,9 +18,9 @@ React + Vite single-page app with **Supabase** (Postgres + Auth + Row Level Secu
 
 Copy `.env.example` to `.env` and set:
 
-- **`VITE_SUPABASE_URL`** and **`VITE_SUPABASE_ANON_KEY`** from Supabase → **Project Settings → API**
-- **`ADMIN_PASSWORD`** — MVP admin gate (embedded at build time via `vite.config`; set the same value as **Netlify environment variable** `ADMIN_PASSWORD` for production builds)
-- **`VITE_ADMIN_EMAIL`** — email of a Supabase Auth user whose **password matches `ADMIN_PASSWORD`**
+- `**VITE_SUPABASE_URL`** and `**VITE_SUPABASE_ANON_KEY**` from Supabase → **Project Settings → API**
+- `**ADMIN_PASSWORD`** — MVP admin gate (embedded at build time via `vite.config`; set the same value as **Netlify environment variable** `ADMIN_PASSWORD` for production builds)
+- `**VITE_ADMIN_EMAIL`** — email of a Supabase Auth user whose **password matches `ADMIN_PASSWORD`**
 
 **Save the file to disk** (`Cmd+S` / `Ctrl+S`). After changing `.env`, **restart** `npm run dev`.
 
@@ -35,17 +35,17 @@ Admin UI: **[http://localhost:5173/admin](http://localhost:5173/admin)** — ent
 ## Supabase setup
 
 1. Create a project at [supabase.com](https://supabase.com).
-2. In the **SQL Editor**, run **`supabase/goldcup_full_setup.sql`** once (copy-paste the whole file).  
-   That creates **`profiles`**, **`teams`**, **`players`**, **`matches`**, **`match_goals`**, **`site_settings`**, RLS policies, triggers, and inserts **Gold Cup teams + fixtures + placeholder players**.  
-   There is **no separate `groups` or `standings` table**: groups live on **`teams.group_letter`**; standings are **computed in the app** from **`matches`** with `stage = 'group'` and `status = 'full_time'`.
-3. **Authentication → Providers**: enable **Email** (password). Create an admin user under **Authentication → Users** with email **`VITE_ADMIN_EMAIL`** and password matching **`ADMIN_PASSWORD`**.
+2. In the **SQL Editor**, run `**supabase/goldcup_full_setup.sql`** once (copy-paste the whole file).
+  That creates `**profiles**`, `**teams**`, `**players**`, `**matches**`, `**match_goals**`, `**site_settings**`, RLS policies, triggers, and inserts **Gold Cup teams + fixtures + placeholder players**.  
+   There is **no separate `groups` or `standings` table**: groups live on `**teams.group_letter`**; standings are **computed in the app** from `**matches`** with `stage = 'group'` and `status = 'full_time'`.
+3. **Authentication → Providers**: enable **Email** (password). Create an admin user under **Authentication → Users** with email `**VITE_ADMIN_EMAIL`** and password matching `**ADMIN_PASSWORD**`.
 4. Promote that user to admin (replace the UUID with theirs from the Users table):
   ```sql
    update public.profiles
    set is_admin = true
    where id = 'YOUR_USER_UUID';
   ```
-5. **Real-time**: If the Live tab does not update automatically, confirm tables are listed under **Database → Replication**, or run **`supabase/migrations/20260107000001_realtime.sql`**.
+5. **Real-time**: If the Live tab does not update automatically, confirm tables are listed under **Database → Replication**, or run `**supabase/migrations/20260107000001_realtime.sql`**.
 
 ## Netlify deployment
 
@@ -73,7 +73,7 @@ Treating this as “support for a custom domain” — Netlify handles TLS and r
 
 - **Public (anon key):** read-only access to teams, players, matches, goals, and `site_settings` (for the featured live match id).
 - **Authenticated admins:** full read/write on those tables via RLS (`profiles.is_admin = true`).
-- **`ADMIN_PASSWORD` MVP:** the string is compiled into the client bundle — fine for a controlled tournament site; replace with a backend or Supabase-only auth when you need stronger secrecy.
+- `**ADMIN_PASSWORD` MVP:** the string is compiled into the client bundle — fine for a controlled tournament site; replace with a backend or Supabase-only auth when you need stronger secrecy.
 - Never expose the **service role** key in the browser; the anon key is safe with RLS.
 
 ## Project structure
