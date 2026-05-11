@@ -536,8 +536,8 @@ where id = 'YOUR_USER_UUID';`}
             Volunteer Portal
           </h2>
           <p className="muted">
-            Entrance count and roster checks for staff. Same tools as <Link to="/volunteer">/volunteer</Link> for
-            volunteer-only logins.
+            Per–matchday entrance counts and roster checks. Same tools as <Link to="/volunteer">/volunteer</Link>. Apply
+            migration <span className="kbd">20260509200000_people_counter_matchdays.sql</span> so counters sync.
           </p>
           <h3 className="admin-volunteer-subtitle">People counter</h3>
           <PeopleCounterWidget />

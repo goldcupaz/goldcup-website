@@ -128,12 +128,19 @@ export function computeGroupStandings(
     (m) => m.stage === "group" && m.group_letter === groupLetter && m.status === "full_time",
   );
 
+  /**
+   * Tiebreak order (after points):
+   * 1. Goal difference  2. Goals scored  3. Head-to-head (among teams tied on pts+GD+GF)
+   * 4. Goals conceded (fewer better)  5. Deterministic draw
+   */
   const sorted = [...rows].sort((a, b) => {
     if (b.pts !== a.pts) return b.pts - a.pts;
+    if (b.gd !== a.gd) return b.gd - a.gd;
+    if (b.gf !== a.gf) return b.gf - a.gf;
 
-    const tiedOnPts = rows.filter((r) => r.pts === a.pts);
-    if (tiedOnPts.length >= 2) {
-      const setTied = new Set(tiedOnPts.map((r) => r.team.id));
+    const tiedTriple = rows.filter((r) => r.pts === a.pts && r.gd === a.gd && r.gf === a.gf);
+    if (tiedTriple.length >= 2) {
+      const setTied = new Set(tiedTriple.map((r) => r.team.id));
       const h2h = h2hStats(setTied, allFinished);
       const ha = h2h.get(a.team.id);
       const hb = h2h.get(b.team.id);
@@ -141,14 +148,11 @@ export function computeGroupStandings(
         if (hb.pts !== ha.pts) return hb.pts - ha.pts;
         if (hb.gd !== ha.gd) return hb.gd - ha.gd;
         if (hb.gf !== ha.gf) return hb.gf - ha.gf;
-        if (ha.ga !== hb.ga) return ha.ga - hb.ga;
       }
     }
 
-    if (b.gd !== a.gd) return b.gd - a.gd;
-    if (b.gf !== a.gf) return b.gf - a.gf;
     if (a.ga !== b.ga) return a.ga - b.ga;
-    return deterministicDrawKey(a.team.id, "gc") - deterministicDrawKey(b.team.id, "gc");
+    return deterministicDrawKey(a.team.id, "gc-tb-2026") - deterministicDrawKey(b.team.id, "gc-tb-2026");
   });
 
   return sorted;

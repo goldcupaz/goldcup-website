@@ -1,40 +1,42 @@
-# Volunteer accounts (4 logins)
+# Volunteer portal (`/volunteer`)
 
-Volunteers use **`/volunteer`** with normal Supabase Auth (email + password). They only see **People counter** and **Team check**, not match editing or admin settings.
+Volunteers see **People counter** (per matchday) and **Team check** only — not the full admin console.
 
-## 1. Run migrations
+## 1. Migrations
 
-Apply `supabase/migrations/20260509160000_volunteer_people_counter_score_rpc.sql` (adds `profiles.is_volunteer`, `people_counter`, RPCs, realtime).
+Apply in order (or `supabase db push`):
 
-## 2. Create four Auth users
+- `20260509160000_volunteer_people_counter_score_rpc.sql` — `is_volunteer`, initial `people_counter`, score RPC, etc.
+- `20260509200000_people_counter_matchdays.sql` — matchday rows `md3`–`md6` and `people_counter_adjust(counter_id, delta)`.
 
-In Supabase Dashboard → **Authentication** → **Users** → **Add user** (or invite):
+## 2. Shared Auth user (hidden email)
 
-- Create four accounts (e.g. `volunteer1@…` … `volunteer4@…`) with passwords you share with gate staff.
+The UI is **password-only**. The app signs in with a **single** Supabase Auth email from env:
 
-Each new user gets a row in `public.profiles` from the `handle_new_user` trigger.
+- **`VITE_VOLUNTEER_EMAIL`** — e.g. `volunteers@yourdomain.com` (must exist in **Authentication → Users**).
 
-## 3. Grant volunteer flag
+Password shown to volunteers:
 
-In **SQL Editor**, set `is_volunteer` for those users (replace UUIDs from Authentication → Users):
+- Default **`goldcupaz`** unless you set **`VITE_VOLUNTEER_PASSWORD`** in `.env` (must match the password for that Auth user in Supabase).
+
+Create the user in Supabase with that password, then:
 
 ```sql
 update public.profiles
 set is_volunteer = true
-where id in (
-  'UUID-volunteer-1',
-  'UUID-volunteer-2',
-  'UUID-volunteer-3',
-  'UUID-volunteer-4'
-);
+where id = 'AUTH_USER_UUID_FOR_VITE_VOLUNTEER_EMAIL';
 ```
 
-Keep `is_admin = false` for these rows so they cannot use the full **Admin** console.
+Keep `is_admin = false` so `/admin` stays separate.
 
-## 4. Optional: admin also at the gate
+## 3. Optional: four devices / four people
 
-Admins already pass `people_counter_adjust` / `people_counter_reset` checks and can open **`/volunteer`** as well as **Admin → People counter**.
+You can still create extra Auth users with `is_volunteer = true`, but the entrance UI only asks for the shared password; each would need the same `VITE_VOLUNTEER_EMAIL` flow unless you change the app. For simplicity, one shared volunteer user is enough.
+
+## 4. Admin at the gate
+
+Admins (`is_admin`) can also call `people_counter_adjust` and may use **`/volunteer`** or **Admin → Volunteer Portal**.
 
 ## 5. Match score RPC
 
-`recompute_match_score_from_events` runs on the database after timeline edits so **goal ↔ own goal** changes always refresh scores and standings. Only **`is_admin`** may call it.
+`recompute_match_score_from_events` recalculates scores from timeline goals; only **`is_admin`** may call it.

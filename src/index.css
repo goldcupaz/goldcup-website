@@ -2850,6 +2850,61 @@ select {
   font-weight: 800;
 }
 
+.people-counter--matchdays .people-counter-day-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.people-counter-day-tab {
+  flex: 1 1 calc(50% - 10px);
+  min-width: 140px;
+  min-height: 72px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: rgba(0, 0, 0, 0.32);
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.people-counter-day-tab--active {
+  border-color: rgba(212, 175, 55, 0.55);
+  background: rgba(20, 48, 30, 0.55);
+  box-shadow: 0 0 0 1px rgba(212, 175, 55, 0.2);
+}
+
+.people-counter-day-tab-title {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--gold-dim);
+}
+
+.people-counter-day-tab-date {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.people-counter-day-tab-count {
+  font-size: 22px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  color: var(--gold);
+  margin-top: 2px;
+}
+
+.people-counter-selected-label strong {
+  color: var(--gold);
+}
+
 .volunteer-team-check {
   margin-top: 8px;
 }
