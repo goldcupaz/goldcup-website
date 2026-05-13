@@ -220,6 +220,9 @@ export function Home() {
             </section>
           ))}
         </div>
+        <p className="muted standings-footnote" style={{ marginTop: 12, fontSize: 12, marginBottom: 0 }}>
+          *Points may include disciplinary deductions.
+        </p>
       </section>
     </main>
   );

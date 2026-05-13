@@ -14,6 +14,11 @@ export type StandingRow = {
   gf: number;
   ga: number;
   gd: number;
+  /** Points from match results (W/D/L) only */
+  normalPts: number;
+  /** Disciplinary deduction stored on team (subtracted in standings only) */
+  pointsDeduction: number;
+  /** normalPts - pointsDeduction; used for order and public “Pts” column */
   pts: number;
 };
 
@@ -27,6 +32,8 @@ function emptyRow(team: TeamRow): StandingRow {
     gf: 0,
     ga: 0,
     gd: 0,
+    normalPts: 0,
+    pointsDeduction: 0,
     pts: 0,
   };
 }
@@ -107,21 +114,26 @@ export function computeGroupStandings(
 
     if (m.home_score > m.away_score) {
       home.wins += 1;
-      home.pts += 3;
+      home.normalPts += 3;
       away.losses += 1;
     } else if (m.home_score < m.away_score) {
       away.wins += 1;
-      away.pts += 3;
+      away.normalPts += 3;
       home.losses += 1;
     } else {
       home.draws += 1;
       away.draws += 1;
-      home.pts += 1;
-      away.pts += 1;
+      home.normalPts += 1;
+      away.normalPts += 1;
     }
   }
 
-  for (const r of Object.values(byId)) r.gd = r.gf - r.ga;
+  for (const r of Object.values(byId)) {
+    r.gd = r.gf - r.ga;
+    const ded = Math.max(0, Math.floor(Number(r.team.points_deduction) || 0));
+    r.pointsDeduction = ded;
+    r.pts = r.normalPts - ded;
+  }
 
   const rows = Object.values(byId);
   const allFinished = groupMatches.filter(
@@ -129,8 +141,8 @@ export function computeGroupStandings(
   );
 
   /**
-   * Tiebreak order (after points):
-   * 1. Goal difference  2. Goals scored  3. Head-to-head (among teams tied on pts+GD+GF)
+   * Tiebreak order (after final points):
+   * 1. Goal difference  2. Goals scored  3. Head-to-head (among teams tied on final pts+GD+GF)
    * 4. Goals conceded (fewer better)  5. Deterministic draw
    */
   const sorted = [...rows].sort((a, b) => {

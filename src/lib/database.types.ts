@@ -60,6 +60,7 @@ export type Database = {
           group_order: number;
           manager_1: string | null;
           manager_2: string | null;
+          points_deduction: number;
           created_at: string;
         };
         Insert: {
@@ -69,6 +70,7 @@ export type Database = {
           group_order: number;
           manager_1?: string | null;
           manager_2?: string | null;
+          points_deduction?: number;
         };
         Update: {
           name?: string;
@@ -76,6 +78,7 @@ export type Database = {
           group_order?: number;
           manager_1?: string | null;
           manager_2?: string | null;
+          points_deduction?: number;
         };
       };
       players: {

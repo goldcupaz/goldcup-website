@@ -6,6 +6,7 @@ import { useTournament } from "../context/TournamentContext";
 import type { Database, MatchEventType } from "../lib/database.types";
 import { statusOptionLabel } from "../lib/format";
 import { AdminMatchEventModal, type MatchEventEditPayload } from "../components/AdminMatchEventModal";
+import { AdminStandingsAdjustments } from "../components/AdminStandingsAdjustments";
 import { PeopleCounterWidget } from "../components/PeopleCounterWidget";
 import { VolunteerTeamCheck } from "../components/VolunteerTeamCheck";
 import { computeScoresFromScoringEvents } from "../lib/matchEventScores";
@@ -42,7 +43,9 @@ export function AdminPage() {
   const { session, isAdmin, loading: authLoading, signOut } = useAuth();
   const { teams, matches, matchEvents, players, currentLiveMatchId, refresh, refreshTeamsAndPlayers } =
     useTournament();
-  const [tab, setTab] = useState<"live" | "matches" | "qf" | "teams" | "volunteer" | "bracket">("live");
+  const [tab, setTab] = useState<
+    "live" | "matches" | "qf" | "teams" | "standingsAdj" | "volunteer" | "bracket"
+  >("live");
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
@@ -359,6 +362,7 @@ where id = 'YOUR_USER_UUID';`}
             ["matches", "Fixtures & results"],
             ["qf", "Quarter-finals"],
             ["teams", "Teams & players"],
+            ["standingsAdj", "Standings Adjustments"],
             ["volunteer", "Volunteer Portal"],
             ["bracket", "Sync bracket"],
           ] as const
@@ -528,6 +532,10 @@ where id = 'YOUR_USER_UUID';`}
           onAdminNotify={notify}
           refreshTeamsAndPlayers={refreshTeamsAndPlayers}
         />
+      )}
+
+      {tab === "standingsAdj" && (
+        <AdminStandingsAdjustments teams={teams} matches={matches} onRefresh={refreshTeamsAndPlayers} />
       )}
 
       {tab === "volunteer" && (

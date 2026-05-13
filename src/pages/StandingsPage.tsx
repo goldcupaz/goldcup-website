@@ -22,8 +22,9 @@ export function StandingsPage() {
       <h1 className="page-title">Standings</h1>
       <p className="subtitle">
         Group standings use current scores for live matches and half-time (points, GF/GA/GD update in real time) and lock
-        in when each match finishes. Tiebreak (after points): goal difference, goals scored, head-to-head among teams
-        still tied, goals conceded (fewer is better), then a fixed draw order.
+        in when each match finishes. Points shown are after any disciplinary deduction. Tiebreak (after points): goal
+        difference, goals scored, head-to-head among teams still tied, goals conceded (fewer is better), then a fixed draw
+        order.
       </p>
       {error && <div className="alert warn">{error}</div>}
       <div className="grid-2">
@@ -69,6 +70,9 @@ export function StandingsPage() {
           </section>
         ))}
       </div>
+      <p className="muted standings-footnote" style={{ marginTop: 16, fontSize: 13 }}>
+        *Points may include disciplinary deductions.
+      </p>
     </main>
   );
 }
