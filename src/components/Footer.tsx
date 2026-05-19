@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 
-import { trackInstagramClick, trackSponsorClick } from "../lib/websiteAnalytics";
+import { GoldCupSocialLinks } from "./GoldCupSocialLinks";
+import { trackSponsorClick } from "../lib/websiteAnalytics";
 import logo from "../assets/goldcup-logo.png";
 import azersunLogo from "../assets/sponsors/azersun.png";
 import dreamFestLogo from "../assets/sponsors/dreamfest.png";
@@ -35,8 +36,6 @@ const TIMSPORT_URL = "https://timsport.az/en";
 const LIV_HOSPITAL_URL = "https://www.livhospital.az/";
 const LUMI_URL = "https://www.instagram.com/lumi.coffeeco/";
 const BUYUKFIRAT_URL = "https://www.instagram.com/buyukfirat/";
-const GOLD_CUP_INSTAGRAM = "https://www.instagram.com/goldcup.az";
-
 function onSponsorClick(name: string, href: string, location: string) {
   trackSponsorClick({ sponsor: name, href, location });
 }
@@ -110,16 +109,10 @@ export function Footer() {
             Gold Cup is a youth football tournament created to bring competition, atmosphere, and community together.
             Our goal is to give teams a professional tournament experience both on and off the pitch.
           </p>
-          <a
-            className="site-footer-link"
-            href={GOLD_CUP_INSTAGRAM}
-            target="_blank"
-            rel={EXTERNAL_REL}
-            aria-label="Gold Cup on Instagram"
-            onClick={() => trackInstagramClick({ source: "footer_about", href: GOLD_CUP_INSTAGRAM })}
-          >
-            Instagram →
-          </a>
+          <div className="site-footer-head" style={{ marginTop: 14 }}>
+            Follow Gold Cup
+          </div>
+          <GoldCupSocialLinks variant="footer" source="footer_about" />
         </div>
 
         <div className="site-footer-sponsors">

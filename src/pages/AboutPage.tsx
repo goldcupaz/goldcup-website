@@ -1,3 +1,7 @@
+import { Link } from "react-router-dom";
+
+import { GoldCupSocialLinks } from "../components/GoldCupSocialLinks";
+
 export function AboutPage() {
   return (
     <main>
@@ -53,6 +57,17 @@ export function AboutPage() {
         <p className="muted" style={{ marginTop: 10 }}>
           Highlights, photography, and storytelling extend the weekend beyond the pitch — giving clubs visibility and
           helping the wider community connect with the tournament narrative as it unfolds.
+        </p>
+      </section>
+
+      <section className="card links-section" style={{ marginTop: 14 }}>
+        <h2 className="section-title">Follow Gold Cup</h2>
+        <p className="muted" style={{ marginTop: 0, marginBottom: 12, fontSize: 13 }}>
+          Official tournament channels — TikTok, Instagram, and YouTube.
+        </p>
+        <GoldCupSocialLinks variant="list" source="about_page" />
+        <p className="muted" style={{ marginTop: 14, marginBottom: 0, fontSize: 13 }}>
+          <Link to="/links">Social &amp; registration</Link> — forms and all links in one place.
         </p>
       </section>
     </main>

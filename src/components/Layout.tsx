@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { isSupabaseConfigured } from "../lib/supabase";
 import { Footer } from "./Footer";
+import { GoldCupSocialLinks } from "./GoldCupSocialLinks";
 import { PageViewTracker } from "./PageViewTracker";
 import logo from "../assets/goldcup-logo.png";
 
@@ -111,8 +112,11 @@ export function Layout() {
                 About
               </NavLink>
               <NavLink to="/links" className="nav-more-item" onClick={closeMoreAndMaybeMenu}>
-                Links
+                Social &amp; registration
               </NavLink>
+              <div className="nav-more-divider" role="separator" />
+              <div className="nav-more-social-label">Follow Gold Cup</div>
+              <GoldCupSocialLinks variant="menu" source="nav_more" onItemClick={closeMoreAndMaybeMenu} />
               <NavLink to="/statistics" className="nav-more-item" onClick={closeMoreAndMaybeMenu}>
                 Statistics
               </NavLink>

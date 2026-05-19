@@ -228,6 +228,54 @@ main {
   background: rgba(255, 255, 255, 0.04);
 }
 
+.nav-more-item--external {
+  color: var(--gold-dim);
+}
+
+.nav-more-divider {
+  height: 1px;
+  margin: 8px 4px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.nav-more-social-label {
+  padding: 4px 10px 6px;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.goldcup-social--footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  margin-top: 8px;
+}
+
+.goldcup-social-link {
+  display: inline-block;
+  color: rgba(255, 255, 255, 0.88);
+  text-decoration: none;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-bottom: 1px solid transparent;
+}
+
+.goldcup-social-link:hover {
+  color: var(--gold);
+  border-bottom-color: var(--gold-dim);
+}
+
+.goldcup-social--menu {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
 .page-title {
   margin: 0 0 10px;
   font-size: clamp(22px, 3.2vw, 30px);
