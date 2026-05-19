@@ -6,6 +6,8 @@ import { useTournament } from "../context/TournamentContext";
 import type { Database, MatchEventType } from "../lib/database.types";
 import { statusOptionLabel } from "../lib/format";
 import { AdminMatchEventModal, type MatchEventEditPayload } from "../components/AdminMatchEventModal";
+import { MatchEventTeamPlayerFields } from "../components/MatchEventTeamPlayerFields";
+import { eventNeedsTeamPlayer, resolveEventPlayerPayload } from "../lib/matchEventForm";
 import { AdminStandingsAdjustments } from "../components/AdminStandingsAdjustments";
 import { PeopleCounterWidget } from "../components/PeopleCounterWidget";
 import { VolunteerTeamCheck } from "../components/VolunteerTeamCheck";
@@ -120,14 +122,8 @@ where id = 'YOUR_USER_UUID';`}
     else await notify("Match saved.");
   }
 
-  /**
-   * Recompute match score from goal + own_goal events.
-   * Prefer DB RPC; fall back to client read/update if RPC is missing or errors.
-   */
+  /** Recompute match score from goal + own_goal events (client logic; own_goal credits opponent). */
   async function syncMatchScoreToTimeline(matchId: string): Promise<string | null> {
-    const { error: rpcErr } = await supabase.rpc("recompute_match_score_from_events", { p_match_id: matchId });
-    if (!rpcErr) return null;
-
     const { data: m, error: e1 } = await supabase
       .from("matches")
       .select("id, home_team_id, away_team_id")
@@ -191,7 +187,15 @@ where id = 'YOUR_USER_UUID';`}
       }
     }
     if (error) {
-      await notify("", error.message);
+      const msg = (error.message ?? "").toLowerCase();
+      if (row.event_type === "own_goal" && (msg.includes("check") || msg.includes("constraint"))) {
+        await notify(
+          "",
+          "Could not save Own Goal. Run migration supabase/migrations/20260509120000_match_events_own_goal.sql in Supabase.",
+        );
+      } else {
+        await notify("", error.message);
+      }
       return;
     }
     const syncErr = await syncMatchScoreToTimeline(matchId);
@@ -758,8 +762,6 @@ function QfRow({
   );
 }
 
-const MANUAL_PLAYER_VALUE = "__manual__";
-
 function LiveEditor({
   match,
   teams,
@@ -811,22 +813,10 @@ function LiveEditor({
   const awayTeam = teams.find((t) => t.id === match.away_team_id);
   const teamNameById = useMemo(() => new Map(teams.map((t) => [t.id, t.name] as const)), [teams]);
 
-  function pickTeamId(): string | null {
-    return side === "home" ? match.home_team_id : match.away_team_id;
-  }
-
-  const roster = useMemo(() => {
-    const tid = pickTeamId();
-    if (!tid) return [];
-    return players.filter((p) => p.team_id === tid).sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name));
-  }, [players, side, match.home_team_id, match.away_team_id]);
-
   function submitScore(e: FormEvent) {
     e.preventDefault();
     onSave({ id: match.id, home_score: Number(hs), away_score: Number(as) });
   }
-
-  const needsDetail = TIMELINE_EVENT_OPTIONS.find((o) => o.value === evType)?.needsTeamPlayer ?? false;
 
   function parseAddMinute(): number | null {
     const t = addMinuteStr.trim();
@@ -841,26 +831,24 @@ function LiveEditor({
     const event_minute = parseAddMinute();
     const event_note = addNote.trim() ? addNote.trim() : null;
 
-    if (needsDetail) {
-      const tid = pickTeamId();
-      if (!tid) return;
-
-      let nameOut: string | null = null;
-      if (roster.length === 0) {
-        if (!manualName.trim()) return;
-        nameOut = manualName.trim();
-      } else if (selectedPlayerId === MANUAL_PLAYER_VALUE) {
-        if (!manualName.trim()) return;
-        nameOut = manualName.trim();
-      } else if (selectedPlayerId) {
-        const pl = roster.find((p) => p.id === selectedPlayerId);
-        if (!pl) return;
-        nameOut = pl.name;
-      } else {
-        return;
-      }
-
-      onAddEvent({ event_type: evType, team_id: tid, player_name: nameOut, event_minute, event_note });
+    if (eventNeedsTeamPlayer(evType)) {
+      const resolved = resolveEventPlayerPayload(
+        evType,
+        side,
+        match.home_team_id,
+        match.away_team_id,
+        players,
+        selectedPlayerId,
+        manualName,
+      );
+      if (!resolved) return;
+      onAddEvent({
+        event_type: evType,
+        team_id: resolved.team_id,
+        player_name: resolved.player_name,
+        event_minute,
+        event_note,
+      });
     } else {
       onAddEvent({ event_type: evType, team_id: null, player_name: null, event_minute, event_note });
     }
@@ -916,7 +904,7 @@ function LiveEditor({
 
       <h3 style={{ fontSize: 13, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>Timeline</h3>
       <p className="muted" style={{ fontSize: 11, margin: "0 0 10px" }}>
-        Score is kept in sync with <strong>Goal</strong> and <strong>Own goal</strong> events. Use &quot;Update score&quot; only if you need a manual override.
+        Score is kept in sync with <strong>Goal</strong> and <strong>Own Goal</strong> events (own goals credit the opposing team). Use &quot;Update score&quot; only if you need a manual override.
       </p>
       <ul className="admin-timeline-list">
         {events.map((ev) => (
@@ -969,51 +957,24 @@ function LiveEditor({
               </option>
             ))}
           </select>
-          {needsDetail && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              <div className="form-row" style={{ marginBottom: 0 }}>
-                <label>Team</label>
-                <select
-                  value={side}
-                  onChange={(e) => {
-                    setSide(e.target.value as "home" | "away");
-                    setSelectedPlayerId("");
-                    setManualName("");
-                  }}
-                >
-                  <option value="home">{homeTeam?.name ?? "Home"}</option>
-                  <option value="away">{awayTeam?.name ?? "Away"}</option>
-                </select>
-              </div>
-              {roster.length > 0 ? (
-                <div className="form-row" style={{ marginBottom: 0 }}>
-                  <label>Player</label>
-                  <select
-                    value={selectedPlayerId}
-                    onChange={(e) => setSelectedPlayerId(e.target.value)}
-                  >
-                    <option value="">Select player…</option>
-                    {roster.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.is_goalkeeper ? `${p.name} (GK)` : p.name}
-                      </option>
-                    ))}
-                    <option value={MANUAL_PLAYER_VALUE}>Other — type name</option>
-                  </select>
-                </div>
-              ) : null}
-              {(roster.length === 0 || selectedPlayerId === MANUAL_PLAYER_VALUE) && (
-                <div className="form-row" style={{ marginBottom: 0 }}>
-                  <label>{roster.length === 0 ? "Player name (no roster)" : "Manual name"}</label>
-                  <input
-                    placeholder="Player name"
-                    value={manualName}
-                    onChange={(e) => setManualName(e.target.value)}
-                  />
-                </div>
-              )}
-            </div>
-          )}
+          <MatchEventTeamPlayerFields
+            evType={evType}
+            side={side}
+            onSideChange={setSide}
+            homeTeam={homeTeam}
+            awayTeam={awayTeam}
+            homeTeamId={match.home_team_id}
+            awayTeamId={match.away_team_id}
+            players={players}
+            selectedPlayerId={selectedPlayerId}
+            onSelectedPlayerIdChange={setSelectedPlayerId}
+            manualName={manualName}
+            onManualNameChange={setManualName}
+            teamSelectId="live-ev-team"
+            playerSelectId="live-ev-player"
+            manualInputId="live-ev-manual"
+            compact
+          />
           <div className="form-row" style={{ marginBottom: 0 }}>
             <label>Minute (optional)</label>
             <input

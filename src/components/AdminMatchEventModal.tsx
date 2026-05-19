@@ -1,13 +1,17 @@
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 
 import type { Database, MatchEventType } from "../lib/database.types";
+import {
+  eventNeedsTeamPlayer,
+  initialSideAndPlayer,
+  resolveEventPlayerPayload,
+} from "../lib/matchEventForm";
 import { TIMELINE_EVENT_OPTIONS } from "../lib/matchEventTimelineOptions";
+import { MatchEventTeamPlayerFields } from "./MatchEventTeamPlayerFields";
 
 type MatchRow = Database["public"]["Tables"]["matches"]["Row"];
 type MatchEventRow = Database["public"]["Tables"]["match_events"]["Row"];
 type PlayerRow = Database["public"]["Tables"]["players"]["Row"];
-
-const MANUAL_PLAYER_VALUE = "__manual__";
 
 export type MatchEventEditPayload = {
   event_type: MatchEventType;
@@ -59,40 +63,11 @@ export function AdminMatchEventModal({ match, event, teams, players, onClose, on
       event.event_minute != null && Number.isFinite(event.event_minute) ? String(event.event_minute) : "",
     );
     setNote(event.event_note ?? "");
-    if (event.team_id === match.home_team_id) setSide("home");
-    else if (event.team_id === match.away_team_id) setSide("away");
-    else setSide("home");
-
-    const tid =
-      event.team_id === match.home_team_id || event.team_id === match.away_team_id ? event.team_id : null;
-    const roster = tid
-      ? players.filter((p) => p.team_id === tid).sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name))
-      : [];
-    const name = (event.player_name ?? "").trim();
-    const found = roster.find((p) => p.name === name);
-    if (found) {
-      setSelectedPlayerId(found.id);
-      setManualName("");
-    } else if (name) {
-      setSelectedPlayerId(MANUAL_PLAYER_VALUE);
-      setManualName(name);
-    } else {
-      setSelectedPlayerId("");
-      setManualName("");
-    }
+    const init = initialSideAndPlayer(event, match.home_team_id, match.away_team_id, players);
+    setSide(init.side);
+    setSelectedPlayerId(init.selectedPlayerId);
+    setManualName(init.manualName);
   }, [event, match.home_team_id, match.away_team_id, players]);
-
-  function pickTeamId(): string | null {
-    return side === "home" ? match.home_team_id : match.away_team_id;
-  }
-
-  const roster = useMemo(() => {
-    const tid = side === "home" ? match.home_team_id : match.away_team_id;
-    if (!tid) return [];
-    return players.filter((p) => p.team_id === tid).sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name));
-  }, [players, side, match.home_team_id, match.away_team_id]);
-
-  const needsDetail = TIMELINE_EVENT_OPTIONS.find((o) => o.value === evType)?.needsTeamPlayer ?? false;
 
   function parseMinute(): number | null {
     const t = minuteStr.trim();
@@ -110,23 +85,19 @@ export function AdminMatchEventModal({ match, event, teams, players, onClose, on
     let team_id: string | null = null;
     let player_name: string | null = null;
 
-    if (needsDetail) {
-      const tid = pickTeamId();
-      if (!tid) return;
-      team_id = tid;
-      if (roster.length === 0) {
-        if (!manualName.trim()) return;
-        player_name = manualName.trim();
-      } else if (selectedPlayerId === MANUAL_PLAYER_VALUE) {
-        if (!manualName.trim()) return;
-        player_name = manualName.trim();
-      } else if (selectedPlayerId) {
-        const pl = roster.find((p) => p.id === selectedPlayerId);
-        if (!pl) return;
-        player_name = pl.name;
-      } else {
-        return;
-      }
+    if (eventNeedsTeamPlayer(evType)) {
+      const resolved = resolveEventPlayerPayload(
+        evType,
+        side,
+        match.home_team_id,
+        match.away_team_id,
+        players,
+        selectedPlayerId,
+        manualName,
+      );
+      if (!resolved) return;
+      team_id = resolved.team_id;
+      player_name = resolved.player_name;
     }
 
     const event_minute = parseMinute();
@@ -197,54 +168,23 @@ export function AdminMatchEventModal({ match, event, teams, players, onClose, on
             </select>
           </div>
 
-          {needsDetail && (
-            <>
-              <div className="form-row">
-                <label htmlFor="adm-ev-team">Team</label>
-                <select
-                  id="adm-ev-team"
-                  value={side}
-                  onChange={(e) => {
-                    setSide(e.target.value as "home" | "away");
-                    setSelectedPlayerId("");
-                    setManualName("");
-                  }}
-                >
-                  <option value="home">{homeTeam?.name ?? "Home"}</option>
-                  <option value="away">{awayTeam?.name ?? "Away"}</option>
-                </select>
-              </div>
-              {roster.length > 0 ? (
-                <div className="form-row">
-                  <label htmlFor="adm-ev-player">Player</label>
-                  <select
-                    id="adm-ev-player"
-                    value={selectedPlayerId}
-                    onChange={(e) => setSelectedPlayerId(e.target.value)}
-                  >
-                    <option value="">Select player…</option>
-                    {roster.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.is_goalkeeper ? `${p.name} (GK)` : p.name}
-                      </option>
-                    ))}
-                    <option value={MANUAL_PLAYER_VALUE}>Other — type name</option>
-                  </select>
-                </div>
-              ) : null}
-              {(roster.length === 0 || selectedPlayerId === MANUAL_PLAYER_VALUE) && (
-                <div className="form-row">
-                  <label htmlFor="adm-ev-manual">{roster.length === 0 ? "Player name" : "Manual name"}</label>
-                  <input
-                    id="adm-ev-manual"
-                    placeholder="Player name"
-                    value={manualName}
-                    onChange={(e) => setManualName(e.target.value)}
-                  />
-                </div>
-              )}
-            </>
-          )}
+          <MatchEventTeamPlayerFields
+            evType={evType}
+            side={side}
+            onSideChange={setSide}
+            homeTeam={homeTeam}
+            awayTeam={awayTeam}
+            homeTeamId={match.home_team_id}
+            awayTeamId={match.away_team_id}
+            players={players}
+            selectedPlayerId={selectedPlayerId}
+            onSelectedPlayerIdChange={setSelectedPlayerId}
+            manualName={manualName}
+            onManualNameChange={setManualName}
+            teamSelectId="adm-ev-team"
+            playerSelectId="adm-ev-player"
+            manualInputId="adm-ev-manual"
+          />
 
           <div className="form-row">
             <label htmlFor="adm-ev-minute">Minute (optional)</label>
@@ -272,7 +212,13 @@ export function AdminMatchEventModal({ match, event, teams, players, onClose, on
 
           <div className="form-row">
             <label htmlFor="adm-ev-note">Note (optional)</label>
-            <textarea id="adm-ev-note" rows={3} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Shown on timeline after the event text" />
+            <textarea
+              id="adm-ev-note"
+              rows={3}
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="Shown on timeline after the event text"
+            />
           </div>
 
           <div className="admin-event-modal-actions">

@@ -44,7 +44,11 @@ export function formatTimelineLine(ev: MatchEventRow, teamNameById: Map<string, 
       core = `Goal by ${player} — ${team}`;
       break;
     case "own_goal":
-      core = player ? `Own goal by ${player}` : "Own goal";
+      core = player
+        ? `Own goal by ${player}${team ? ` — ${team}` : ""}`
+        : team
+          ? `Own goal — ${team}`
+          : "Own goal";
       break;
     case "half_time":
       core = "Half time";
