@@ -8,6 +8,7 @@ import { statusOptionLabel } from "../lib/format";
 import { AdminMatchEventModal, type MatchEventEditPayload } from "../components/AdminMatchEventModal";
 import { MatchEventTeamPlayerFields } from "../components/MatchEventTeamPlayerFields";
 import { eventNeedsTeamPlayer, resolveEventPlayerPayload } from "../lib/matchEventForm";
+import { AdminAnalytics } from "../components/AdminAnalytics";
 import { AdminStandingsAdjustments } from "../components/AdminStandingsAdjustments";
 import { PeopleCounterWidget } from "../components/PeopleCounterWidget";
 import { VolunteerTeamCheck } from "../components/VolunteerTeamCheck";
@@ -46,7 +47,7 @@ export function AdminPage() {
   const { teams, matches, matchEvents, players, currentLiveMatchId, refresh, refreshTeamsAndPlayers } =
     useTournament();
   const [tab, setTab] = useState<
-    "live" | "matches" | "qf" | "teams" | "standingsAdj" | "volunteer" | "bracket"
+    "live" | "matches" | "qf" | "teams" | "standingsAdj" | "volunteer" | "bracket" | "analytics"
   >("live");
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -369,6 +370,7 @@ where id = 'YOUR_USER_UUID';`}
             ["standingsAdj", "Standings Adjustments"],
             ["volunteer", "Volunteer Portal"],
             ["bracket", "Sync bracket"],
+            ["analytics", "Analytics"],
           ] as const
         ).map(([k, label]) => (
           <button
@@ -541,6 +543,8 @@ where id = 'YOUR_USER_UUID';`}
       {tab === "standingsAdj" && (
         <AdminStandingsAdjustments teams={teams} matches={matches} onRefresh={refreshTeamsAndPlayers} />
       )}
+
+      {tab === "analytics" && <AdminAnalytics />}
 
       {tab === "volunteer" && (
         <section className="card">

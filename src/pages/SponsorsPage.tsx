@@ -1,3 +1,4 @@
+import { trackSponsorClick } from "../lib/websiteAnalytics";
 import azersunLogo from "../assets/sponsors/azersun.png";
 import dreamFestLogo from "../assets/sponsors/dreamfest.png";
 import starCollegesLogo from "../assets/sponsors/star-colleges.png";
@@ -80,6 +81,10 @@ const OFFICIAL_AND_PARTNERS: SponsorGridItem[] = [
   },
 ];
 
+function onSponsorClick(name: string, href: string, location: string) {
+  trackSponsorClick({ sponsor: name, href, location });
+}
+
 export function SponsorsPage() {
   return (
     <main>
@@ -96,6 +101,7 @@ export function SponsorsPage() {
               target="_blank"
               rel={EXTERNAL_REL}
               aria-label="Azersun — opens in a new tab"
+              onClick={() => onSponsorClick("Azersun", AZERSUN_URL, "sponsors_page_main")}
             >
               <div className="sponsor-logo-chip sponsor-logo-chip--sponsors-main">
                 <img className="sponsor-logo sponsor-logo--sponsors-main-azersun" src={azersunLogo} alt="" />
@@ -109,6 +115,7 @@ export function SponsorsPage() {
               target="_blank"
               rel={EXTERNAL_REL}
               aria-label="Dream Fest — opens in a new tab"
+              onClick={() => onSponsorClick("Dream Fest", DREAMFEST_URL, "sponsors_page_main")}
             >
               <div className="sponsor-logo-chip sponsor-logo-chip--sponsors-main">
                 <img className="sponsor-logo sponsor-logo--sponsors-main-dreamfest" src={dreamFestLogo} alt="" />
@@ -122,6 +129,7 @@ export function SponsorsPage() {
               target="_blank"
               rel={EXTERNAL_REL}
               aria-label="Star Colleges — opens in a new tab"
+              onClick={() => onSponsorClick("Star Colleges", STAR_COLLEGES_URL, "sponsors_page_main")}
             >
               <div className="sponsor-logo-chip sponsor-logo-chip--sponsors-main">
                 <img
@@ -159,6 +167,7 @@ export function SponsorsPage() {
                     target="_blank"
                     rel={EXTERNAL_REL}
                     aria-label={`${s.name} — opens in a new tab`}
+                    onClick={() => onSponsorClick(s.name, s.href, "sponsors_page_official")}
                   >
                     {img}
                   </a>

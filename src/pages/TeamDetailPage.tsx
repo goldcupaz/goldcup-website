@@ -1,10 +1,11 @@
-import { useLayoutEffect, useMemo } from "react";
+import { useEffect, useLayoutEffect, useMemo } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
 
 import { useTournament } from "../context/TournamentContext";
 import type { Database } from "../lib/database.types";
 import { formatKickoff, statusLabel } from "../lib/format";
 import { topGoalscorersFromEvents } from "../lib/tournamentStats";
+import { trackTeamPageOpen } from "../lib/websiteAnalytics";
 
 type MatchRow = Database["public"]["Tables"]["matches"]["Row"];
 
@@ -36,6 +37,10 @@ export function TeamDetailPage() {
   }, [teamId]);
 
   const team = teams.find((t) => t.id === teamId);
+
+  useEffect(() => {
+    if (teamId && team) trackTeamPageOpen(teamId, team.name);
+  }, [teamId, team?.id, team?.name]);
 
   const nameById = useMemo(() => new Map(teams.map((t) => [t.id, t.name] as const)), [teams]);
 

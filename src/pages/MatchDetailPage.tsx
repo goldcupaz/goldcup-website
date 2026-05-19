@@ -1,4 +1,4 @@
-import { useLayoutEffect, useMemo } from "react";
+import { useEffect, useLayoutEffect, useMemo } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
 
 import { MatchTimelineSplit } from "../components/MatchTimelineSplit";
@@ -6,6 +6,7 @@ import { useTournament } from "../context/TournamentContext";
 import type { Database } from "../lib/database.types";
 import { formatKickoff, statusLabel } from "../lib/format";
 import { isMatchInPlayOrBreak } from "../lib/matchStatus";
+import { trackMatchPageOpen } from "../lib/websiteAnalytics";
 
 type MatchRow = Database["public"]["Tables"]["matches"]["Row"];
 
@@ -35,6 +36,10 @@ export function MatchDetailPage() {
     document.documentElement.scrollTop = 0;
     document.body.scrollTop = 0;
   }, [matchId]);
+
+  useEffect(() => {
+    if (matchId && match) trackMatchPageOpen(matchId);
+  }, [matchId, match?.id]);
 
   if (!matchId) return <Navigate to="/fixtures" replace />;
 

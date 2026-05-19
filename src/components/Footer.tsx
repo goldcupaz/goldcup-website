@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 
+import { trackInstagramClick, trackSponsorClick } from "../lib/websiteAnalytics";
 import logo from "../assets/goldcup-logo.png";
 import azersunLogo from "../assets/sponsors/azersun.png";
 import dreamFestLogo from "../assets/sponsors/dreamfest.png";
@@ -34,6 +35,11 @@ const TIMSPORT_URL = "https://timsport.az/en";
 const LIV_HOSPITAL_URL = "https://www.livhospital.az/";
 const LUMI_URL = "https://www.instagram.com/lumi.coffeeco/";
 const BUYUKFIRAT_URL = "https://www.instagram.com/buyukfirat/";
+const GOLD_CUP_INSTAGRAM = "https://www.instagram.com/goldcup.az";
+
+function onSponsorClick(name: string, href: string, location: string) {
+  trackSponsorClick({ sponsor: name, href, location });
+}
 
 const OFFICIAL_SPONSOR_SLOTS: OfficialSlot[] = [
   {
@@ -104,7 +110,14 @@ export function Footer() {
             Gold Cup is a youth football tournament created to bring competition, atmosphere, and community together.
             Our goal is to give teams a professional tournament experience both on and off the pitch.
           </p>
-          <a className="site-footer-link" href="#" onClick={(e) => e.preventDefault()} aria-label="Instagram (placeholder)">
+          <a
+            className="site-footer-link"
+            href={GOLD_CUP_INSTAGRAM}
+            target="_blank"
+            rel={EXTERNAL_REL}
+            aria-label="Gold Cup on Instagram"
+            onClick={() => trackInstagramClick({ source: "footer_about", href: GOLD_CUP_INSTAGRAM })}
+          >
             Instagram →
           </a>
         </div>
@@ -137,6 +150,7 @@ export function Footer() {
               target="_blank"
               rel={EXTERNAL_REL}
               aria-label="Azersun — opens in a new tab"
+              onClick={() => onSponsorClick("Azersun", AZERSUN_URL, "footer_main")}
             >
               <img
                 className="sponsor-logo sponsor-logo--free sponsor-logo--footer-azersun"
@@ -152,6 +166,7 @@ export function Footer() {
               target="_blank"
               rel={EXTERNAL_REL}
               aria-label="Dream Fest — opens in a new tab"
+              onClick={() => onSponsorClick("Dream Fest", DREAMFEST_URL, "footer_main")}
             >
               <img
                 className="sponsor-logo sponsor-logo--free sponsor-logo--footer-dreamfest"
@@ -167,6 +182,7 @@ export function Footer() {
               target="_blank"
               rel={EXTERNAL_REL}
               aria-label="Star Colleges — opens in a new tab"
+              onClick={() => onSponsorClick("Star Colleges", STAR_COLLEGES_URL, "footer_main")}
             >
               <div className="sponsor-logo-chip">
                 <img className="sponsor-logo sponsor-logo--star" src={starCollegesLogo} alt="" />
@@ -192,6 +208,7 @@ export function Footer() {
                     target="_blank"
                     rel={EXTERNAL_REL}
                     aria-label={`${slot.alt} — opens in a new tab`}
+                    onClick={() => onSponsorClick(slot.alt, slot.href, "footer_official")}
                   >
                     <img className={`sponsor-official-img ${slot.zoomClass}`} src={slot.src} alt="" />
                   </a>

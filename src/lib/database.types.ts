@@ -211,6 +211,27 @@ export type Database = {
           value?: unknown;
         };
       };
+      website_events: {
+        Row: {
+          id: string;
+          event_name: string;
+          page_path: string | null;
+          metadata: Record<string, unknown>;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          event_name: string;
+          page_path?: string | null;
+          metadata?: Record<string, unknown>;
+          created_at?: string;
+        };
+        Update: {
+          event_name?: string;
+          page_path?: string | null;
+          metadata?: Record<string, unknown>;
+        };
+      };
     };
   };
 };

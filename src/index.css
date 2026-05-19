@@ -3164,3 +3164,130 @@ select {
     width: 11%;
   }
 }
+
+/* Admin analytics */
+.admin-analytics-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.admin-analytics-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+@media (min-width: 640px) {
+  .admin-analytics-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.admin-analytics-stat {
+  padding: 12px 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(212, 175, 55, 0.22);
+  background: rgba(0, 0, 0, 0.22);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.admin-analytics-stat-label {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  line-height: 1.3;
+}
+
+.admin-analytics-stat-value {
+  font-size: 22px;
+  font-weight: 900;
+  color: var(--gold);
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-analytics-subhead {
+  margin: 18px 0 10px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--gold-dim);
+}
+
+.admin-analytics-table-wrap {
+  margin-bottom: 8px;
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+.admin-analytics-table {
+  width: 100%;
+  min-width: 280px;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.admin-analytics-table th,
+.admin-analytics-table td {
+  padding: 8px 6px;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  vertical-align: top;
+}
+
+.admin-analytics-table th {
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.admin-analytics-path {
+  word-break: break-word;
+  max-width: 140px;
+}
+
+.admin-analytics-table--recent .admin-analytics-path {
+  max-width: 100px;
+}
+
+.admin-analytics-meta {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.78);
+  word-break: break-word;
+  max-width: 160px;
+}
+
+.admin-analytics-num {
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--gold);
+  white-space: nowrap;
+}
+
+.admin-analytics-when {
+  white-space: nowrap;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+@media (max-width: 420px) {
+  .admin-analytics-stat-value {
+    font-size: 18px;
+  }
+
+  .admin-analytics-table {
+    font-size: 11px;
+  }
+}

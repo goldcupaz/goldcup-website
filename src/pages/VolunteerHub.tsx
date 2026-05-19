@@ -1,4 +1,4 @@
-import { FormEvent, useCallback, useState } from "react";
+import { FormEvent, useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 import { Footer } from "../components/Footer";
@@ -10,12 +10,17 @@ import {
   setVolunteerSession,
   VOLUNTEER_PASSWORD,
 } from "../lib/volunteerGate";
+import { trackPageView, trackVolunteerLoginSuccess } from "../lib/websiteAnalytics";
 import logo from "../assets/goldcup-logo.png";
 
 type VolTab = "counter" | "verify";
 
 export function VolunteerHub() {
   const [unlocked, setUnlocked] = useState(isVolunteerSessionOpen);
+
+  useEffect(() => {
+    trackPageView();
+  }, []);
   const [tab, setTab] = useState<VolTab>("counter");
   const [password, setPassword] = useState("");
   const [loginErr, setLoginErr] = useState<string | null>(null);
@@ -28,6 +33,7 @@ export function VolunteerHub() {
       return;
     }
     setVolunteerSession();
+    trackVolunteerLoginSuccess();
     setUnlocked(true);
     setPassword("");
   }, [password]);

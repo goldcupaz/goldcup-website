@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { isSupabaseConfigured } from "../lib/supabase";
 import { Footer } from "./Footer";
+import { PageViewTracker } from "./PageViewTracker";
 import logo from "../assets/goldcup-logo.png";
 
 export function Layout() {
@@ -136,6 +137,7 @@ export function Layout() {
           See <span className="kbd">README.md</span>.
         </div>
       )}
+      <PageViewTracker />
       <Outlet />
       <Footer />
     </div>
