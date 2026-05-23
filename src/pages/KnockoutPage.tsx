@@ -5,6 +5,7 @@ import { useTournament } from "../context/TournamentContext";
 import type { Database } from "../lib/database.types";
 import { formatKickoff, statusLabel } from "../lib/format";
 import { isMatchInPlayOrBreak } from "../lib/matchStatus";
+import { QUARTER_FINALS, qfDisplayLabel, type QfSlot } from "../lib/knockoutBracket";
 import {
   finalComputed,
   getBySlot,
@@ -12,7 +13,6 @@ import {
   sideName,
   thirdComputed,
 } from "../lib/knockoutResolve";
-import { computeStandingsForGroup } from "../lib/standings";
 
 type MatchRow = Database["public"]["Tables"]["matches"]["Row"];
 type TeamRow = Database["public"]["Tables"]["teams"]["Row"];
@@ -20,21 +20,14 @@ type TeamRow = Database["public"]["Tables"]["teams"]["Row"];
 export function KnockoutPage() {
   const { teams, matches, loading, error } = useTournament();
 
-  const qualified = useMemo(() => {
-    const winners: string[] = [];
-    const runners: string[] = [];
-    for (const L of ["A", "B", "C", "D"] as const) {
-      const rows = computeStandingsForGroup(L, teams, matches);
-      winners.push(rows[0]?.team.name ?? "—");
-      runners.push(rows[1]?.team.name ?? "—");
+  const qfBySlot = useMemo(() => {
+    const map = new Map<QfSlot, MatchRow | null>();
+    for (const def of QUARTER_FINALS) {
+      map.set(def.slot, getBySlot(matches, def.slot));
     }
-    return { winners, runners };
-  }, [teams, matches]);
+    return map;
+  }, [matches]);
 
-  const qf1 = getBySlot(matches, "QF1");
-  const qf2 = getBySlot(matches, "QF2");
-  const qf3 = getBySlot(matches, "QF3");
-  const qf4 = getBySlot(matches, "QF4");
   const sf1 = getBySlot(matches, "SF1");
   const sf2 = getBySlot(matches, "SF2");
   const fin = getBySlot(matches, "FINAL");
@@ -51,31 +44,38 @@ export function KnockoutPage() {
     <main>
       <h1 className="page-title">Knockout path</h1>
       <p className="subtitle">
-        Top two from each group qualify. Quarter-finals are built from Pot 1 (winners) and Pot 2 (runners-up) by admin
-        assignment. Semi-finals and the final follow the fixed bracket.
+        Fixed quarter-final bracket from group standings. Semi-finals: winners of QF1 &amp; QF3 meet in SF1; winners
+        of QF2 &amp; QF4 in SF2.
       </p>
       {error && <div className="alert warn">{error}</div>}
 
       <div className="card" style={{ marginBottom: 14 }}>
         <div className="badge" style={{ marginBottom: 8 }}>
-          Qualifiers (from standings)
+          Quarter-final order
         </div>
-        <p className="muted" style={{ marginTop: 0 }}>
-          <strong>Pot 1</strong> (1st): {qualified.winners.join(" · ")}
-        </p>
-        <p className="muted" style={{ marginBottom: 0 }}>
-          <strong>Pot 2</strong> (2nd): {qualified.runners.join(" · ")}
-        </p>
+        <ol className="knockout-qf-order muted" style={{ margin: 0, paddingLeft: 18, fontSize: 13, lineHeight: 1.55 }}>
+          {QUARTER_FINALS.map((q) => (
+            <li key={q.slot}>
+              <strong>{q.orderLabel}</strong> — {q.homeTeamName} vs {q.awayTeamName} ({q.pairing})
+            </li>
+          ))}
+        </ol>
       </div>
 
       <div className="bracket-scroll">
         <div className="bracket">
           <section className="round">
             <h3>Quarter-finals</h3>
-            <MatchCard label="QF1" m={qf1} teams={teams} phH="Pot 1 team" phA="Pot 2 team" />
-            <MatchCard label="QF2" m={qf2} teams={teams} phH="Pot 1 team" phA="Pot 2 team" />
-            <MatchCard label="QF3" m={qf3} teams={teams} phH="Pot 1 team" phA="Pot 2 team" />
-            <MatchCard label="QF4" m={qf4} teams={teams} phH="Pot 1 team" phA="Pot 2 team" />
+            {QUARTER_FINALS.map((def) => (
+              <MatchCard
+                key={def.slot}
+                label={qfDisplayLabel(def.slot)}
+                m={qfBySlot.get(def.slot) ?? null}
+                teams={teams}
+                phH={def.homeTeamName}
+                phA={def.awayTeamName}
+              />
+            ))}
           </section>
           <section className="round">
             <h3>Semi-finals</h3>

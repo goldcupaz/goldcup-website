@@ -5,6 +5,8 @@ import { useTournament } from "../context/TournamentContext";
 import type { Database } from "../lib/database.types";
 import { formatKickoff, statusLabel } from "../lib/format";
 import { isMatchInPlayOrBreak } from "../lib/matchStatus";
+import { QUARTER_FINALS, qfDisplayLabel } from "../lib/knockoutBracket";
+import { stageSortKey } from "../lib/matchSort";
 
 type MatchRow = Database["public"]["Tables"]["matches"]["Row"];
 
@@ -115,6 +117,27 @@ export function FixturesPage() {
     return b ? [b] : [];
   }, [matchdays, filter]);
 
+  const knockoutMatches = useMemo(() => {
+    return matches
+      .filter((m) => m.stage !== "group")
+      .slice()
+      .sort((a, b) => {
+        const sa = stageSortKey(a.stage);
+        const sb = stageSortKey(b.stage);
+        if (sa !== sb) return sa - sb;
+        if (a.sort_order !== b.sort_order) return a.sort_order - b.sort_order;
+        const ta = a.scheduled_at ? new Date(a.scheduled_at).getTime() : Infinity;
+        const tb = b.scheduled_at ? new Date(b.scheduled_at).getTime() : Infinity;
+        return ta - tb;
+      });
+  }, [matches]);
+
+  const qfLabelBySlot = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const q of QUARTER_FINALS) map.set(q.slot, qfDisplayLabel(q.slot));
+    return map;
+  }, []);
+
   if (loading && matches.length === 0) return <p className="empty">Loading…</p>;
 
   const mdTabs = [0, 1, 2] as const;
@@ -122,7 +145,7 @@ export function FixturesPage() {
   return (
     <main>
       <h1 className="page-title">Fixtures / Results</h1>
-      <p className="subtitle">Group stage schedule by matchday. Live matches are highlighted.</p>
+      <p className="subtitle">Group stage by matchday, then knockout fixtures in bracket order. Live matches are highlighted.</p>
       {error && <div className="alert warn">{error}</div>}
 
       {matchdays.length > 0 && (
@@ -220,6 +243,66 @@ export function FixturesPage() {
           </section>
         ))}
       </div>
+
+      {knockoutMatches.length > 0 && (
+        <section className="matchday-card fixtures-knockout-section" style={{ marginTop: 20 }}>
+          <header className="matchday-card-head">
+            <h2 className="matchday-card-title">Knockout</h2>
+            <p className="matchday-card-sub">Quarter-finals in order, then semi-finals and finals</p>
+          </header>
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Kickoff</th>
+                  <th>Round</th>
+                  <th>Home</th>
+                  <th className="fixture-hide-vs" aria-hidden />
+                  <th>Away</th>
+                  <th>Score</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {knockoutMatches.map((m) => {
+                  const live = isMatchInPlayOrBreak(m.status);
+                  const finished = m.status === "full_time";
+                  const roundLabel =
+                    m.stage === "qf" && m.slot_code ? (qfLabelBySlot.get(m.slot_code) ?? m.slot_code) : (m.slot_code ?? m.stage);
+                  return (
+                    <tr
+                      key={m.id}
+                      className="fixture-row fixture-row--clickable"
+                      tabIndex={0}
+                      role="link"
+                      aria-label={`Open match ${teamName(nameById, m.home_team_id)} vs ${teamName(nameById, m.away_team_id)}`}
+                      onClick={() => goMatch(m.id)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          goMatch(m.id);
+                        }
+                      }}
+                    >
+                      <td>{formatKickoff(m.scheduled_at)}</td>
+                      <td style={{ fontSize: 12, fontWeight: 700 }}>{roundLabel}</td>
+                      <td style={{ fontWeight: 800 }}>{teamName(nameById, m.home_team_id)}</td>
+                      <td className="muted fixture-hide-vs">vs</td>
+                      <td style={{ fontWeight: 800 }}>{teamName(nameById, m.away_team_id)}</td>
+                      <td style={{ fontVariantNumeric: "tabular-nums" }}>
+                        {finished || live ? `${m.home_score} – ${m.away_score}` : "—"}
+                      </td>
+                      <td>
+                        {live ? <span className="badge live">LIVE</span> : <span>{statusLabel(m.status)}</span>}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
     </main>
   );
 }

@@ -16,7 +16,7 @@ import { computeScoresFromScoringEvents } from "../lib/matchEventScores";
 import { TIMELINE_EVENT_OPTIONS } from "../lib/matchEventTimelineOptions";
 import { formatTimelineLine, sortMatchEvents } from "../lib/timeline";
 import { sortMatchesForAdminPicker } from "../lib/matchSort";
-import { qualifiedPot } from "../lib/pots";
+import { QUARTER_FINALS } from "../lib/knockoutBracket";
 import { supabase } from "../lib/supabase";
 import { finalComputed, getBySlot, thirdComputed } from "../lib/knockoutResolve";
 import { winnerId } from "../lib/bracket";
@@ -51,8 +51,6 @@ export function AdminPage() {
   >("live");
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
-
-  const { pot1, pot2 } = useMemo(() => qualifiedPot(teams, matches), [teams, matches]);
 
   const matchesForLivePick = useMemo(() => sortMatchesForAdminPicker(matches), [matches]);
 
@@ -256,25 +254,6 @@ where id = 'YOUR_USER_UUID';`}
     await notify("Timeline event removed.");
   }
 
-  function sameGroup(aid: string | null, bid: string | null) {
-    if (!aid || !bid) return false;
-    const a = teams.find((t) => t.id === aid);
-    const b = teams.find((t) => t.id === bid);
-    return !!a && !!b && a.group_letter === b.group_letter;
-  }
-
-  async function saveQf(slot: "QF1" | "QF2" | "QF3" | "QF4", homeId: string, awayId: string) {
-    const hid = homeId || null;
-    const aid = awayId || null;
-    if (hid && aid && sameGroup(hid, aid)) {
-      await notify("", "Pot 1 and Pot 2 teams cannot be from the same group.");
-      return;
-    }
-    const m = getBySlot(matches, slot);
-    if (!m) return;
-    await saveMatch({ id: m.id, home_team_id: hid, away_team_id: aid });
-  }
-
   async function syncBracket() {
     const qf1 = getBySlot(matches, "QF1");
     const qf2 = getBySlot(matches, "QF2");
@@ -365,7 +344,7 @@ where id = 'YOUR_USER_UUID';`}
           [
             ["live", "Live match"],
             ["matches", "Fixtures & results"],
-            ["qf", "Quarter-finals"],
+            ["qf", "QF bracket"],
             ["teams", "Teams & players"],
             ["standingsAdj", "Standings Adjustments"],
             ["volunteer", "Volunteer Portal"],
@@ -504,30 +483,43 @@ where id = 'YOUR_USER_UUID';`}
       {tab === "qf" && (
         <section className="card">
           <h2 style={{ marginTop: 0, fontSize: 14, letterSpacing: "0.12em", textTransform: "uppercase" }}>
-            Quarter-final draw
+            Quarter-finals (fixed)
           </h2>
           <p className="muted">
-            Home side should be a Pot 1 (group winner) team and away a Pot 2 (runner-up) team. Same-group pairings are
-            blocked.
+            Bracket is set — no draw. Edit kickoff, score, and status under <strong>Fixtures &amp; results → Knockout</strong>.
+            After QFs finish, use <strong>Sync bracket</strong> for semi-finals and finals.
           </p>
-          <div className="muted" style={{ marginBottom: 12 }}>
-            <strong>Pot 1</strong>: {pot1.map((t) => t.name).join(", ") || "—"} &nbsp;|&nbsp; <strong>Pot 2</strong>:{" "}
-            {pot2.map((t) => t.name).join(", ") || "—"}
+          <div className="table-wrap" style={{ marginTop: 14 }}>
+            <table>
+              <thead>
+                <tr>
+                  <th>Order</th>
+                  <th>Slot</th>
+                  <th>Pairing</th>
+                  <th>Match</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {QUARTER_FINALS.map((def) => {
+                  const qm = getBySlot(matches, def.slot);
+                  const hn = qm?.home_team_id ? teams.find((t) => t.id === qm.home_team_id)?.name : null;
+                  const an = qm?.away_team_id ? teams.find((t) => t.id === qm.away_team_id)?.name : null;
+                  return (
+                    <tr key={def.slot}>
+                      <td>{def.orderLabel}</td>
+                      <td>{def.slot}</td>
+                      <td>{def.pairing}</td>
+                      <td style={{ fontWeight: 700 }}>
+                        {hn ?? def.homeTeamName} vs {an ?? def.awayTeamName}
+                      </td>
+                      <td>{qm ? statusOptionLabel(qm.status) : "—"}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
-          {(["QF1", "QF2", "QF3", "QF4"] as const).map((slot) => {
-            const qm = getBySlot(matches, slot);
-            if (!qm) return null;
-            return (
-              <QfRow
-                key={slot}
-                slot={slot}
-                match={qm}
-                pot1={pot1}
-                pot2={pot2}
-                onSave={(hid, aid) => void saveQf(slot, hid, aid)}
-              />
-            );
-          })}
         </section>
       )}
 
@@ -569,8 +561,8 @@ where id = 'YOUR_USER_UUID';`}
             Sync semi-finals & finals
           </h2>
           <p className="muted">
-            After quarter-finals are final, press to copy winners into SF1/SF2. After both semi-finals are final, Final
-            and 3rd place teams are filled (fixed tree: SF1 vs SF3 branch, SF2 vs SF4 branch).
+            After quarter-finals are final, press to copy winners into SF1 (QF1 + QF3) and SF2 (QF2 + QF4). After both
+            semi-finals are final, Final and 3rd place teams are filled automatically.
           </p>
           <button type="button" className="btn btn-primary" onClick={() => void syncBracket()}>
             Sync bracket from results
@@ -708,61 +700,6 @@ function KoMatchRow({
         </button>
       </td>
     </tr>
-  );
-}
-
-function QfRow({
-  slot,
-  match,
-  pot1,
-  pot2,
-  onSave,
-}: {
-  slot: "QF1" | "QF2" | "QF3" | "QF4";
-  match: MatchRow;
-  pot1: Database["public"]["Tables"]["teams"]["Row"][];
-  pot2: Database["public"]["Tables"]["teams"]["Row"][];
-  onSave: (homeId: string, awayId: string) => void;
-}) {
-  const [h, setH] = useState(match.home_team_id ?? "");
-  const [a, setA] = useState(match.away_team_id ?? "");
-
-  useEffect(() => {
-    setH(match.home_team_id ?? "");
-    setA(match.away_team_id ?? "");
-  }, [match.home_team_id, match.away_team_id]);
-
-  return (
-    <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)", padding: "12px 0" }}>
-      <div style={{ fontWeight: 800, marginBottom: 8 }}>{slot}</div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr auto", gap: 10, alignItems: "end" }}>
-        <div className="form-row">
-          <label>Pot 1 (home)</label>
-          <select value={h} onChange={(e) => setH(e.target.value)}>
-            <option value="">—</option>
-            {pot1.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.name} (Gr {t.group_letter})
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="form-row">
-          <label>Pot 2 (away)</label>
-          <select value={a} onChange={(e) => setA(e.target.value)}>
-            <option value="">—</option>
-            {pot2.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.name} (Gr {t.group_letter})
-              </option>
-            ))}
-          </select>
-        </div>
-        <button type="button" className="btn btn-primary" onClick={() => onSave(h, a)}>
-          Save
-        </button>
-      </div>
-    </div>
   );
 }
 
