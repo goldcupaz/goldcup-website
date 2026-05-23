@@ -2261,6 +2261,29 @@ select {
   }
 }
 
+/* Matchday 4 — quarter-final buffer gaps (10 min between games) */
+.matchday-card--quarterfinals .fixtures-qf-buffer td {
+  padding: 0 16px;
+  border: none !important;
+  background: transparent;
+  vertical-align: middle;
+}
+
+.matchday-card--quarterfinals .fixtures-qf-buffer-line {
+  display: block;
+  height: 14px;
+  margin: 2px 0;
+  border-radius: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(212, 175, 55, 0.12) 20%,
+    rgba(212, 175, 55, 0.22) 50%,
+    rgba(212, 175, 55, 0.12) 80%,
+    transparent 100%
+  );
+}
+
 /* Admin console */
 .admin-login-page {
   max-width: 480px;

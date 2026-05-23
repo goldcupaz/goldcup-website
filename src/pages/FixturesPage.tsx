@@ -1,11 +1,11 @@
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState, type KeyboardEvent } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { useTournament } from "../context/TournamentContext";
 import type { Database } from "../lib/database.types";
 import { formatKickoff, statusLabel } from "../lib/format";
 import { isMatchInPlayOrBreak } from "../lib/matchStatus";
-import { QUARTER_FINALS, qfDisplayLabel, qfTimeWindow, type QfSlot } from "../lib/knockoutBracket";
+import { QUARTER_FINALS } from "../lib/knockoutBracket";
 import { stageSortKey } from "../lib/matchSort";
 
 type MatchRow = Database["public"]["Tables"]["matches"]["Row"];
@@ -42,8 +42,12 @@ function matchdayHeading(dayNum: number, representativeIso: string): string {
 type MatchdayBucket = {
   key: string;
   label: string;
+  subtitle: string;
   matches: MatchRow[];
+  kind: "group" | "quarterfinals";
 };
+
+const MD4_KEY = "matchday-4-quarterfinals";
 
 export function FixturesPage() {
   const { teams, matches, loading, error } = useTournament();
@@ -67,7 +71,7 @@ export function FixturesPage() {
       });
   }, [matches]);
 
-  const matchdays = useMemo((): MatchdayBucket[] => {
+  const groupMatchdays = useMemo((): MatchdayBucket[] => {
     const withDates: MatchRow[] = [];
     const noDate: MatchRow[] = [];
     for (const m of groupMatchesSorted) {
@@ -96,7 +100,9 @@ export function FixturesPage() {
       return {
         key,
         label: matchdayHeading(idx + 1, firstIso),
+        subtitle: `${list.length} fixtures`,
         matches: list,
+        kind: "group",
       };
     });
 
@@ -104,22 +110,48 @@ export function FixturesPage() {
       buckets.push({
         key: "__tbd__",
         label: "Date TBD",
+        subtitle: `${noDate.length} fixtures`,
         matches: noDate,
+        kind: "group",
       });
     }
 
     return buckets;
   }, [groupMatchesSorted]);
 
-  const visibleMatchdays = useMemo(() => {
-    if (filter === "all") return matchdays;
-    const b = matchdays[filter];
-    return b ? [b] : [];
-  }, [matchdays, filter]);
+  const quarterfinalMatches = useMemo(() => {
+    return QUARTER_FINALS.map((def) => matches.find((m) => m.stage === "qf" && m.slot_code === def.slot) ?? null).filter(
+      (m): m is MatchRow => m !== null,
+    );
+  }, [matches]);
 
-  const knockoutMatches = useMemo(() => {
+  const matchday4: MatchdayBucket | null = useMemo(() => {
+    if (quarterfinalMatches.length === 0) return null;
+    return {
+      key: MD4_KEY,
+      label: "Matchday 4 — Quarterfinals",
+      subtitle: "Quarterfinals",
+      matches: quarterfinalMatches,
+      kind: "quarterfinals",
+    };
+  }, [quarterfinalMatches]);
+
+  const allMatchdaySections = useMemo(() => {
+    const sections = [...groupMatchdays];
+    if (matchday4) sections.push(matchday4);
+    return sections;
+  }, [groupMatchdays, matchday4]);
+
+  const visibleSections = useMemo(() => {
+    if (filter === "all") return allMatchdaySections;
+    if (filter === 3) return matchday4 ? [matchday4] : [];
+    const b = groupMatchdays[filter];
+    return b ? [b] : [];
+  }, [allMatchdaySections, filter, groupMatchdays, matchday4]);
+
+  const laterKnockoutMatches = useMemo(() => {
     return matches
-      .filter((m) => m.stage !== "group")
+      .filter((m) => m.stage !== "group" && m.stage !== "qf")
       .slice()
       .sort((a, b) => {
         const sa = stageSortKey(a.stage);
@@ -132,27 +164,30 @@ export function FixturesPage() {
       });
   }, [matches]);
 
-  const qfLabelBySlot = useMemo(() => {
+  const qfTimeBySlot = useMemo(() => {
     const map = new Map<string, string>();
-    for (const q of QUARTER_FINALS) map.set(q.slot, qfDisplayLabel(q.slot));
+    for (const q of QUARTER_FINALS) map.set(q.slot, q.timeWindow);
     return map;
   }, []);
 
   if (loading && matches.length === 0) return <p className="empty">Loading…</p>;
 
-  const mdTabs = [0, 1, 2] as const;
+  const mdTabIndices = [0, 1, 2, 3] as const;
+  const hasAnyFixtures = allMatchdaySections.length > 0 || laterKnockoutMatches.length > 0;
 
   return (
     <main>
       <h1 className="page-title">Fixtures / Results</h1>
-      <p className="subtitle">Group stage by matchday, then knockout fixtures in bracket order. Live matches are highlighted.</p>
+      <p className="subtitle">
+        Group stage by matchday, Matchday 4 quarter-finals, then semi-finals and finals. Live matches are highlighted.
+      </p>
       {error && <div className="alert warn">{error}</div>}
 
-      {matchdays.length > 0 && (
+      {hasAnyFixtures && (
         <div className="fixtures-tabs-scroll">
           <div className="fixtures-tabs-inner" role="tablist" aria-label="Matchday filter">
-            {mdTabs.map((i) => {
-              const bucket = matchdays[i];
+            {mdTabIndices.map((i) => {
+              const bucket = i < 3 ? groupMatchdays[i] : matchday4;
               const disabled = !bucket || bucket.matches.length === 0;
               return (
                 <button
@@ -182,73 +217,27 @@ export function FixturesPage() {
       )}
 
       <div className="matchday-stack">
-        {visibleMatchdays.length === 0 && <p className="empty">No group fixtures yet.</p>}
-        {visibleMatchdays.map((bucket) => (
-          <section key={bucket.key} className="matchday-card" aria-labelledby={`md-${bucket.key}`}>
-            <header className="matchday-card-head">
-              <h2 id={`md-${bucket.key}`} className="matchday-card-title">
-                {bucket.label}
-              </h2>
-              <p className="matchday-card-sub">{bucket.matches.length} fixtures</p>
-            </header>
-            <div className="table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Kickoff</th>
-                    <th>Group</th>
-                    <th>Home</th>
-                    <th className="fixture-hide-vs" aria-hidden />
-                    <th>Away</th>
-                    <th>Score</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {bucket.matches.map((m) => {
-                    const live = isMatchInPlayOrBreak(m.status);
-                    const finished = m.status === "full_time";
-                    return (
-                      <tr
-                        key={m.id}
-                        className="fixture-row fixture-row--clickable"
-                        tabIndex={0}
-                        role="link"
-                        aria-label={`Open match ${teamName(nameById, m.home_team_id)} vs ${teamName(nameById, m.away_team_id)}`}
-                        onClick={() => goMatch(m.id)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" || e.key === " ") {
-                            e.preventDefault();
-                            goMatch(m.id);
-                          }
-                        }}
-                      >
-                        <td>{formatKickoff(m.scheduled_at)}</td>
-                        <td>{m.group_letter ?? "—"}</td>
-                        <td style={{ fontWeight: 800 }}>{teamName(nameById, m.home_team_id)}</td>
-                        <td className="muted fixture-hide-vs">vs</td>
-                        <td style={{ fontWeight: 800 }}>{teamName(nameById, m.away_team_id)}</td>
-                        <td style={{ fontVariantNumeric: "tabular-nums" }}>
-                          {finished || live ? `${m.home_score} – ${m.away_score}` : "—"}
-                        </td>
-                        <td>
-                          {live ? <span className="badge live">LIVE</span> : <span>{statusLabel(m.status)}</span>}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </section>
-        ))}
+        {visibleSections.length === 0 && <p className="empty">No fixtures yet.</p>}
+        {visibleSections.map((bucket) =>
+          bucket.kind === "quarterfinals" ? (
+            <QuarterfinalsMatchdayCard
+              key={bucket.key}
+              bucket={bucket}
+              nameById={nameById}
+              qfTimeBySlot={qfTimeBySlot}
+              onOpen={goMatch}
+            />
+          ) : (
+            <GroupMatchdayCard key={bucket.key} bucket={bucket} nameById={nameById} onOpen={goMatch} />
+          ),
+        )}
       </div>
 
-      {knockoutMatches.length > 0 && (
+      {laterKnockoutMatches.length > 0 && filter === "all" && (
         <section className="matchday-card fixtures-knockout-section" style={{ marginTop: 20 }}>
           <header className="matchday-card-head">
-            <h2 className="matchday-card-title">Knockout</h2>
-            <p className="matchday-card-sub">Quarter-finals in order, then semi-finals and finals</p>
+            <h2 className="matchday-card-title">Semi-finals &amp; finals</h2>
+            <p className="matchday-card-sub">Knockout path after quarter-finals</p>
           </header>
           <div className="table-wrap">
             <table>
@@ -264,47 +253,201 @@ export function FixturesPage() {
                 </tr>
               </thead>
               <tbody>
-                {knockoutMatches.map((m) => {
-                  const live = isMatchInPlayOrBreak(m.status);
-                  const finished = m.status === "full_time";
-                  const roundLabel =
-                    m.stage === "qf" && m.slot_code
-                      ? `${qfLabelBySlot.get(m.slot_code) ?? m.slot_code} · ${qfTimeWindow(m.slot_code as QfSlot)}`
-                      : (m.slot_code ?? m.stage);
-                  return (
-                    <tr
-                      key={m.id}
-                      className="fixture-row fixture-row--clickable"
-                      tabIndex={0}
-                      role="link"
-                      aria-label={`Open match ${teamName(nameById, m.home_team_id)} vs ${teamName(nameById, m.away_team_id)}`}
-                      onClick={() => goMatch(m.id)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          e.preventDefault();
-                          goMatch(m.id);
-                        }
-                      }}
-                    >
-                      <td>{formatKickoff(m.scheduled_at)}</td>
-                      <td style={{ fontSize: 12, fontWeight: 700 }}>{roundLabel}</td>
-                      <td style={{ fontWeight: 800 }}>{teamName(nameById, m.home_team_id)}</td>
-                      <td className="muted fixture-hide-vs">vs</td>
-                      <td style={{ fontWeight: 800 }}>{teamName(nameById, m.away_team_id)}</td>
-                      <td style={{ fontVariantNumeric: "tabular-nums" }}>
-                        {finished || live ? `${m.home_score} – ${m.away_score}` : "—"}
-                      </td>
-                      <td>
-                        {live ? <span className="badge live">LIVE</span> : <span>{statusLabel(m.status)}</span>}
-                      </td>
-                    </tr>
-                  );
-                })}
+                {laterKnockoutMatches.map((m) => (
+                  <KnockoutFixtureRow key={m.id} m={m} nameById={nameById} onOpen={goMatch} />
+                ))}
               </tbody>
             </table>
           </div>
         </section>
       )}
     </main>
+  );
+}
+
+function openMatchKey(e: KeyboardEvent, id: string, onOpen: (id: string) => void) {
+  if (e.key === "Enter" || e.key === " ") {
+    e.preventDefault();
+    onOpen(id);
+  }
+}
+
+function GroupMatchdayCard({
+  bucket,
+  nameById,
+  onOpen,
+}: {
+  bucket: MatchdayBucket;
+  nameById: Map<string, string>;
+  onOpen: (id: string) => void;
+}) {
+  return (
+    <section className="matchday-card" aria-labelledby={`md-${bucket.key}`}>
+      <header className="matchday-card-head">
+        <h2 id={`md-${bucket.key}`} className="matchday-card-title">
+          {bucket.label}
+        </h2>
+        <p className="matchday-card-sub">{bucket.subtitle}</p>
+      </header>
+      <div className="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Kickoff</th>
+              <th>Group</th>
+              <th>Home</th>
+              <th className="fixture-hide-vs" aria-hidden />
+              <th>Away</th>
+              <th>Score</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {bucket.matches.map((m) => {
+              const live = isMatchInPlayOrBreak(m.status);
+              const finished = m.status === "full_time";
+              return (
+                <tr
+                  key={m.id}
+                  className="fixture-row fixture-row--clickable"
+                  tabIndex={0}
+                  role="link"
+                  aria-label={`Open match ${teamName(nameById, m.home_team_id)} vs ${teamName(nameById, m.away_team_id)}`}
+                  onClick={() => onOpen(m.id)}
+                  onKeyDown={(e) => openMatchKey(e, m.id, onOpen)}
+                >
+                  <td>{formatKickoff(m.scheduled_at)}</td>
+                  <td>{m.group_letter ?? "—"}</td>
+                  <td style={{ fontWeight: 800 }}>{teamName(nameById, m.home_team_id)}</td>
+                  <td className="muted fixture-hide-vs">vs</td>
+                  <td style={{ fontWeight: 800 }}>{teamName(nameById, m.away_team_id)}</td>
+                  <td style={{ fontVariantNumeric: "tabular-nums" }}>
+                    {finished || live ? `${m.home_score} – ${m.away_score}` : "—"}
+                  </td>
+                  <td>
+                    {live ? <span className="badge live">LIVE</span> : <span>{statusLabel(m.status)}</span>}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
+function QuarterfinalsMatchdayCard({
+  bucket,
+  nameById,
+  qfTimeBySlot,
+  onOpen,
+}: {
+  bucket: MatchdayBucket;
+  nameById: Map<string, string>;
+  qfTimeBySlot: Map<string, string>;
+  onOpen: (id: string) => void;
+}) {
+  return (
+    <section className="matchday-card matchday-card--quarterfinals" aria-labelledby={`md-${bucket.key}`}>
+      <header className="matchday-card-head">
+        <h2 id={`md-${bucket.key}`} className="matchday-card-title">
+          {bucket.label}
+        </h2>
+        <p className="matchday-card-sub">{bucket.subtitle}</p>
+      </header>
+      <div className="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Time</th>
+              <th>Round</th>
+              <th>Home</th>
+              <th className="fixture-hide-vs" aria-hidden />
+              <th>Away</th>
+              <th>Score</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {bucket.matches.map((m, idx) => {
+              const live = isMatchInPlayOrBreak(m.status);
+              const finished = m.status === "full_time";
+              const slot = m.slot_code ?? "";
+              const timeLabel = qfTimeBySlot.get(slot) ?? formatKickoff(m.scheduled_at);
+              const showBuffer = idx < bucket.matches.length - 1;
+              return (
+                <Fragment key={m.id}>
+                  <tr
+                    className="fixture-row fixture-row--clickable"
+                    tabIndex={0}
+                    role="link"
+                    aria-label={`Open match ${teamName(nameById, m.home_team_id)} vs ${teamName(nameById, m.away_team_id)}`}
+                    onClick={() => onOpen(m.id)}
+                    onKeyDown={(e) => openMatchKey(e, m.id, onOpen)}
+                  >
+                    <td style={{ fontVariantNumeric: "tabular-nums", fontWeight: 700 }}>{timeLabel}</td>
+                    <td>{slot || "QF"}</td>
+                    <td style={{ fontWeight: 800 }}>{teamName(nameById, m.home_team_id)}</td>
+                    <td className="muted fixture-hide-vs">vs</td>
+                    <td style={{ fontWeight: 800 }}>{teamName(nameById, m.away_team_id)}</td>
+                    <td style={{ fontVariantNumeric: "tabular-nums" }}>
+                      {finished || live ? `${m.home_score} – ${m.away_score}` : "—"}
+                    </td>
+                    <td>
+                      {live ? <span className="badge live">LIVE</span> : <span>{statusLabel(m.status)}</span>}
+                    </td>
+                  </tr>
+                  {showBuffer && (
+                    <tr className="fixtures-qf-buffer" aria-hidden>
+                      <td colSpan={7}>
+                        <span className="fixtures-qf-buffer-line" />
+                      </td>
+                    </tr>
+                  )}
+                </Fragment>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
+function KnockoutFixtureRow({
+  m,
+  nameById,
+  onOpen,
+}: {
+  m: MatchRow;
+  nameById: Map<string, string>;
+  onOpen: (id: string) => void;
+}) {
+  const live = isMatchInPlayOrBreak(m.status);
+  const finished = m.status === "full_time";
+  const roundLabel = m.slot_code ?? m.stage;
+
+  return (
+    <tr
+      className="fixture-row fixture-row--clickable"
+      tabIndex={0}
+      role="link"
+      aria-label={`Open match ${teamName(nameById, m.home_team_id)} vs ${teamName(nameById, m.away_team_id)}`}
+      onClick={() => onOpen(m.id)}
+      onKeyDown={(e) => openMatchKey(e, m.id, onOpen)}
+    >
+      <td>{formatKickoff(m.scheduled_at)}</td>
+      <td style={{ fontSize: 12, fontWeight: 700 }}>{roundLabel}</td>
+      <td style={{ fontWeight: 800 }}>{teamName(nameById, m.home_team_id)}</td>
+      <td className="muted fixture-hide-vs">vs</td>
+      <td style={{ fontWeight: 800 }}>{teamName(nameById, m.away_team_id)}</td>
+      <td style={{ fontVariantNumeric: "tabular-nums" }}>
+        {finished || live ? `${m.home_score} – ${m.away_score}` : "—"}
+      </td>
+      <td>
+        {live ? <span className="badge live">LIVE</span> : <span>{statusLabel(m.status)}</span>}
+      </td>
+    </tr>
   );
 }
