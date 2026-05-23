@@ -56,7 +56,8 @@ export function KnockoutPage() {
         <ol className="knockout-qf-order muted" style={{ margin: 0, paddingLeft: 18, fontSize: 13, lineHeight: 1.55 }}>
           {QUARTER_FINALS.map((q) => (
             <li key={q.slot}>
-              <strong>{q.orderLabel}</strong> — {q.homeTeamName} vs {q.awayTeamName} ({q.pairing})
+              <strong>{q.orderLabel}</strong> — {q.homeTeamName} vs {q.awayTeamName} ·{" "}
+              <strong>{q.timeWindow}</strong> ({q.pairing})
             </li>
           ))}
         </ol>
@@ -70,6 +71,7 @@ export function KnockoutPage() {
               <MatchCard
                 key={def.slot}
                 label={qfDisplayLabel(def.slot)}
+                timeWindow={def.timeWindow}
                 m={qfBySlot.get(def.slot) ?? null}
                 teams={teams}
                 phH={def.homeTeamName}
@@ -131,10 +133,11 @@ function MatchCard(props: {
   teams: TeamRow[];
   phH: string;
   phA: string;
+  timeWindow?: string;
   computedHome?: string | null;
   computedAway?: string | null;
 }) {
-  const { label, m, teams, phH, phA, computedHome, computedAway } = props;
+  const { label, m, teams, phH, phA, timeWindow, computedHome, computedAway } = props;
   const h = sideName(m, "home", teams, computedHome ?? null, phH);
   const a = sideName(m, "away", teams, computedAway ?? null, phA);
   const when = m?.scheduled_at ? formatKickoff(m.scheduled_at) : "";
@@ -143,10 +146,16 @@ function MatchCard(props: {
       <div className="muted" style={{ fontSize: 11, marginBottom: 8, letterSpacing: "0.12em", textTransform: "uppercase" }}>
         {label}
       </div>
-      {when && (
+      {timeWindow ? (
         <div className="muted" style={{ fontSize: 11, marginBottom: 6 }}>
-          {when}
+          {timeWindow}
         </div>
+      ) : (
+        when && (
+          <div className="muted" style={{ fontSize: 11, marginBottom: 6 }}>
+            {when}
+          </div>
+        )
       )}
       <div className="match-line">
         <span>{h}</span>

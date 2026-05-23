@@ -5,7 +5,7 @@ import { useTournament } from "../context/TournamentContext";
 import type { Database } from "../lib/database.types";
 import { formatKickoff, statusLabel } from "../lib/format";
 import { isMatchInPlayOrBreak } from "../lib/matchStatus";
-import { QUARTER_FINALS, qfDisplayLabel } from "../lib/knockoutBracket";
+import { QUARTER_FINALS, qfDisplayLabel, qfTimeWindow, type QfSlot } from "../lib/knockoutBracket";
 import { stageSortKey } from "../lib/matchSort";
 
 type MatchRow = Database["public"]["Tables"]["matches"]["Row"];
@@ -268,7 +268,9 @@ export function FixturesPage() {
                   const live = isMatchInPlayOrBreak(m.status);
                   const finished = m.status === "full_time";
                   const roundLabel =
-                    m.stage === "qf" && m.slot_code ? (qfLabelBySlot.get(m.slot_code) ?? m.slot_code) : (m.slot_code ?? m.stage);
+                    m.stage === "qf" && m.slot_code
+                      ? `${qfLabelBySlot.get(m.slot_code) ?? m.slot_code} · ${qfTimeWindow(m.slot_code as QfSlot)}`
+                      : (m.slot_code ?? m.stage);
                   return (
                     <tr
                       key={m.id}

@@ -8,7 +8,7 @@ import { isMatchInPlayOrBreak } from "../lib/matchStatus";
 import { computeStandingsForGroup } from "../lib/standings";
 import { MatchTimelineSplit } from "../components/MatchTimelineSplit";
 import { sortMatchEvents } from "../lib/timeline";
-import { qfDisplayLabel, type QfSlot } from "../lib/knockoutBracket";
+import { qfDisplayLabel, qfTimeWindow, type QfSlot } from "../lib/knockoutBracket";
 import logo from "../assets/goldcup-logo.png";
 
 type MatchRow = Database["public"]["Tables"]["matches"]["Row"];
@@ -24,7 +24,10 @@ function teamName(map: Map<string, string>, id: string | null) {
 
 function matchLabel(m: MatchRow): string {
   if (m.stage === "group") return `Group ${m.group_letter ?? "?"} · ${m.slot_code ?? ""}`;
-  if (m.stage === "qf" && m.slot_code) return qfDisplayLabel(m.slot_code as QfSlot);
+  if (m.stage === "qf" && m.slot_code) {
+    const slot = m.slot_code as QfSlot;
+    return `${qfDisplayLabel(slot)} · ${qfTimeWindow(slot)}`;
+  }
   return m.slot_code ?? m.stage;
 }
 

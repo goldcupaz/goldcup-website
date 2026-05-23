@@ -2,6 +2,9 @@
 
 export type QfSlot = "QF1" | "QF2" | "QF3" | "QF4";
 
+/** Wall-clock kickoff date for all QFs (UTC+4, same as group stage). */
+export const QF_MATCHDAY = "2026-06-20" as const;
+
 export type QuarterFinalDef = {
   slot: QfSlot;
   /** Group seed labels shown in UI (1st/2nd in group). */
@@ -9,6 +12,10 @@ export type QuarterFinalDef = {
   /** Display order on site (1 = first KO game). */
   order: number;
   orderLabel: string;
+  /** Local kickoff–full-time window (80 min + 10 min buffer before next game). */
+  timeWindow: string;
+  /** Kickoff wall time (HH:MM, UTC+4) — matches `scheduled_at` in DB. */
+  kickoffTime: string;
   homeTeamName: string;
   awayTeamName: string;
 };
@@ -20,6 +27,8 @@ export const QUARTER_FINALS: readonly QuarterFinalDef[] = [
     pairing: "C1 vs D2",
     order: 1,
     orderLabel: "1st game",
+    timeWindow: "16:00 – 17:20",
+    kickoffTime: "16:00",
     homeTeamName: "Blue Phoenix",
     awayTeamName: "EAS Saints",
   },
@@ -28,6 +37,8 @@ export const QUARTER_FINALS: readonly QuarterFinalDef[] = [
     pairing: "D1 vs C2",
     order: 2,
     orderLabel: "2nd game",
+    timeWindow: "17:30 – 18:50",
+    kickoffTime: "17:30",
     homeTeamName: "Sabis Tigers",
     awayTeamName: "Star Eagles",
   },
@@ -36,6 +47,8 @@ export const QUARTER_FINALS: readonly QuarterFinalDef[] = [
     pairing: "B1 vs A2",
     order: 3,
     orderLabel: "Pre-last game",
+    timeWindow: "19:00 – 20:20",
+    kickoffTime: "19:00",
     homeTeamName: "MTK Eagles",
     awayTeamName: "132-134 MFC",
   },
@@ -44,6 +57,8 @@ export const QUARTER_FINALS: readonly QuarterFinalDef[] = [
     pairing: "A1 vs B2",
     order: 4,
     orderLabel: "Last game",
+    timeWindow: "20:30 – 21:50",
+    kickoffTime: "20:30",
     homeTeamName: "Sahil FC",
     awayTeamName: "Sambo FC",
   },
@@ -56,6 +71,15 @@ export const QF_BY_SLOT: Record<QfSlot, QuarterFinalDef> = Object.fromEntries(
 export function qfDisplayLabel(slot: QfSlot): string {
   const q = QF_BY_SLOT[slot];
   return `${q.slot} · ${q.pairing} (${q.orderLabel})`;
+}
+
+export function qfScheduledAtIso(slot: QfSlot): string {
+  const q = QF_BY_SLOT[slot];
+  return `${QF_MATCHDAY} ${q.kickoffTime}:00+04`;
+}
+
+export function qfTimeWindow(slot: QfSlot): string {
+  return QF_BY_SLOT[slot].timeWindow;
 }
 
 /** Team UUIDs from seed — used only in SQL migrations / docs. */

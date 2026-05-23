@@ -495,6 +495,7 @@ where id = 'YOUR_USER_UUID';`}
                 <tr>
                   <th>Order</th>
                   <th>Slot</th>
+                  <th>Time</th>
                   <th>Pairing</th>
                   <th>Match</th>
                   <th>Status</th>
@@ -509,6 +510,7 @@ where id = 'YOUR_USER_UUID';`}
                     <tr key={def.slot}>
                       <td>{def.orderLabel}</td>
                       <td>{def.slot}</td>
+                      <td style={{ fontVariantNumeric: "tabular-nums" }}>{def.timeWindow}</td>
                       <td>{def.pairing}</td>
                       <td style={{ fontWeight: 700 }}>
                         {hn ?? def.homeTeamName} vs {an ?? def.awayTeamName}
