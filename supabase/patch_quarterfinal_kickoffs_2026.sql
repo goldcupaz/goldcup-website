@@ -1,5 +1,5 @@
--- Gold Cup 2026 quarter-final kickoffs (paste in Supabase SQL Editor)
--- Wall times UTC+4; 10-minute buffers: 17:20→17:30, 18:50→19:00, 20:20→20:30
+-- Deprecated: use patch_quarterfinal_fixtures_full_2026.sql (teams + kickoffs together).
+-- Gold Cup 2026 quarter-final kickoffs only (wall times UTC+4)
 
 begin;
 

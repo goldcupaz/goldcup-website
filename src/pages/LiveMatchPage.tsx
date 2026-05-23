@@ -5,12 +5,9 @@ import { MatchTimelineSplit } from "../components/MatchTimelineSplit";
 import { useTournament } from "../context/TournamentContext";
 import type { Database } from "../lib/database.types";
 import { formatKickoff, statusLabel } from "../lib/format";
-type MatchRow = Database["public"]["Tables"]["matches"]["Row"];
+import { resolveTeamName } from "../lib/matchTeamNames";
 
-function teamName(map: Map<string, string>, id: string | null) {
-  if (!id) return "TBD";
-  return map.get(id) ?? "TBD";
-}
+type MatchRow = Database["public"]["Tables"]["matches"]["Row"];
 
 function matchLabel(m: MatchRow): string {
   if (m.stage === "group") return `Group ${m.group_letter ?? "?"} · ${m.slot_code ?? ""}`;
@@ -62,7 +59,7 @@ export function LiveMatchPage() {
               <div className="live-meta muted">{matchLabel(liveMatch)}</div>
               <div className="live-score-row live-score-row-compact">
                 <div className="live-side">
-                  <div className="live-name">{teamName(nameById, liveMatch.home_team_id)}</div>
+                  <div className="live-name">{resolveTeamName(liveMatch, "home", nameById)}</div>
                 </div>
                 <div className="live-center">
                   <div className="live-score">
@@ -71,7 +68,7 @@ export function LiveMatchPage() {
                   <div className="live-status">{statusLabel(liveMatch.status)}</div>
                 </div>
                 <div className="live-side">
-                  <div className="live-name">{teamName(nameById, liveMatch.away_team_id)}</div>
+                  <div className="live-name">{resolveTeamName(liveMatch, "away", nameById)}</div>
                 </div>
               </div>
               <span className="live-open-match-hint muted">Open match page →</span>
@@ -91,8 +88,8 @@ export function LiveMatchPage() {
         ) : (
           <div className="live-archive">
             {finishedArchive.map((m) => {
-              const hn = teamName(nameById, m.home_team_id);
-              const an = teamName(nameById, m.away_team_id);
+              const hn = resolveTeamName(m, "home", nameById);
+              const an = resolveTeamName(m, "away", nameById);
               return (
                 <Link key={m.id} to={`/matches/${m.id}`} className="card live-finished-card live-finished-card--link">
                   <div className="live-finished-head">

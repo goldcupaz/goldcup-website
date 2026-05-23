@@ -7,6 +7,7 @@ import { formatKickoff, statusLabel } from "../lib/format";
 import { isMatchInPlayOrBreak } from "../lib/matchStatus";
 import { QUARTER_FINALS } from "../lib/knockoutBracket";
 import { stageSortKey } from "../lib/matchSort";
+import { resolveTeamName } from "../lib/matchTeamNames";
 
 type MatchRow = Database["public"]["Tables"]["matches"]["Row"];
 
@@ -382,15 +383,15 @@ function QuarterfinalsMatchdayCard({
                     className="fixture-row fixture-row--clickable"
                     tabIndex={0}
                     role="link"
-                    aria-label={`Open match ${teamName(nameById, m.home_team_id)} vs ${teamName(nameById, m.away_team_id)}`}
+                    aria-label={`Open match ${resolveTeamName(m, "home", nameById)} vs ${resolveTeamName(m, "away", nameById)}`}
                     onClick={() => onOpen(m.id)}
                     onKeyDown={(e) => openMatchKey(e, m.id, onOpen)}
                   >
                     <td style={{ fontVariantNumeric: "tabular-nums", fontWeight: 700 }}>{timeLabel}</td>
                     <td>{slot || "QF"}</td>
-                    <td style={{ fontWeight: 800 }}>{teamName(nameById, m.home_team_id)}</td>
+                    <td style={{ fontWeight: 800 }}>{resolveTeamName(m, "home", nameById)}</td>
                     <td className="muted fixture-hide-vs">vs</td>
-                    <td style={{ fontWeight: 800 }}>{teamName(nameById, m.away_team_id)}</td>
+                    <td style={{ fontWeight: 800 }}>{resolveTeamName(m, "away", nameById)}</td>
                     <td style={{ fontVariantNumeric: "tabular-nums" }}>
                       {finished || live ? `${m.home_score} – ${m.away_score}` : "—"}
                     </td>

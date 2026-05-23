@@ -9,6 +9,7 @@ import { computeStandingsForGroup } from "../lib/standings";
 import { MatchTimelineSplit } from "../components/MatchTimelineSplit";
 import { sortMatchEvents } from "../lib/timeline";
 import { qfDisplayLabel, qfTimeWindow, type QfSlot } from "../lib/knockoutBracket";
+import { resolveTeamName } from "../lib/matchTeamNames";
 import logo from "../assets/goldcup-logo.png";
 
 type MatchRow = Database["public"]["Tables"]["matches"]["Row"];
@@ -119,7 +120,7 @@ export function Home() {
           <>
             <div className="home-live-meta muted">{matchLabel(liveCard.match)}</div>
             <div className="home-live-teams">
-              <span className="home-live-team">{teamName(nameById, liveCard.match.home_team_id)}</span>
+              <span className="home-live-team">{resolveTeamName(liveCard.match, "home", nameById)}</span>
               <div className="home-live-center">
                 <span className="home-live-score">
                   {liveCard.match.home_score} – {liveCard.match.away_score}
@@ -128,7 +129,7 @@ export function Home() {
                   {liveCard.mode === "featured" ? statusLabel(liveCard.match.status) : "Not started"}
                 </span>
               </div>
-              <span className="home-live-team">{teamName(nameById, liveCard.match.away_team_id)}</span>
+              <span className="home-live-team">{resolveTeamName(liveCard.match, "away", nameById)}</span>
             </div>
             {liveCard.match.scheduled_at && liveCard.mode === "next" && (
               <p className="muted home-live-kickoff">{formatKickoff(liveCard.match.scheduled_at)}</p>
@@ -171,8 +172,8 @@ export function Home() {
                     <span className="home-fixture-meta">{matchLabel(m)}</span>
                   </div>
                   <div className="home-fixture-teams">
-                    {teamName(nameById, m.home_team_id)} <span className="muted">vs</span>{" "}
-                    {teamName(nameById, m.away_team_id)}
+                    {resolveTeamName(m, "home", nameById)} <span className="muted">vs</span>{" "}
+                    {resolveTeamName(m, "away", nameById)}
                   </div>
                 </Link>
               </li>

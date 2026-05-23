@@ -6,14 +6,10 @@ import { useTournament } from "../context/TournamentContext";
 import type { Database } from "../lib/database.types";
 import { formatKickoff, statusLabel } from "../lib/format";
 import { isMatchInPlayOrBreak } from "../lib/matchStatus";
+import { resolveTeamName } from "../lib/matchTeamNames";
 import { trackMatchPageOpen } from "../lib/websiteAnalytics";
 
 type MatchRow = Database["public"]["Tables"]["matches"]["Row"];
-
-function teamName(map: Map<string, string>, id: string | null) {
-  if (!id) return "TBD";
-  return map.get(id) ?? "TBD";
-}
 
 function matchLabel(m: MatchRow): string {
   if (m.stage === "group") return `Group ${m.group_letter ?? "?"} · ${m.slot_code ?? ""}`;
@@ -71,11 +67,11 @@ export function MatchDetailPage() {
       </div>
 
       <h1 className="page-title match-detail-title">
-        {teamName(nameById, match.home_team_id)}{" "}
+        {resolveTeamName(match, "home", nameById)}{" "}
         <span className="muted" style={{ fontWeight: 600 }}>
           vs
         </span>{" "}
-        {teamName(nameById, match.away_team_id)}
+        {resolveTeamName(match, "away", nameById)}
       </h1>
 
       <div className="muted match-detail-meta">{matchLabel(match)}</div>
@@ -86,7 +82,7 @@ export function MatchDetailPage() {
       <div className="card live-board live-featured-card match-detail-board">
         <div className="live-score-row live-score-row-compact">
           <div className="live-side">
-            <div className="live-name">{teamName(nameById, match.home_team_id)}</div>
+            <div className="live-name">{resolveTeamName(match, "home", nameById)}</div>
           </div>
           <div className="live-center">
             <div className="live-score">
@@ -95,7 +91,7 @@ export function MatchDetailPage() {
             <div className="live-status">{statusLabel(match.status)}</div>
           </div>
           <div className="live-side">
-            <div className="live-name">{teamName(nameById, match.away_team_id)}</div>
+            <div className="live-name">{resolveTeamName(match, "away", nameById)}</div>
           </div>
         </div>
 
