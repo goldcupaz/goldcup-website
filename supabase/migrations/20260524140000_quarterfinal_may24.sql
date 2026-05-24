@@ -1,5 +1,4 @@
--- Gold Cup 2026 — quarter-finals May 24 (teams + kickoffs UTC+4)
--- Paste in Supabase SQL Editor
+-- Quarter-finals: May 24 2026 teams + kickoffs (UTC+4)
 
 begin;
 

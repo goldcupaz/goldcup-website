@@ -3,7 +3,9 @@
 export type QfSlot = "QF1" | "QF2" | "QF3" | "QF4";
 
 /** Wall-clock kickoff date for all QFs (UTC+4, same as group stage). */
-export const QF_MATCHDAY = "2026-06-20" as const;
+export const QF_MATCHDAY = "2026-05-24" as const;
+
+export const QF_MATCHDAY_LABEL = "May 24" as const;
 
 export type QuarterFinalDef = {
   slot: QfSlot;
@@ -27,7 +29,7 @@ export const QUARTER_FINALS: readonly QuarterFinalDef[] = [
     pairing: "C1 vs D2",
     order: 1,
     orderLabel: "1st game",
-    timeWindow: "16:00 – 17:20",
+    timeWindow: "04:00 PM – 05:20 PM",
     kickoffTime: "16:00",
     homeTeamName: "Blue Phoenix",
     awayTeamName: "EAS Saints",
@@ -37,7 +39,7 @@ export const QUARTER_FINALS: readonly QuarterFinalDef[] = [
     pairing: "D1 vs C2",
     order: 2,
     orderLabel: "2nd game",
-    timeWindow: "17:30 – 18:50",
+    timeWindow: "05:30 PM – 06:50 PM",
     kickoffTime: "17:30",
     homeTeamName: "Sabis Tigers",
     awayTeamName: "Star Eagles",
@@ -47,7 +49,7 @@ export const QUARTER_FINALS: readonly QuarterFinalDef[] = [
     pairing: "B1 vs A2",
     order: 3,
     orderLabel: "Pre-last game",
-    timeWindow: "19:00 – 20:20",
+    timeWindow: "07:00 PM – 08:20 PM",
     kickoffTime: "19:00",
     homeTeamName: "MTK Eagles",
     awayTeamName: "132-134 MFC",
@@ -57,7 +59,7 @@ export const QUARTER_FINALS: readonly QuarterFinalDef[] = [
     pairing: "A1 vs B2",
     order: 4,
     orderLabel: "Last game",
-    timeWindow: "20:30 – 21:50",
+    timeWindow: "08:30 PM – 09:50 PM",
     kickoffTime: "20:30",
     homeTeamName: "Sahil FC",
     awayTeamName: "Sambo FC",
@@ -82,7 +84,7 @@ export function qfTimeWindow(slot: QfSlot): string {
   return QF_BY_SLOT[slot].timeWindow;
 }
 
-/** Team UUIDs from seed — used only in SQL migrations / docs. */
+/** Team UUIDs from seed — used in SQL migrations and admin QF sync. */
 export const QF_TEAM_IDS = {
   "Blue Phoenix": "a0000001-0000-4000-8000-000000000008",
   "EAS Saints": "a0000001-0000-4000-8000-000000000006",
@@ -93,3 +95,17 @@ export const QF_TEAM_IDS = {
   "Sahil FC": "a0000001-0000-4000-8000-000000000002",
   "Sambo FC": "a0000001-0000-4000-8000-000000000005",
 } as const;
+
+export function qfTeamIdsForSlot(slot: QfSlot): { homeTeamId: string; awayTeamId: string } {
+  const def = QF_BY_SLOT[slot];
+  return {
+    homeTeamId: QF_TEAM_IDS[def.homeTeamName as keyof typeof QF_TEAM_IDS],
+    awayTeamId: QF_TEAM_IDS[def.awayTeamName as keyof typeof QF_TEAM_IDS],
+  };
+}
+
+/** Admin live-picker / dropdown label for a quarter-final. */
+export function qfAdminFixtureLabel(slot: QfSlot): string {
+  const def = QF_BY_SLOT[slot];
+  return `${def.slot} · ${QF_MATCHDAY_LABEL} · ${def.timeWindow} · ${def.homeTeamName} vs ${def.awayTeamName}`;
+}

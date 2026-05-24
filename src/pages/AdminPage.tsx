@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useTournament } from "../context/TournamentContext";
 import type { Database, MatchEventType } from "../lib/database.types";
-import { statusOptionLabel } from "../lib/format";
+import { isoToDatetimeLocalValue, statusOptionLabel } from "../lib/format";
 import { AdminMatchEventModal, type MatchEventEditPayload } from "../components/AdminMatchEventModal";
 import { MatchEventTeamPlayerFields } from "../components/MatchEventTeamPlayerFields";
 import { eventNeedsTeamPlayer, resolveEventPlayerPayload } from "../lib/matchEventForm";
@@ -16,7 +16,15 @@ import { computeScoresFromScoringEvents } from "../lib/matchEventScores";
 import { TIMELINE_EVENT_OPTIONS } from "../lib/matchEventTimelineOptions";
 import { formatTimelineLine, sortMatchEvents } from "../lib/timeline";
 import { sortMatchesForAdminPicker } from "../lib/matchSort";
-import { QUARTER_FINALS } from "../lib/knockoutBracket";
+import {
+  QUARTER_FINALS,
+  QF_BY_SLOT,
+  qfAdminFixtureLabel,
+  qfScheduledAtIso,
+  qfTeamIdsForSlot,
+  type QfSlot,
+} from "../lib/knockoutBracket";
+import { resolveTeamName } from "../lib/matchTeamNames";
 import { supabase } from "../lib/supabase";
 import { finalComputed, getBySlot, thirdComputed } from "../lib/knockoutResolve";
 import { winnerId } from "../lib/bracket";
@@ -53,6 +61,8 @@ export function AdminPage() {
   const [err, setErr] = useState<string | null>(null);
 
   const matchesForLivePick = useMemo(() => sortMatchesForAdminPicker(matches), [matches]);
+
+  const nameById = useMemo(() => new Map(teams.map((t) => [t.id, t.name] as const)), [teams]);
 
   const liveMatch = useMemo(() => {
     if (!currentLiveMatchId) return null;
@@ -93,7 +103,10 @@ where id = 'YOUR_USER_UUID';`}
   }
 
   const groupMatches = matches.filter((m) => m.stage === "group").sort((a, b) => a.sort_order - b.sort_order);
-  const koMatches = matches.filter((m) => m.stage !== "group").sort((a, b) => a.sort_order - b.sort_order);
+  const qfMatches = matches.filter((m) => m.stage === "qf").sort((a, b) => a.sort_order - b.sort_order);
+  const koMatchesLater = matches
+    .filter((m) => m.stage !== "group" && m.stage !== "qf")
+    .sort((a, b) => a.sort_order - b.sort_order);
 
   async function notify(msgText: string, error?: string | null) {
     setMsg(msgText);
@@ -119,6 +132,30 @@ where id = 'YOUR_USER_UUID';`}
     const { error } = await supabase.from("matches").update(rest).eq("id", id);
     if (error) await notify("", error.message);
     else await notify("Match saved.");
+  }
+
+  async function applyQuarterfinalFixtures() {
+    let ok = 0;
+    for (const def of QUARTER_FINALS) {
+      const m = getBySlot(matches, def.slot);
+      if (!m) continue;
+      const { homeTeamId, awayTeamId } = qfTeamIdsForSlot(def.slot);
+      const { error } = await supabase
+        .from("matches")
+        .update({
+          home_team_id: homeTeamId,
+          away_team_id: awayTeamId,
+          scheduled_at: qfScheduledAtIso(def.slot),
+          sort_order: 99 + def.order,
+        })
+        .eq("id", m.id);
+      if (error) {
+        await notify("", `QF ${def.slot}: ${error.message}`);
+        return;
+      }
+      ok += 1;
+    }
+    await notify(ok ? `Quarter-finals updated (${ok} matches).` : "No quarter-final rows found in database.");
   }
 
   /** Recompute match score from goal + own_goal events (client logic; own_goal credits opponent). */
@@ -380,32 +417,36 @@ where id = 'YOUR_USER_UUID';`}
               >
                 <option value="">None</option>
                 {matchesForLivePick.map((m) => {
-                  const hn = m.home_team_id ? teams.find((t) => t.id === m.home_team_id)?.name : "TBD";
-                  const an = m.away_team_id ? teams.find((t) => t.id === m.away_team_id)?.name : "TBD";
-                  const stageTag =
-                    m.stage === "group"
-                      ? `Group ${m.group_letter ?? "?"}`
-                      : m.stage === "qf"
-                        ? "QF"
-                        : m.stage === "sf"
-                          ? "SF"
-                          : m.stage === "third"
-                            ? "3rd"
-                            : m.stage === "final"
-                              ? "Final"
-                              : m.stage;
-                  const when = m.scheduled_at
-                    ? new Date(m.scheduled_at).toLocaleString(undefined, {
-                        month: "short",
-                        day: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })
-                    : "TBD";
-                  const label = [m.slot_code, m.group_letter].filter(Boolean).join(" ") || m.stage;
+                  const hn = resolveTeamName(m, "home", nameById);
+                  const an = resolveTeamName(m, "away", nameById);
+                  const qfSlot = m.stage === "qf" && m.slot_code && m.slot_code in QF_BY_SLOT ? (m.slot_code as QfSlot) : null;
+                  const optionLabel = qfSlot
+                    ? qfAdminFixtureLabel(qfSlot)
+                    : (() => {
+                        const stageTag =
+                          m.stage === "group"
+                            ? `Group ${m.group_letter ?? "?"}`
+                            : m.stage === "sf"
+                              ? "SF"
+                              : m.stage === "third"
+                                ? "3rd"
+                                : m.stage === "final"
+                                  ? "Final"
+                                  : m.stage;
+                        const when = m.scheduled_at
+                          ? new Date(m.scheduled_at).toLocaleString(undefined, {
+                              month: "short",
+                              day: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })
+                          : "TBD";
+                        const label = [m.slot_code, m.group_letter].filter(Boolean).join(" ") || m.stage;
+                        return `[${stageTag}] ${when} · ${label} · ${hn} vs ${an}`;
+                      })();
                   return (
                     <option key={m.id} value={m.id}>
-                      [{stageTag}] {when} · {label} · {hn} vs {an}
+                      {optionLabel}
                     </option>
                   );
                 })}
@@ -456,7 +497,34 @@ where id = 'YOUR_USER_UUID';`}
           </div>
 
           <h2 style={{ marginTop: 24, fontSize: 14, letterSpacing: "0.12em", textTransform: "uppercase" }}>
-            Knockout
+            Quarter-finals · May 24
+          </h2>
+          <p className="muted" style={{ marginTop: 0, fontSize: 12 }}>
+            Fixed bracket. If teams show as TBD, click <strong>Apply QF fixtures</strong> on the QF bracket tab (or run the
+            Supabase patch).
+          </p>
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Slot</th>
+                  <th>When</th>
+                  <th>Match-up</th>
+                  <th>Score</th>
+                  <th>Status</th>
+                  <th />
+                </tr>
+              </thead>
+              <tbody>
+                {qfMatches.map((m) => (
+                  <KoMatchRow key={m.id} m={m} teams={teams} nameById={nameById} onSave={(p) => void saveMatch(p)} />
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <h2 style={{ marginTop: 24, fontSize: 14, letterSpacing: "0.12em", textTransform: "uppercase" }}>
+            Semi-finals &amp; finals
           </h2>
           <div className="table-wrap">
             <table>
@@ -471,8 +539,8 @@ where id = 'YOUR_USER_UUID';`}
                 </tr>
               </thead>
               <tbody>
-                {koMatches.map((m) => (
-                  <KoMatchRow key={m.id} m={m} teams={teams} onSave={(p) => void saveMatch(p)} />
+                {koMatchesLater.map((m) => (
+                  <KoMatchRow key={m.id} m={m} teams={teams} nameById={nameById} onSave={(p) => void saveMatch(p)} />
                 ))}
               </tbody>
             </table>
@@ -483,42 +551,36 @@ where id = 'YOUR_USER_UUID';`}
       {tab === "qf" && (
         <section className="card">
           <h2 style={{ marginTop: 0, fontSize: 14, letterSpacing: "0.12em", textTransform: "uppercase" }}>
-            Quarter-finals (fixed)
+            Quarter-finals (fixed) · May 24
           </h2>
           <p className="muted">
-            Bracket is set — no draw. Edit kickoff, score, and status under <strong>Fixtures &amp; results → Knockout</strong>.
+            Bracket is set — no draw. Scores and status are edited below or under <strong>Fixtures &amp; results</strong>.
             After QFs finish, use <strong>Sync bracket</strong> for semi-finals and finals.
           </p>
-          <div className="table-wrap" style={{ marginTop: 14 }}>
+          <button
+            type="button"
+            className="btn btn-primary"
+            style={{ marginBottom: 14 }}
+            onClick={() => void applyQuarterfinalFixtures()}
+          >
+            Apply QF fixtures to database
+          </button>
+          <div className="table-wrap">
             <table>
               <thead>
                 <tr>
-                  <th>Order</th>
                   <th>Slot</th>
-                  <th>Time</th>
-                  <th>Pairing</th>
-                  <th>Match</th>
+                  <th>When</th>
+                  <th>Match-up</th>
+                  <th>Score</th>
                   <th>Status</th>
+                  <th />
                 </tr>
               </thead>
               <tbody>
-                {QUARTER_FINALS.map((def) => {
-                  const qm = getBySlot(matches, def.slot);
-                  const hn = qm?.home_team_id ? teams.find((t) => t.id === qm.home_team_id)?.name : null;
-                  const an = qm?.away_team_id ? teams.find((t) => t.id === qm.away_team_id)?.name : null;
-                  return (
-                    <tr key={def.slot}>
-                      <td>{def.orderLabel}</td>
-                      <td>{def.slot}</td>
-                      <td style={{ fontVariantNumeric: "tabular-nums" }}>{def.timeWindow}</td>
-                      <td>{def.pairing}</td>
-                      <td style={{ fontWeight: 700 }}>
-                        {hn ?? def.homeTeamName} vs {an ?? def.awayTeamName}
-                      </td>
-                      <td>{qm ? statusOptionLabel(qm.status) : "—"}</td>
-                    </tr>
-                  );
-                })}
+                {qfMatches.map((m) => (
+                  <KoMatchRow key={m.id} m={m} teams={teams} nameById={nameById} onSave={(p) => void saveMatch(p)} />
+                ))}
               </tbody>
             </table>
           </div>
@@ -645,27 +707,44 @@ function GroupMatchRow({
 function KoMatchRow({
   m,
   teams,
+  nameById,
   onSave,
 }: {
   m: MatchRow;
   teams: Database["public"]["Tables"]["teams"]["Row"][];
+  nameById: Map<string, string>;
   onSave: (p: Partial<MatchRow> & { id: string }) => void;
 }) {
+  const qfSlot = m.stage === "qf" && m.slot_code && m.slot_code in QF_BY_SLOT ? (m.slot_code as QfSlot) : null;
+  const bracketIds = qfSlot ? qfTeamIdsForSlot(qfSlot) : null;
+
   const [hs, setHs] = useState(String(m.home_score));
   const [as, setAs] = useState(String(m.away_score));
   const [st, setSt] = useState<MatchStatus>(m.status);
-  const [when, setWhen] = useState(m.scheduled_at ? m.scheduled_at.slice(0, 16) : "");
+  const [homeId, setHomeId] = useState(m.home_team_id ?? bracketIds?.homeTeamId ?? "");
+  const [awayId, setAwayId] = useState(m.away_team_id ?? bracketIds?.awayTeamId ?? "");
+  const [when, setWhen] = useState(() => {
+    if (m.scheduled_at) return isoToDatetimeLocalValue(m.scheduled_at);
+    if (qfSlot) return isoToDatetimeLocalValue(qfScheduledAtIso(qfSlot));
+    return "";
+  });
 
   useEffect(() => {
     setSt(m.status);
     setHs(String(m.home_score));
     setAs(String(m.away_score));
-  }, [m.id, m.status, m.home_score, m.away_score]);
+    setHomeId(m.home_team_id ?? bracketIds?.homeTeamId ?? "");
+    setAwayId(m.away_team_id ?? bracketIds?.awayTeamId ?? "");
+    if (m.scheduled_at) setWhen(isoToDatetimeLocalValue(m.scheduled_at));
+    else if (qfSlot) setWhen(isoToDatetimeLocalValue(qfScheduledAtIso(qfSlot)));
+  }, [m.id, m.status, m.home_score, m.away_score, m.home_team_id, m.away_team_id, m.scheduled_at, qfSlot]);
 
   function submit(e: FormEvent) {
     e.preventDefault();
     onSave({
       id: m.id,
+      home_team_id: homeId || null,
+      away_team_id: awayId || null,
       home_score: Number(hs),
       away_score: Number(as),
       status: st,
@@ -673,15 +752,56 @@ function KoMatchRow({
     });
   }
 
+  const homeLabel = resolveTeamName(m, "home", nameById);
+  const awayLabel = resolveTeamName(m, "away", nameById);
+
   return (
     <tr>
       <td>{m.slot_code}</td>
       <td>
-        <input type="datetime-local" value={when} onChange={(e) => setWhen(e.target.value)} />
+        {qfSlot ? (
+          <div style={{ fontSize: 12, lineHeight: 1.4 }}>
+            <div style={{ fontWeight: 700 }}>May 24</div>
+            <div className="muted">{QF_BY_SLOT[qfSlot].timeWindow}</div>
+            <input
+              type="datetime-local"
+              value={when}
+              onChange={(e) => setWhen(e.target.value)}
+              style={{ marginTop: 6, maxWidth: "100%" }}
+            />
+          </div>
+        ) : (
+          <input type="datetime-local" value={when} onChange={(e) => setWhen(e.target.value)} />
+        )}
       </td>
       <td>
-        {m.home_team_id ? teams.find((t) => t.id === m.home_team_id)?.name : "—"} vs{" "}
-        {m.away_team_id ? teams.find((t) => t.id === m.away_team_id)?.name : "—"}
+        {qfSlot ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: 6, minWidth: 160 }}>
+            <select className="select" value={homeId} onChange={(e) => setHomeId(e.target.value)}>
+              <option value="">—</option>
+              {teams.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
+                </option>
+              ))}
+            </select>
+            <span className="muted" style={{ fontSize: 11, textAlign: "center" }}>
+              vs
+            </span>
+            <select className="select" value={awayId} onChange={(e) => setAwayId(e.target.value)}>
+              <option value="">—</option>
+              {teams.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        ) : (
+          <>
+            {homeLabel} vs {awayLabel}
+          </>
+        )}
       </td>
       <td>
         <input style={{ width: 48 }} value={hs} onChange={(e) => setHs(e.target.value)} /> –{" "}
