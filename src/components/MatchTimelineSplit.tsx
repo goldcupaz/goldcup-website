@@ -1,20 +1,20 @@
 import type { Database } from "../lib/database.types";
+import { resolveMatchTeamIds, resolveTeamName } from "../lib/matchTeamNames";
 import { formatTimelineLine, isClockTimelineEvent, sortMatchEvents } from "../lib/timeline";
 
 type MatchRow = Database["public"]["Tables"]["matches"]["Row"];
 type MatchEventRow = Database["public"]["Tables"]["match_events"]["Row"];
 
-function teamLabel(map: Map<string, string>, id: string | null) {
-  if (!id) return "TBD";
-  return map.get(id) ?? "TBD";
-}
-
-function eventSide(ev: MatchEventRow, match: MatchRow): "home" | "away" | "neutral" {
+function eventSide(
+  ev: MatchEventRow,
+  homeTeamId: string | null,
+  awayTeamId: string | null,
+): "home" | "away" | "neutral" {
   if (isClockTimelineEvent(ev.event_type)) return "neutral";
-  if (!match.home_team_id || !match.away_team_id) return "neutral";
+  if (!homeTeamId || !awayTeamId) return "neutral";
   if (!ev.team_id) return "neutral";
-  if (ev.team_id === match.home_team_id) return "home";
-  if (ev.team_id === match.away_team_id) return "away";
+  if (ev.team_id === homeTeamId) return "home";
+  if (ev.team_id === awayTeamId) return "away";
   return "neutral";
 }
 
@@ -30,8 +30,9 @@ type Props = {
  */
 export function MatchTimelineSplit({ match, events, teamNameById, className }: Props) {
   const sorted = sortMatchEvents(events.filter((e) => e.match_id === match.id));
-  const homeName = teamLabel(teamNameById, match.home_team_id);
-  const awayName = teamLabel(teamNameById, match.away_team_id);
+  const { homeTeamId, awayTeamId } = resolveMatchTeamIds(match);
+  const homeName = resolveTeamName(match, "home", teamNameById);
+  const awayName = resolveTeamName(match, "away", teamNameById);
 
   return (
     <div className={className ? `match-timeline-split ${className}` : "match-timeline-split"}>
@@ -44,7 +45,7 @@ export function MatchTimelineSplit({ match, events, teamNameById, className }: P
           <p className="muted match-timeline-split-empty">No timeline events yet.</p>
         ) : null}
         {sorted.map((ev) => {
-          const side = eventSide(ev, match);
+          const side = eventSide(ev, homeTeamId, awayTeamId);
           const line = formatTimelineLine(ev, teamNameById);
           if (side === "neutral") {
             return (

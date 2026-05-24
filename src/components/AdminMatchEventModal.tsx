@@ -7,6 +7,7 @@ import {
   resolveEventPlayerPayload,
 } from "../lib/matchEventForm";
 import { TIMELINE_EVENT_OPTIONS } from "../lib/matchEventTimelineOptions";
+import { resolveMatchTeamIds } from "../lib/matchTeamNames";
 import { MatchEventTeamPlayerFields } from "./MatchEventTeamPlayerFields";
 
 type MatchRow = Database["public"]["Tables"]["matches"]["Row"];
@@ -45,8 +46,9 @@ export function AdminMatchEventModal({ match, event, teams, players, onClose, on
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  const homeTeam = teams.find((t) => t.id === match.home_team_id);
-  const awayTeam = teams.find((t) => t.id === match.away_team_id);
+  const { homeTeamId, awayTeamId } = resolveMatchTeamIds(match);
+  const homeTeam = teams.find((t) => t.id === homeTeamId);
+  const awayTeam = teams.find((t) => t.id === awayTeamId);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -63,11 +65,11 @@ export function AdminMatchEventModal({ match, event, teams, players, onClose, on
       event.event_minute != null && Number.isFinite(event.event_minute) ? String(event.event_minute) : "",
     );
     setNote(event.event_note ?? "");
-    const init = initialSideAndPlayer(event, match.home_team_id, match.away_team_id, players);
+    const init = initialSideAndPlayer(event, homeTeamId, awayTeamId, players);
     setSide(init.side);
     setSelectedPlayerId(init.selectedPlayerId);
     setManualName(init.manualName);
-  }, [event, match.home_team_id, match.away_team_id, players]);
+  }, [event, homeTeamId, awayTeamId, players]);
 
   function parseMinute(): number | null {
     const t = minuteStr.trim();
@@ -89,8 +91,8 @@ export function AdminMatchEventModal({ match, event, teams, players, onClose, on
       const resolved = resolveEventPlayerPayload(
         evType,
         side,
-        match.home_team_id,
-        match.away_team_id,
+        homeTeamId,
+        awayTeamId,
         players,
         selectedPlayerId,
         manualName,
@@ -174,8 +176,8 @@ export function AdminMatchEventModal({ match, event, teams, players, onClose, on
             onSideChange={setSide}
             homeTeam={homeTeam}
             awayTeam={awayTeam}
-            homeTeamId={match.home_team_id}
-            awayTeamId={match.away_team_id}
+            homeTeamId={homeTeamId}
+            awayTeamId={awayTeamId}
             players={players}
             selectedPlayerId={selectedPlayerId}
             onSelectedPlayerIdChange={setSelectedPlayerId}

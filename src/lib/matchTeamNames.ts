@@ -36,3 +36,21 @@ export function resolveTeamId(match: MatchSides, side: "home" | "away"): string 
   }
   return null;
 }
+
+/** Effective home/away team ids (stored on match or fixed QF bracket). */
+export function resolveMatchTeamIds(match: MatchSides): {
+  homeTeamId: string | null;
+  awayTeamId: string | null;
+} {
+  return {
+    homeTeamId: resolveTeamId(match, "home"),
+    awayTeamId: resolveTeamId(match, "away"),
+  };
+}
+
+export function qfMatchNeedsTeamPersist(match: MatchSides): boolean {
+  if (match.stage !== "qf" || !match.slot_code || !(match.slot_code in QF_BY_SLOT)) return false;
+  const { homeTeamId, awayTeamId } = resolveMatchTeamIds(match);
+  if (!homeTeamId || !awayTeamId) return false;
+  return !match.home_team_id || !match.away_team_id;
+}

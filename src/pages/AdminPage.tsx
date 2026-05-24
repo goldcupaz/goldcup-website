@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 
 import { useAuth } from "../context/AuthContext";
@@ -24,7 +24,7 @@ import {
   qfTeamIdsForSlot,
   type QfSlot,
 } from "../lib/knockoutBracket";
-import { resolveTeamName } from "../lib/matchTeamNames";
+import { qfMatchNeedsTeamPersist, resolveMatchTeamIds, resolveTeamName } from "../lib/matchTeamNames";
 import { supabase } from "../lib/supabase";
 import { finalComputed, getBySlot, thirdComputed } from "../lib/knockoutResolve";
 import { winnerId } from "../lib/bracket";
@@ -116,6 +116,20 @@ where id = 'YOUR_USER_UUID';`}
 
   /** Set which match is featured on the Live tab. */
   async function setLiveMatch(matchId: string | null) {
+    if (matchId) {
+      const picked = matches.find((m) => m.id === matchId);
+      if (picked && qfMatchNeedsTeamPersist(picked)) {
+        const { homeTeamId, awayTeamId } = resolveMatchTeamIds(picked);
+        const { error: te } = await supabase
+          .from("matches")
+          .update({ home_team_id: homeTeamId, away_team_id: awayTeamId })
+          .eq("id", picked.id);
+        if (te) {
+          await notify("", te.message);
+          return;
+        }
+      }
+    }
     const value = { id: matchId };
     const { error } = await supabase
       .from("site_settings")
@@ -166,7 +180,8 @@ where id = 'YOUR_USER_UUID';`}
       .eq("id", matchId)
       .maybeSingle();
     if (e1) return `Score sync: ${e1.message}`;
-    if (!m?.home_team_id || !m.away_team_id) return null;
+    const { homeTeamId, awayTeamId } = resolveMatchTeamIds(m);
+    if (!homeTeamId || !awayTeamId) return null;
 
     const { data: evs, error: e2 } = await supabase
       .from("match_events")
@@ -175,8 +190,8 @@ where id = 'YOUR_USER_UUID';`}
     if (e2) return `Score sync: ${e2.message}`;
 
     const { home, away } = computeScoresFromScoringEvents(
-      m.home_team_id,
-      m.away_team_id,
+      homeTeamId,
+      awayTeamId,
       (evs ?? []) as { event_type: MatchEventType; team_id: string | null }[],
     );
     const { error: e3 } = await supabase.from("matches").update({ home_score: home, away_score: away }).eq("id", matchId);
@@ -859,6 +874,9 @@ function LiveEditor({
   const [addMinuteStr, setAddMinuteStr] = useState("");
   const [addNote, setAddNote] = useState("");
   const [editingEvent, setEditingEvent] = useState<MatchEventRow | null>(null);
+  const persistedTeamsForMatch = useRef<string | null>(null);
+
+  const { homeTeamId, awayTeamId } = useMemo(() => resolveMatchTeamIds(match), [match]);
 
   useEffect(() => {
     setHs(String(match.home_score));
@@ -870,10 +888,19 @@ function LiveEditor({
     setAddMinuteStr("");
     setAddNote("");
     setEditingEvent(null);
+    persistedTeamsForMatch.current = null;
   }, [match.id, match.home_score, match.away_score, match.home_team_id, match.away_team_id]);
 
-  const homeTeam = teams.find((t) => t.id === match.home_team_id);
-  const awayTeam = teams.find((t) => t.id === match.away_team_id);
+  useEffect(() => {
+    if (!qfMatchNeedsTeamPersist(match)) return;
+    if (persistedTeamsForMatch.current === match.id) return;
+    if (!homeTeamId || !awayTeamId) return;
+    persistedTeamsForMatch.current = match.id;
+    onSave({ id: match.id, home_team_id: homeTeamId, away_team_id: awayTeamId });
+  }, [match, homeTeamId, awayTeamId, onSave]);
+
+  const homeTeam = teams.find((t) => t.id === homeTeamId);
+  const awayTeam = teams.find((t) => t.id === awayTeamId);
   const teamNameById = useMemo(() => new Map(teams.map((t) => [t.id, t.name] as const)), [teams]);
 
   function submitScore(e: FormEvent) {
@@ -898,8 +925,8 @@ function LiveEditor({
       const resolved = resolveEventPlayerPayload(
         evType,
         side,
-        match.home_team_id,
-        match.away_team_id,
+        homeTeamId,
+        awayTeamId,
         players,
         selectedPlayerId,
         manualName,
@@ -1026,8 +1053,8 @@ function LiveEditor({
             onSideChange={setSide}
             homeTeam={homeTeam}
             awayTeam={awayTeam}
-            homeTeamId={match.home_team_id}
-            awayTeamId={match.away_team_id}
+            homeTeamId={homeTeamId}
+            awayTeamId={awayTeamId}
             players={players}
             selectedPlayerId={selectedPlayerId}
             onSelectedPlayerIdChange={setSelectedPlayerId}
