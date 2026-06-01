@@ -21,6 +21,7 @@ import { LinksPage } from "./pages/LinksPage";
 import { AboutPage } from "./pages/AboutPage";
 import { FanzonePage } from "./pages/FanzonePage";
 import { RulesPage } from "./pages/RulesPage";
+import { TicketsPage } from "./pages/TicketsPage";
 
 export default function App() {
   return (
@@ -36,6 +37,7 @@ export default function App() {
               <Route path="matches" element={<Navigate to="/fixtures" replace />} />
               <Route path="matches/:matchId" element={<MatchDetailPage />} />
               <Route path="fanzone" element={<FanzonePage />} />
+              <Route path="tickets" element={<TicketsPage />} />
               <Route path="rules" element={<RulesPage />} />
               <Route path="live" element={<LiveMatchPage />} />
               <Route path="teams/:teamId" element={<TeamDetailPage />} />

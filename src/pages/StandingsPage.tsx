@@ -1,5 +1,7 @@
 import { useMemo } from "react";
+import { Link } from "react-router-dom";
 
+import { TeamBadge } from "../components/TeamBadge";
 import { useTournament } from "../context/TournamentContext";
 import { computeStandingsForGroup } from "../lib/standings";
 
@@ -18,50 +20,45 @@ export function StandingsPage() {
   if (loading && teams.length === 0) return <p className="empty">Loading…</p>;
 
   return (
-    <main>
+    <main className="standings-page standings-page--premium">
       <h1 className="page-title">Standings</h1>
-      <p className="subtitle">
-        Group standings use current scores for live matches and half-time (points, GF/GA/GD update in real time) and lock
-        in when each match finishes. Points shown are after any disciplinary deduction. Tiebreak (after points): goal
-        difference, goals scored, head-to-head among teams still tied, goals conceded (fewer is better), then a fixed draw
-        order.
-      </p>
       {error && <div className="alert warn">{error}</div>}
-      <div className="grid-2">
+      <div className="standings-premium-grid">
         {tables.map(({ letter, rows }) => (
-          <section key={letter} className="card">
-            <div className="badge" style={{ marginBottom: 12 }}>
-              Group {letter}
+          <section key={letter} className="card standings-group-card">
+            <div className="standings-group-card__head">
+              <span className="badge">Group {letter}</span>
             </div>
             <div className="table-wrap">
-              <table>
+              <table className="standings-table-compact">
                 <thead>
                   <tr>
                     <th>#</th>
                     <th>Team</th>
-                    <th>P</th>
-                    <th>W</th>
-                    <th>D</th>
-                    <th>L</th>
-                    <th>GF</th>
-                    <th>GA</th>
-                    <th>GD</th>
-                    <th>Pts</th>
+                    <th className="standings-priority">W</th>
+                    <th className="standings-priority">GD</th>
+                    <th className="standings-priority standings-th-pts">PTS</th>
+                    <th className="standings-secondary">P</th>
+                    <th className="standings-secondary">D</th>
+                    <th className="standings-secondary">L</th>
                   </tr>
                 </thead>
                 <tbody>
                   {rows.map((r, i) => (
                     <tr key={r.team.id}>
                       <td>{i + 1}</td>
-                      <td style={{ fontWeight: 800 }}>{r.team.name}</td>
-                      <td>{r.played}</td>
-                      <td>{r.wins}</td>
-                      <td>{r.draws}</td>
-                      <td>{r.losses}</td>
-                      <td>{r.gf}</td>
-                      <td>{r.ga}</td>
-                      <td>{r.gd}</td>
-                      <td style={{ color: "var(--gold)", fontWeight: 900 }}>{r.pts}</td>
+                      <td className="standings-team-cell">
+                        <TeamBadge name={r.team.name} size="sm" />
+                        <Link to={`/teams/${r.team.id}`} className="standings-team-link">
+                          {r.team.name}
+                        </Link>
+                      </td>
+                      <td className="standings-priority">{r.wins}</td>
+                      <td className="standings-priority">{r.gd > 0 ? `+${r.gd}` : r.gd}</td>
+                      <td className="standings-priority standings-td-pts">{r.pts}</td>
+                      <td className="standings-secondary">{r.played}</td>
+                      <td className="standings-secondary">{r.draws}</td>
+                      <td className="standings-secondary">{r.losses}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -70,9 +67,7 @@ export function StandingsPage() {
           </section>
         ))}
       </div>
-      <p className="muted standings-footnote" style={{ marginTop: 16, fontSize: 13 }}>
-        *Points may include disciplinary deductions.
-      </p>
+      <p className="muted standings-footnote standings-footnote--compact">*Points may include disciplinary deductions.</p>
     </main>
   );
 }

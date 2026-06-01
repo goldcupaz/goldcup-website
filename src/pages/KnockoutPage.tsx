@@ -105,15 +105,6 @@ export function KnockoutPage() {
           <section className="round">
             <h3>Finals</h3>
             <MatchCard
-              label="Final"
-              m={fin}
-              teams={teams}
-              computedHome={c_final.homeId}
-              computedAway={c_final.awayId}
-              phH="Winner SF1"
-              phA="Winner SF2"
-            />
-            <MatchCard
               label="Third Place Match"
               m={third}
               teams={teams}
@@ -121,6 +112,15 @@ export function KnockoutPage() {
               computedAway={c_third.awayId}
               phH="Loser SF1"
               phA="Loser SF2"
+            />
+            <MatchCard
+              label="Final"
+              m={fin}
+              teams={teams}
+              computedHome={c_final.homeId}
+              computedAway={c_final.awayId}
+              phH="Winner SF1"
+              phA="Winner SF2"
             />
           </section>
         </div>

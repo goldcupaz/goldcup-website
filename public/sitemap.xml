@@ -8,6 +8,7 @@
   <url><loc>https://goldcupaz.netlify.app/statistics</loc><changefreq>daily</changefreq><priority>0.8</priority></url>
   <url><loc>https://goldcupaz.netlify.app/sponsors</loc><changefreq>monthly</changefreq><priority>0.75</priority></url>
   <url><loc>https://goldcupaz.netlify.app/fanzone</loc><changefreq>weekly</changefreq><priority>0.75</priority></url>
+  <url><loc>https://goldcupaz.netlify.app/tickets</loc><changefreq>weekly</changefreq><priority>0.85</priority></url>
   <url><loc>https://goldcupaz.netlify.app/rules</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
   <url><loc>https://goldcupaz.netlify.app/live</loc><changefreq>always</changefreq><priority>0.85</priority></url>
   <url><loc>https://goldcupaz.netlify.app/about</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>

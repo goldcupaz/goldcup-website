@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { isSupabaseConfigured } from "../lib/supabase";
 import { seoForPath } from "../lib/seo";
+import { ITICKET_URL, EXTERNAL_LINK_REL } from "../lib/tickets";
 import { Footer } from "./Footer";
 import { GoldCupSocialLinks } from "./GoldCupSocialLinks";
 import { PageViewTracker } from "./PageViewTracker";
@@ -31,16 +32,16 @@ export function Layout() {
     return () => document.removeEventListener("pointerdown", onPointerDown, true);
   }, [moreOpen]);
 
-  function closeMoreAndMaybeMenu() {
+  function closeNav() {
     setMoreOpen(false);
     setMenuOpen(false);
   }
 
   return (
     <div className="shell">
-      <header className="topbar">
+      <header className="topbar topbar--premium">
         <div className="brand">
-          <Link to="/" className="brand-link" onClick={() => (setMenuOpen(false), setMoreOpen(false))}>
+          <Link to="/" className="brand-link" onClick={closeNav}>
             <img className="brand-logo" src={logo} alt="Gold Cup Azerbaijan logo" width={40} height={40} />
             <span className="brand-name">Gold Cup</span>
           </Link>
@@ -56,36 +57,40 @@ export function Layout() {
           Menu
         </button>
 
-        <nav className={menuOpen ? "nav nav-open" : "nav"} aria-label="Main">
-          <NavLink
-            to="/"
-            end
-            className={({ isActive }) => (isActive ? "active" : undefined)}
-            onClick={() => (setMenuOpen(false), setMoreOpen(false))}
-          >
+        <nav className={menuOpen ? "nav nav-open nav--premium" : "nav nav--premium"} aria-label="Main">
+          <NavLink to="/" end className={({ isActive }) => (isActive ? "active" : undefined)} onClick={closeNav}>
             Home
           </NavLink>
           <NavLink
             to="/fixtures"
             className={({ isActive }) => (isActive ? "active" : undefined)}
-            onClick={() => (setMenuOpen(false), setMoreOpen(false))}
+            onClick={closeNav}
           >
-            Matches
+            Fixtures
           </NavLink>
           <NavLink
             to="/standings"
             className={({ isActive }) => (isActive ? "active" : undefined)}
-            onClick={() => (setMenuOpen(false), setMoreOpen(false))}
+            onClick={closeNav}
           >
             Standings
           </NavLink>
           <NavLink
             to="/teams"
             className={({ isActive }) => (isActive ? "active" : undefined)}
-            onClick={() => (setMenuOpen(false), setMoreOpen(false))}
+            onClick={closeNav}
           >
             Teams
           </NavLink>
+          <a
+            href={ITICKET_URL}
+            target="_blank"
+            rel={EXTERNAL_LINK_REL}
+            className="nav-tickets-external"
+            onClick={closeNav}
+          >
+            Tickets
+          </a>
 
           <div className="nav-more" ref={moreWrapRef}>
             <button
@@ -103,40 +108,47 @@ export function Layout() {
               aria-label="More"
               aria-hidden={!moreOpen}
             >
-              <NavLink to="/groups" className="nav-more-item" onClick={closeMoreAndMaybeMenu}>
-                Groups
+              <NavLink to="/tickets" className="nav-more-item" onClick={closeNav}>
+                Tickets page
               </NavLink>
-              <NavLink to="/knockout" className="nav-more-item" onClick={closeMoreAndMaybeMenu}>
-                Knockout Path
-              </NavLink>
-              <NavLink to="/sponsors" className="nav-more-item" onClick={closeMoreAndMaybeMenu}>
+              <NavLink to="/sponsors" className="nav-more-item" onClick={closeNav}>
                 Sponsors
               </NavLink>
-              <NavLink to="/fanzone" className="nav-more-item" onClick={closeMoreAndMaybeMenu}>
+              <NavLink to="/fanzone" className="nav-more-item" onClick={closeNav}>
                 Fanzone
               </NavLink>
-              <NavLink to="/rules" className="nav-more-item" onClick={closeMoreAndMaybeMenu}>
+              <NavLink to="/rules" className="nav-more-item" onClick={closeNav}>
                 Rules
               </NavLink>
-              <NavLink to="/about" className="nav-more-item" onClick={closeMoreAndMaybeMenu}>
+              <NavLink to="/about" className="nav-more-item" onClick={closeNav}>
                 About
               </NavLink>
-              <NavLink to="/links" className="nav-more-item" onClick={closeMoreAndMaybeMenu}>
+              <NavLink to="/statistics" className="nav-more-item" onClick={closeNav}>
+                Statistics
+              </NavLink>
+              <NavLink to="/groups" className="nav-more-item" onClick={closeNav}>
+                Groups
+              </NavLink>
+              <NavLink to="/knockout" className="nav-more-item" onClick={closeNav}>
+                Knockout path
+              </NavLink>
+              <NavLink to="/links" className="nav-more-item" onClick={closeNav}>
                 Social &amp; registration
+              </NavLink>
+              <NavLink to="/live" className="nav-more-item" onClick={closeNav}>
+                Live match
               </NavLink>
               <div className="nav-more-divider" role="separator" />
               <div className="nav-more-social-label">Follow Gold Cup</div>
-              <GoldCupSocialLinks variant="menu" source="nav_more" onItemClick={closeMoreAndMaybeMenu} />
-              <NavLink to="/statistics" className="nav-more-item" onClick={closeMoreAndMaybeMenu}>
-                Statistics
-              </NavLink>
+              <GoldCupSocialLinks variant="menu" source="nav_more" onItemClick={closeNav} />
               {isSupabaseConfigured && (
                 <>
-                  <NavLink to="/admin" className="nav-more-item" onClick={closeMoreAndMaybeMenu}>
+                  <div className="nav-more-divider" role="separator" />
+                  <NavLink to="/admin" className="nav-more-item" onClick={closeNav}>
                     {adminLabel}
                   </NavLink>
-                  <NavLink to="/volunteer" className="nav-more-item" onClick={closeMoreAndMaybeMenu}>
-                    Volunteer Portal
+                  <NavLink to="/volunteer" className="nav-more-item" onClick={closeNav}>
+                    Volunteer portal
                   </NavLink>
                 </>
               )}

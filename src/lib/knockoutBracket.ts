@@ -240,10 +240,10 @@ export function thirdPlaceAdminFixtureLabel(): string {
   return `Third Place · ${FINAL_MATCHDAY_LABEL} · ${THIRD_PLACE_FIXTURE.timeWindow} · ${THIRD_PLACE_FIXTURE.homeTeamName} vs ${THIRD_PLACE_FIXTURE.awayTeamName}`;
 }
 
-/** Apply both Matchday 6 fixtures (final + third place) in display order. */
+/** Matchday 6 fixtures in display order (third place, then final). */
 export const MATCHDAY_6_FIXTURES = [
-  { kind: "final" as const, def: FINAL_FIXTURE },
   { kind: "third" as const, def: THIRD_PLACE_FIXTURE },
+  { kind: "final" as const, def: FINAL_FIXTURE },
 ] as const;
 
 export type KoTimeMatch = {

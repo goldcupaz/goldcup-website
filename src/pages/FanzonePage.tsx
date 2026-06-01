@@ -1,49 +1,29 @@
 import { Link } from "react-router-dom";
 
+import { BuyTicketsButton } from "../components/BuyTicketsButton";
 import { GoldCupSocialLinks } from "../components/GoldCupSocialLinks";
 
 export function FanzonePage() {
   return (
-    <main className="fanzone-page">
-      <h1 className="page-title">Gold Cup Fanzone</h1>
-      <p className="subtitle">
-        Welcome to the Gold Cup fan zone in Baku — follow live scores, connect on social media, and stay close to the
-        youth football tournament atmosphere.
-      </p>
+    <main className="fanzone-page fanzone-page--premium">
+      <h1 className="page-title">Fanzone</h1>
+      <p className="subtitle fanzone-page__lead">Follow Gold Cup Azerbaijan on matchday.</p>
+
+      <section className="card fanzone-tickets-card">
+        <h2 className="section-title section-title--compact">Official tickets</h2>
+        <BuyTicketsButton size="lg" />
+      </section>
 
       <section className="card">
-        <h2 className="section-title">Follow the tournament</h2>
-        <p className="muted" style={{ marginTop: 8 }}>
-          Gold Cup AZ shares match updates, highlights, and announcements across official channels. Whether you support
-          a school team or follow the full mini football tournament in Azerbaijan, the fan zone keeps you connected.
-        </p>
+        <h2 className="section-title section-title--compact">Social</h2>
         <GoldCupSocialLinks variant="list" source="fanzone_page" />
       </section>
 
-      <section className="card" style={{ marginTop: 16 }}>
-        <h2 className="section-title">Registration &amp; tickets</h2>
-        <p className="muted" style={{ marginTop: 8 }}>
-          Teams and volunteers can register through our official forms. Visit the links page for registration and ticket
-          information for this youth sports event in Baku.
-        </p>
-        <p style={{ marginTop: 12 }}>
-          <Link to="/links" className="home-link-more">
-            Social &amp; registration →
-          </Link>
-        </p>
-      </section>
-
-      <section className="card" style={{ marginTop: 16 }}>
-        <h2 className="section-title">Live match centre</h2>
-        <p className="muted" style={{ marginTop: 8 }}>
-          Follow the featured live match with scores and timeline updates during matchdays.
-        </p>
-        <p style={{ marginTop: 12 }}>
-          <Link to="/live" className="home-link-more">
-            Live match →
-          </Link>
-        </p>
-      </section>
+      <p className="muted fanzone-page__links">
+        <Link to="/live">Live match →</Link>
+        {" · "}
+        <Link to="/links">Registration →</Link>
+      </p>
     </main>
   );
 }

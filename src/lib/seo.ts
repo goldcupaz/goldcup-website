@@ -66,6 +66,10 @@ const ROUTE_SEO: Record<string, PageSeo> = {
     description:
       "Gold Cup fan zone in Baku: follow live updates, social channels, registration, and the youth football tournament atmosphere at Gold Cup Azerbaijan.",
   },
+  "/tickets": {
+    title: "Gold Cup Tickets | Gold Cup Azerbaijan",
+    description: "Buy official Gold Cup Azerbaijan tickets through iTicket.",
+  },
   "/rules": {
     title: "Gold Cup Rules & Fair Play | Gold Cup Azerbaijan",
     description:
@@ -178,6 +182,7 @@ export const SITEMAP_PATHS = [
   "/statistics",
   "/sponsors",
   "/fanzone",
+  "/tickets",
   "/rules",
   "/live",
   "/about",

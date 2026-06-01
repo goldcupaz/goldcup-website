@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 
 import { GoldCupSocialLinks } from "./GoldCupSocialLinks";
+import { ITICKET_URL, EXTERNAL_LINK_REL } from "../lib/tickets";
 import { trackSponsorClick } from "../lib/websiteAnalytics";
 import logo from "../assets/goldcup-logo.png";
 import azersunLogo from "../assets/sponsors/azersun.png";
@@ -125,14 +126,32 @@ export function Footer() {
         <div className="site-footer-sponsors">
           <div className="site-footer-head">Links</div>
           <div className="site-footer-links">
-            <Link className="site-footer-link" to="/links">
-              Social & registration
-            </Link>
+            <a className="site-footer-link" href={ITICKET_URL} target="_blank" rel={EXTERNAL_LINK_REL}>
+              Tickets
+            </a>
             <Link className="site-footer-link" to="/sponsors">
               Sponsors
             </Link>
+            <Link className="site-footer-link" to="/fanzone">
+              Fanzone
+            </Link>
+            <Link className="site-footer-link" to="/rules">
+              Rules
+            </Link>
             <Link className="site-footer-link" to="/about">
               About
+            </Link>
+            <Link className="site-footer-link" to="/statistics">
+              Statistics
+            </Link>
+            <Link className="site-footer-link" to="/links">
+              Social &amp; registration
+            </Link>
+            <Link className="site-footer-link" to="/volunteer">
+              Volunteer
+            </Link>
+            <Link className="site-footer-link" to="/admin">
+              Admin
             </Link>
           </div>
         </div>

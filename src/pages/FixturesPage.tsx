@@ -1,29 +1,20 @@
-import { Fragment, useMemo, useState, type KeyboardEvent } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+import { BuyTicketsButton } from "../components/BuyTicketsButton";
+import { PremiumMatchCard } from "../components/PremiumMatchCard";
 import { useTournament } from "../context/TournamentContext";
 import type { Database } from "../lib/database.types";
-import { formatKickoff, statusLabel } from "../lib/format";
-import { isMatchInPlayOrBreak } from "../lib/matchStatus";
 import {
   FINAL_FIXTURE,
   QUARTER_FINALS,
   SEMI_FINALS,
   THIRD_PLACE_FIXTURE,
   FINAL_AFTERPARTY_LABEL,
-  koTimeWindowForMatch,
   type SfSlot,
 } from "../lib/knockoutBracket";
-import { formatMatchScoreLine } from "../lib/matchScoreDisplay";
-import { TeamNameWithQualification } from "../components/TeamNameWithQualification";
-import { resolveTeamName } from "../lib/matchTeamNames";
 
 type MatchRow = Database["public"]["Tables"]["matches"]["Row"];
-
-function teamName(map: Map<string, string>, id: string | null) {
-  if (!id) return "TBD";
-  return map.get(id) ?? "TBD";
-}
 
 /** Local calendar date YYYY-MM-DD for grouping kickoffs in the viewer's timezone */
 function localDateKey(iso: string | null): string | null {
@@ -81,15 +72,15 @@ const FIXTURE_TABS: { index: number; label: string }[] = [
   { index: 0, label: "Matchday 1" },
   { index: 1, label: "Matchday 2" },
   { index: 2, label: "Matchday 3" },
-  { index: 3, label: "Matchday 4 — Quarterfinals" },
-  { index: 4, label: "Matchday 5 — Semifinals" },
-  { index: 5, label: "Matchday 6 — Finals" },
+  { index: 3, label: "Quarterfinals" },
+  { index: 4, label: "Semifinals" },
+  { index: 5, label: "Finals" },
 ];
 
 export function FixturesPage() {
   const { teams, matches, loading, error } = useTournament();
   const navigate = useNavigate();
-  const [filter, setFilter] = useState<"all" | number>(0);
+  const [filter, setFilter] = useState<number>(0);
 
   function goMatch(id: string) {
     navigate(`/matches/${id}`);
@@ -205,17 +196,17 @@ export function FixturesPage() {
 
   const matchday6: KoStyledMatchdayBucket | null = useMemo(() => {
     const sections: KoStyledSection[] = [];
-    if (finalMatch) {
-      sections.push({ variant: "final", dividerTitle: "Final", dividerIcon: "🏆", match: finalMatch });
-    }
     if (thirdPlaceMatch) {
       sections.push({ variant: "third", dividerTitle: "Third Place", match: thirdPlaceMatch });
+    }
+    if (finalMatch) {
+      sections.push({ variant: "final", dividerTitle: "Final", dividerIcon: "🏆", match: finalMatch });
     }
     if (sections.length === 0) return null;
     return {
       key: MD6_KEY,
       label: "Matchday 6 — Finals",
-      subtitle: "Final · Third Place",
+      subtitle: "Third Place · Final",
       matches: sections.map((s) => s.match),
       sections,
       kind: "finals",
@@ -231,19 +222,12 @@ export function FixturesPage() {
   }, [groupMatchdays, matchday4, matchday5, matchday6]);
 
   const visibleSections = useMemo(() => {
-    if (filter === "all") return allMatchdaySections;
     if (filter === 3) return matchday4 ? [matchday4] : [];
     if (filter === 4) return matchday5 ? [matchday5] : [];
     if (filter === 5) return matchday6 ? [matchday6] : [];
     const b = groupMatchdays[filter];
     return b ? [b] : [];
-  }, [allMatchdaySections, filter, groupMatchdays, matchday4, matchday5, matchday6]);
-
-  const qfTimeBySlot = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const q of QUARTER_FINALS) map.set(q.slot, q.timeWindow);
-    return map;
-  }, []);
+  }, [filter, groupMatchdays, matchday4, matchday5, matchday6]);
 
   if (loading && matches.length === 0) return <p className="empty">Loading…</p>;
 
@@ -258,16 +242,16 @@ export function FixturesPage() {
   }
 
   return (
-    <main>
-      <h1 className="page-title">Fixtures / Results</h1>
-      <p className="subtitle">
-        Group stage by matchday, quarter-finals, semi-finals, then Matchday 6 finals. Live matches are highlighted.
-      </p>
+    <main className="fixtures-page fixtures-page--premium">
+      <header className="page-head-row">
+        <h1 className="page-title">Fixtures</h1>
+        <BuyTicketsButton size="sm" />
+      </header>
       {error && <div className="alert warn">{error}</div>}
 
       {hasAnyFixtures && (
         <div className="fixtures-tabs-scroll">
-          <div className="fixtures-tabs-inner" role="tablist" aria-label="Matchday filter">
+          <div className="fixtures-tabs-inner fixtures-tabs-inner--premium" role="tablist" aria-label="Matchday filter">
             {FIXTURE_TABS.map(({ index, label }) => {
               const bucket = tabBucket(index);
               const disabled = !bucket || bucket.matches.length === 0;
@@ -285,15 +269,6 @@ export function FixturesPage() {
                 </button>
               );
             })}
-            <button
-              type="button"
-              role="tab"
-              aria-selected={filter === "all"}
-              className={`fixtures-tab${filter === "all" ? " active" : ""}`}
-              onClick={() => setFilter("all")}
-            >
-              All
-            </button>
           </div>
         </div>
       )}
@@ -306,7 +281,6 @@ export function FixturesPage() {
               key={bucket.key}
               bucket={bucket}
               nameById={nameById}
-              qfTimeBySlot={qfTimeBySlot}
               onOpen={goMatch}
             />
           ) : bucket.kind === "semifinals" || bucket.kind === "finals" ? (
@@ -326,13 +300,6 @@ export function FixturesPage() {
   );
 }
 
-function openMatchKey(e: KeyboardEvent, id: string, onOpen: (id: string) => void) {
-  if (e.key === "Enter" || e.key === " ") {
-    e.preventDefault();
-    onOpen(id);
-  }
-}
-
 function GroupMatchdayCard({
   bucket,
   nameById,
@@ -343,56 +310,16 @@ function GroupMatchdayCard({
   onOpen: (id: string) => void;
 }) {
   return (
-    <section className="matchday-card" aria-labelledby={`md-${bucket.key}`}>
-      <header className="matchday-card-head">
+    <section className="matchday-card matchday-card--premium" aria-labelledby={`md-${bucket.key}`}>
+      <header className="matchday-card-head matchday-card-head--compact">
         <h2 id={`md-${bucket.key}`} className="matchday-card-title">
           {bucket.label}
         </h2>
-        <p className="matchday-card-sub">{bucket.subtitle}</p>
       </header>
-      <div className="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Kickoff</th>
-              <th>Group</th>
-              <th>Home</th>
-              <th className="fixture-hide-vs" aria-hidden />
-              <th>Away</th>
-              <th>Score</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {bucket.matches.map((m) => {
-              const live = isMatchInPlayOrBreak(m.status);
-              const finished = m.status === "full_time";
-              return (
-                <tr
-                  key={m.id}
-                  className="fixture-row fixture-row--clickable"
-                  tabIndex={0}
-                  role="link"
-                  aria-label={`Open match ${teamName(nameById, m.home_team_id)} vs ${teamName(nameById, m.away_team_id)}`}
-                  onClick={() => onOpen(m.id)}
-                  onKeyDown={(e) => openMatchKey(e, m.id, onOpen)}
-                >
-                  <td>{formatKickoff(m.scheduled_at)}</td>
-                  <td>{m.group_letter ?? "—"}</td>
-                  <td style={{ fontWeight: 800 }}>{teamName(nameById, m.home_team_id)}</td>
-                  <td className="muted fixture-hide-vs">vs</td>
-                  <td style={{ fontWeight: 800 }}>{teamName(nameById, m.away_team_id)}</td>
-                  <td style={{ fontVariantNumeric: "tabular-nums" }}>
-                    {finished || live ? formatMatchScoreLine(m) : "—"}
-                  </td>
-                  <td>
-                    {live ? <span className="badge live">LIVE</span> : <span>{statusLabel(m.status)}</span>}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+      <div className="premium-match-list">
+        {bucket.matches.map((m) => (
+          <PremiumMatchCard key={m.id} match={m} nameById={nameById} onOpen={onOpen} />
+        ))}
       </div>
     </section>
   );
@@ -401,76 +328,23 @@ function GroupMatchdayCard({
 function QuarterfinalsMatchdayCard({
   bucket,
   nameById,
-  qfTimeBySlot,
   onOpen,
 }: {
   bucket: MatchdayBucket;
   nameById: Map<string, string>;
-  qfTimeBySlot: Map<string, string>;
   onOpen: (id: string) => void;
 }) {
   return (
-    <section className="matchday-card matchday-card--quarterfinals" aria-labelledby={`md-${bucket.key}`}>
-      <header className="matchday-card-head">
+    <section className="matchday-card matchday-card--premium matchday-card--quarterfinals" aria-labelledby={`md-${bucket.key}`}>
+      <header className="matchday-card-head matchday-card-head--compact">
         <h2 id={`md-${bucket.key}`} className="matchday-card-title">
           {bucket.label}
         </h2>
-        <p className="matchday-card-sub">{bucket.subtitle}</p>
       </header>
-      <div className="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Time</th>
-              <th>Round</th>
-              <th>Home</th>
-              <th className="fixture-hide-vs" aria-hidden />
-              <th>Away</th>
-              <th>Score</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {bucket.matches.map((m, idx) => {
-              const live = isMatchInPlayOrBreak(m.status);
-              const finished = m.status === "full_time";
-              const slot = m.slot_code ?? "";
-              const timeLabel = qfTimeBySlot.get(slot) ?? formatKickoff(m.scheduled_at);
-              const showBuffer = idx < bucket.matches.length - 1;
-              return (
-                <Fragment key={m.id}>
-                  <tr
-                    className="fixture-row fixture-row--clickable"
-                    tabIndex={0}
-                    role="link"
-                    aria-label={`Open match ${resolveTeamName(m, "home", nameById)} vs ${resolveTeamName(m, "away", nameById)}`}
-                    onClick={() => onOpen(m.id)}
-                    onKeyDown={(e) => openMatchKey(e, m.id, onOpen)}
-                  >
-                    <td style={{ fontVariantNumeric: "tabular-nums", fontWeight: 700 }}>{timeLabel}</td>
-                    <td>{slot || "QF"}</td>
-                    <td style={{ fontWeight: 800 }}>{resolveTeamName(m, "home", nameById)}</td>
-                    <td className="muted fixture-hide-vs">vs</td>
-                    <td style={{ fontWeight: 800 }}>{resolveTeamName(m, "away", nameById)}</td>
-                    <td style={{ fontVariantNumeric: "tabular-nums" }}>
-                      {finished || live ? formatMatchScoreLine(m) : "—"}
-                    </td>
-                    <td>
-                      {live ? <span className="badge live">LIVE</span> : <span>{statusLabel(m.status)}</span>}
-                    </td>
-                  </tr>
-                  {showBuffer && (
-                    <tr className="fixtures-qf-buffer" aria-hidden>
-                      <td colSpan={7}>
-                        <span className="fixtures-qf-buffer-line" />
-                      </td>
-                    </tr>
-                  )}
-                </Fragment>
-              );
-            })}
-          </tbody>
-        </table>
+      <div className="premium-match-list">
+        {bucket.matches.map((m) => (
+          <PremiumMatchCard key={m.id} match={m} nameById={nameById} onOpen={onOpen} />
+        ))}
       </div>
     </section>
   );
@@ -517,11 +391,10 @@ function KoStyledMatchdayCard({
       className={`matchday-card matchday-card--ko-styled matchday-card--${cardMod}`}
       aria-labelledby={`md-${bucket.key}`}
     >
-      <header className="matchday-card-head">
+      <header className="matchday-card-head matchday-card-head--compact">
         <h2 id={`md-${bucket.key}`} className="matchday-card-title">
           {bucket.label}
         </h2>
-        <p className="matchday-card-sub">{bucket.subtitle}</p>
       </header>
       <div className="finals-matchday-sections">
         {bucket.sections.map((section, index) => (
@@ -530,25 +403,7 @@ function KoStyledMatchdayCard({
             className={`finals-matchday-section finals-matchday-section--${section.variant}${index > 0 ? " finals-matchday-section--separated" : ""}`}
           >
             <KoStyledSectionDivider title={section.dividerTitle} variant={section.variant} icon={section.dividerIcon} />
-            <div className="finals-matchday-table-card">
-              <div className="table-wrap finals-matchday-table-wrap">
-                <table className="finals-fixture-table">
-                  <thead>
-                    <tr>
-                      <th>Time</th>
-                      <th className="finals-fixture-team-col">Home</th>
-                      <th className="fixture-hide-vs finals-fixture-vs-col" aria-hidden />
-                      <th className="finals-fixture-team-col">Away</th>
-                      <th>Score</th>
-                      <th>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <KoStyledFixtureRow m={section.match} nameById={nameById} onOpen={onOpen} />
-                  </tbody>
-                </table>
-              </div>
-            </div>
+            <PremiumMatchCard match={section.match} nameById={nameById} onOpen={onOpen} />
             {section.variant === "final" && (
               <div className="finals-afterparty" role="note">
                 <span className="finals-afterparty__line" aria-hidden />
@@ -568,46 +423,3 @@ function KoStyledMatchdayCard({
   );
 }
 
-function KoStyledFixtureRow({
-  m,
-  nameById,
-  onOpen,
-}: {
-  m: MatchRow;
-  nameById: Map<string, string>;
-  onOpen: (id: string) => void;
-}) {
-  const live = isMatchInPlayOrBreak(m.status);
-  const finished = m.status === "full_time";
-  const homeName = resolveTeamName(m, "home", nameById);
-  const awayName = resolveTeamName(m, "away", nameById);
-  const timeLabel = koTimeWindowForMatch(m) ?? formatKickoff(m.scheduled_at);
-
-  return (
-    <tr
-      className="fixture-row fixture-row--clickable fixture-row--ko-styled"
-      tabIndex={0}
-      role="link"
-      aria-label={`Open match ${homeName} vs ${awayName}`}
-      onClick={() => onOpen(m.id)}
-      onKeyDown={(e) => openMatchKey(e, m.id, onOpen)}
-    >
-      <td className="finals-fixture-kickoff">{timeLabel}</td>
-      <td className="finals-fixture-team finals-fixture-team--home">
-        <span className="finals-fixture-team-inner">
-          <TeamNameWithQualification match={m} side="home" nameById={nameById} />
-        </span>
-      </td>
-      <td className="muted fixture-hide-vs finals-fixture-vs">vs</td>
-      <td className="finals-fixture-team finals-fixture-team--away">
-        <span className="finals-fixture-team-inner">
-          <TeamNameWithQualification match={m} side="away" nameById={nameById} />
-        </span>
-      </td>
-      <td className="finals-fixture-score">{finished || live ? formatMatchScoreLine(m) : "—"}</td>
-      <td className="finals-fixture-status">
-        {live ? <span className="badge live">LIVE</span> : <span>{statusLabel(m.status)}</span>}
-      </td>
-    </tr>
-  );
-}

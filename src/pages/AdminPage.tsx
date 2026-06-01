@@ -703,7 +703,7 @@ where id = 'YOUR_USER_UUID';`}
             Matchday 6 — Finals
           </h2>
           <p className="muted" style={{ marginTop: 0, fontSize: 12 }}>
-            Final: MTK Eagles vs Sambo FC · Third Place: Ebra FC vs EAS Saints. Penalty shootout kicks on the Live tab.
+            Third Place: Ebra FC vs EAS Saints · Final: MTK Eagles vs Sambo FC. Penalty shootout kicks on the Live tab.
           </p>
           <button
             type="button"
