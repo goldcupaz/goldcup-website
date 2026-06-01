@@ -50,8 +50,10 @@ type MatchdayBucket = {
   kind: "group" | "quarterfinals" | "semifinals" | "finals";
 };
 
+type FinalsSectionKey = "final" | "third";
+
 type FinalsSection = {
-  roundLabel: string;
+  key: FinalsSectionKey;
   match: MatchRow;
 };
 
@@ -187,13 +189,13 @@ export function FixturesPage() {
 
   const matchday6: FinalsMatchdayBucket | null = useMemo(() => {
     const sections: FinalsSection[] = [];
-    if (finalMatch) sections.push({ roundLabel: "Final", match: finalMatch });
-    if (thirdPlaceMatch) sections.push({ roundLabel: "Third Place Match", match: thirdPlaceMatch });
+    if (finalMatch) sections.push({ key: "final", match: finalMatch });
+    if (thirdPlaceMatch) sections.push({ key: "third", match: thirdPlaceMatch });
     if (sections.length === 0) return null;
     return {
       key: MD6_KEY,
       label: "Matchday 6 — Finals",
-      subtitle: "Final · Third Place Match",
+      subtitle: "Final · Third Place",
       matches: sections.map((s) => s.match),
       sections,
       kind: "finals",
@@ -456,6 +458,24 @@ function QuarterfinalsMatchdayCard({
   );
 }
 
+function FinalsSectionDivider({ sectionKey }: { sectionKey: FinalsSectionKey }) {
+  const isFinal = sectionKey === "final";
+  const title = isFinal ? "Final" : "Third Place";
+  return (
+    <div
+      className={`finals-section-divider${isFinal ? " finals-section-divider--final" : " finals-section-divider--third"}`}
+      role="presentation"
+    >
+      <span className="finals-section-divider__line" aria-hidden />
+      <span className="finals-section-divider__label">
+        {isFinal && <span className="finals-section-divider__icon" aria-hidden="true">🏆</span>}
+        {title}
+      </span>
+      <span className="finals-section-divider__line" aria-hidden />
+    </div>
+  );
+}
+
 function FinalsMatchdayCard({
   bucket,
   nameById,
@@ -474,31 +494,78 @@ function FinalsMatchdayCard({
         <p className="matchday-card-sub">{bucket.subtitle}</p>
       </header>
       <div className="finals-matchday-sections">
-        {bucket.sections.map((section) => (
-          <div key={section.match.id} className="finals-matchday-section">
-            <h3 className="finals-matchday-round">{section.roundLabel}</h3>
-            <div className="table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Kickoff</th>
-                    <th>Round</th>
-                    <th>Home</th>
-                    <th className="fixture-hide-vs" aria-hidden />
-                    <th>Away</th>
-                    <th>Score</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <KnockoutFixtureRow m={section.match} nameById={nameById} onOpen={onOpen} />
-                </tbody>
-              </table>
+        {bucket.sections.map((section, index) => (
+          <div
+            key={section.match.id}
+            className={`finals-matchday-section finals-matchday-section--${section.key}${index > 0 ? " finals-matchday-section--after-final" : ""}`}
+          >
+            <FinalsSectionDivider sectionKey={section.key} />
+            <div className="finals-matchday-table-card">
+              <div className="table-wrap finals-matchday-table-wrap">
+                <table className="finals-fixture-table">
+                  <thead>
+                    <tr>
+                      <th>Kickoff</th>
+                      <th className="finals-fixture-team-col">Home</th>
+                      <th className="fixture-hide-vs finals-fixture-vs-col" aria-hidden />
+                      <th className="finals-fixture-team-col">Away</th>
+                      <th>Score</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <FinalsFixtureRow m={section.match} nameById={nameById} onOpen={onOpen} />
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         ))}
       </div>
     </section>
+  );
+}
+
+function FinalsFixtureRow({
+  m,
+  nameById,
+  onOpen,
+}: {
+  m: MatchRow;
+  nameById: Map<string, string>;
+  onOpen: (id: string) => void;
+}) {
+  const live = isMatchInPlayOrBreak(m.status);
+  const finished = m.status === "full_time";
+  const homeName = resolveTeamName(m, "home", nameById);
+  const awayName = resolveTeamName(m, "away", nameById);
+
+  return (
+    <tr
+      className="fixture-row fixture-row--clickable fixture-row--finals"
+      tabIndex={0}
+      role="link"
+      aria-label={`Open match ${homeName} vs ${awayName}`}
+      onClick={() => onOpen(m.id)}
+      onKeyDown={(e) => openMatchKey(e, m.id, onOpen)}
+    >
+      <td className="finals-fixture-kickoff">{formatKickoff(m.scheduled_at)}</td>
+      <td className="finals-fixture-team finals-fixture-team--home">
+        <span className="finals-fixture-team-inner">
+          <TeamNameWithQualification match={m} side="home" nameById={nameById} />
+        </span>
+      </td>
+      <td className="muted fixture-hide-vs finals-fixture-vs">vs</td>
+      <td className="finals-fixture-team finals-fixture-team--away">
+        <span className="finals-fixture-team-inner">
+          <TeamNameWithQualification match={m} side="away" nameById={nameById} />
+        </span>
+      </td>
+      <td className="finals-fixture-score">{finished || live ? formatMatchScoreLine(m) : "—"}</td>
+      <td className="finals-fixture-status">
+        {live ? <span className="badge live">LIVE</span> : <span>{statusLabel(m.status)}</span>}
+      </td>
+    </tr>
   );
 }
 

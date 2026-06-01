@@ -1583,19 +1583,215 @@ th {
   padding: 2px 0;
 }
 
+/* Matchday 6 — Finals layout */
+.matchday-card--finals .matchday-card-head {
+  text-align: center;
+}
+
 .finals-matchday-sections {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  align-items: stretch;
+  gap: 0;
+  width: 100%;
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 4px 12px 16px;
 }
 
-.finals-matchday-round {
-  margin: 0 0 8px;
-  font-size: 13px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
+.finals-matchday-section {
+  width: 100%;
+}
+
+.finals-matchday-section--after-final {
+  margin-top: 8px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(212, 175, 55, 0.14);
+}
+
+.finals-section-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(12px, 3vw, 20px);
+  margin: clamp(22px, 4vw, 32px) 0 clamp(16px, 3vw, 22px);
+  width: 100%;
+}
+
+.finals-section-divider--final {
+  margin-top: clamp(12px, 2vw, 18px);
+}
+
+.finals-section-divider__line {
+  flex: 1;
+  height: 1px;
+  max-width: 200px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(212, 175, 55, 0.25) 15%,
+    rgba(212, 175, 55, 0.65) 50%,
+    rgba(212, 175, 55, 0.25) 85%,
+    transparent 100%
+  );
+}
+
+.finals-section-divider--third .finals-section-divider__line {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(212, 175, 55, 0.12) 20%,
+    rgba(212, 175, 55, 0.4) 50%,
+    rgba(212, 175, 55, 0.12) 80%,
+    transparent 100%
+  );
+}
+
+.finals-section-divider__label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-shrink: 0;
+  font-weight: 900;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: var(--muted);
+  color: var(--gold);
+  white-space: nowrap;
+}
+
+.finals-section-divider--final .finals-section-divider__label {
+  font-size: clamp(14px, 2.4vw, 16px);
+  text-shadow: 0 0 24px rgba(212, 175, 55, 0.35);
+}
+
+.finals-section-divider--third .finals-section-divider__label {
+  font-size: clamp(12px, 2.2vw, 13px);
+  letter-spacing: 0.18em;
+  color: rgba(212, 175, 55, 0.88);
+}
+
+.finals-section-divider__icon {
+  font-size: 1.05em;
+  line-height: 1;
+  filter: grayscale(0.1);
+}
+
+.finals-matchday-table-card {
+  width: 100%;
+  border: 1px solid rgba(212, 175, 55, 0.22);
+  border-radius: var(--radius);
+  background: rgba(0, 0, 0, 0.22);
+  overflow: hidden;
+}
+
+.finals-matchday-section--final .finals-matchday-table-card {
+  border-color: rgba(212, 175, 55, 0.42);
+  box-shadow: 0 0 28px rgba(212, 175, 55, 0.08);
+  background: linear-gradient(180deg, rgba(212, 175, 55, 0.06), rgba(0, 0, 0, 0.24));
+}
+
+.finals-matchday-section--third .finals-matchday-table-card {
+  border-color: rgba(212, 175, 55, 0.16);
+}
+
+.finals-matchday-table-wrap {
+  padding: 0 6px 6px;
+}
+
+.finals-fixture-table {
+  width: 100%;
+  table-layout: fixed;
+}
+
+.finals-fixture-table th,
+.finals-fixture-table td {
+  vertical-align: middle;
+}
+
+.finals-fixture-table .finals-fixture-team-col {
+  width: 28%;
+}
+
+.finals-fixture-table .finals-fixture-vs-col {
+  width: 2.5rem;
+  text-align: center;
+}
+
+.finals-fixture-team {
+  white-space: nowrap;
+  font-size: clamp(11px, 2.1vw, 13px);
+  font-weight: 800;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.finals-fixture-team-inner {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  white-space: nowrap;
+}
+
+.finals-fixture-team--home {
+  text-align: right;
+}
+
+.finals-fixture-team--home .finals-fixture-team-inner {
+  justify-content: flex-end;
+  margin-left: auto;
+}
+
+.finals-fixture-team--away {
+  text-align: left;
+}
+
+.finals-fixture-team--away .finals-fixture-team-inner {
+  justify-content: flex-start;
+}
+
+.finals-fixture-kickoff,
+.finals-fixture-score,
+.finals-fixture-status {
+  white-space: nowrap;
+  font-size: clamp(11px, 2vw, 12px);
+}
+
+.finals-fixture-score {
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+}
+
+.finals-fixture-vs {
+  text-align: center;
+  font-size: 11px;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.fixture-row--finals:hover td {
+  background: rgba(212, 175, 55, 0.06);
+}
+
+@media (max-width: 520px) {
+  .finals-matchday-sections {
+    padding-left: 4px;
+    padding-right: 4px;
+  }
+
+  .finals-fixture-table .finals-fixture-team-col {
+    width: 32%;
+  }
+
+  .finals-fixture-team {
+    font-size: 10px;
+    letter-spacing: -0.01em;
+  }
+
+  .finals-section-divider__line {
+    max-width: 48px;
+  }
 }
 
 .team-qualified-star {
