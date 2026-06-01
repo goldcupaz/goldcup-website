@@ -7,8 +7,10 @@ import { formatKickoff, statusLabel } from "../lib/format";
 import { isMatchInPlayOrBreak } from "../lib/matchStatus";
 import { computeStandingsForGroup } from "../lib/standings";
 import { MatchTimelineSplit } from "../components/MatchTimelineSplit";
+import { filterMainTimelineEvents } from "../lib/matchEventPenalties";
 import { sortMatchEvents } from "../lib/timeline";
 import { qfDisplayLabel, qfTimeWindow, type QfSlot } from "../lib/knockoutBracket";
+import { formatMatchScoreLineSpaced } from "../lib/matchScoreDisplay";
 import { resolveTeamName } from "../lib/matchTeamNames";
 import logo from "../assets/goldcup-logo.png";
 
@@ -59,7 +61,9 @@ export function Home() {
 
   const timelinePreview = useMemo(() => {
     if (liveCard.mode === "none" || !liveCard.match) return [];
-    const all = sortMatchEvents(matchEvents.filter((e) => e.match_id === liveCard.match.id));
+    const all = sortMatchEvents(
+      filterMainTimelineEvents(matchEvents.filter((e) => e.match_id === liveCard.match.id)),
+    );
     return all.slice(-TIMELINE_PREVIEW);
   }, [liveCard, matchEvents]);
 
@@ -123,7 +127,7 @@ export function Home() {
               <span className="home-live-team">{resolveTeamName(liveCard.match, "home", nameById)}</span>
               <div className="home-live-center">
                 <span className="home-live-score">
-                  {liveCard.match.home_score} – {liveCard.match.away_score}
+                  {formatMatchScoreLineSpaced(liveCard.match)}
                 </span>
                 <span className={`home-live-status${showLivePulse ? " home-live-status--pulse" : ""}`}>
                   {liveCard.mode === "featured" ? statusLabel(liveCard.match.status) : "Not started"}

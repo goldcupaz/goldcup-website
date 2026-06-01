@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { useTournament } from "../context/TournamentContext";
 import type { Database } from "../lib/database.types";
 import { formatKickoff, statusLabel } from "../lib/format";
+import { formatMatchScoreLineSpaced } from "../lib/matchScoreDisplay";
 import { isMatchInPlayOrBreak } from "../lib/matchStatus";
 import { QUARTER_FINALS, qfDisplayLabel, type QfSlot } from "../lib/knockoutBracket";
 import {
@@ -161,7 +162,7 @@ function MatchCard(props: {
         <span>{h}</span>
         {m && (m.status === "full_time" || isMatchInPlayOrBreak(m.status)) ? (
           <span className="match-score">
-            {m.home_score} – {m.away_score}
+            {formatMatchScoreLineSpaced(m)}
           </span>
         ) : (
           <span className="muted">vs</span>

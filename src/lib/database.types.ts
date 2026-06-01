@@ -13,7 +13,9 @@ export type MatchEventType =
   | "half_time"
   | "yellow_card"
   | "red_card"
-  | "full_time";
+  | "full_time"
+  | "penalty_scored"
+  | "penalty_missed";
 
 export type Database = {
   public: {
@@ -116,6 +118,8 @@ export type Database = {
           status: MatchStatus;
           home_score: number;
           away_score: number;
+          home_penalties: number | null;
+          away_penalties: number | null;
           sort_order: number;
           created_at: string;
           updated_at: string;
@@ -131,6 +135,8 @@ export type Database = {
           status?: MatchStatus;
           home_score?: number;
           away_score?: number;
+          home_penalties?: number | null;
+          away_penalties?: number | null;
           sort_order?: number;
         };
         Update: {
@@ -143,6 +149,8 @@ export type Database = {
           status?: MatchStatus;
           home_score?: number;
           away_score?: number;
+          home_penalties?: number | null;
+          away_penalties?: number | null;
           sort_order?: number;
         };
       };

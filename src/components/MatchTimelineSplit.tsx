@@ -1,5 +1,6 @@
 import type { Database } from "../lib/database.types";
 import { resolveMatchTeamIds, resolveTeamName } from "../lib/matchTeamNames";
+import { filterMainTimelineEvents } from "../lib/matchEventPenalties";
 import { formatTimelineLine, isClockTimelineEvent, sortMatchEvents } from "../lib/timeline";
 
 type MatchRow = Database["public"]["Tables"]["matches"]["Row"];
@@ -29,7 +30,7 @@ type Props = {
  * Chronological timeline: home team left, away right; match started / half / full time centered.
  */
 export function MatchTimelineSplit({ match, events, teamNameById, className }: Props) {
-  const sorted = sortMatchEvents(events.filter((e) => e.match_id === match.id));
+  const sorted = sortMatchEvents(filterMainTimelineEvents(events.filter((e) => e.match_id === match.id)));
   const { homeTeamId, awayTeamId } = resolveMatchTeamIds(match);
   const homeName = resolveTeamName(match, "home", teamNameById);
   const awayName = resolveTeamName(match, "away", teamNameById);

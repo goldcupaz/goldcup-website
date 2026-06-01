@@ -2,9 +2,11 @@ import { useMemo } from "react";
 import { Link } from "react-router-dom";
 
 import { MatchTimelineSplit } from "../components/MatchTimelineSplit";
+import { PenaltyShootoutTimeline } from "../components/PenaltyShootoutTimeline";
 import { useTournament } from "../context/TournamentContext";
 import type { Database } from "../lib/database.types";
 import { formatKickoff, statusLabel } from "../lib/format";
+import { formatMatchScoreLineSpaced } from "../lib/matchScoreDisplay";
 import { resolveTeamName } from "../lib/matchTeamNames";
 
 type MatchRow = Database["public"]["Tables"]["matches"]["Row"];
@@ -63,7 +65,7 @@ export function LiveMatchPage() {
                 </div>
                 <div className="live-center">
                   <div className="live-score">
-                    {liveMatch.home_score} – {liveMatch.away_score}
+                    {formatMatchScoreLineSpaced(liveMatch)}
                   </div>
                   <div className="live-status">{statusLabel(liveMatch.status)}</div>
                 </div>
@@ -76,6 +78,7 @@ export function LiveMatchPage() {
             <div className="live-timeline-block">
               <h3 className="live-timeline-title">Timeline</h3>
               <MatchTimelineSplit match={liveMatch} events={matchEvents} teamNameById={nameById} />
+              <PenaltyShootoutTimeline match={liveMatch} events={matchEvents} teamNameById={nameById} />
             </div>
           </div>
         )}
@@ -102,7 +105,7 @@ export function LiveMatchPage() {
                     </div>
                     <div className="live-finished-center">
                       <span className="live-finished-score">
-                        {m.home_score} – {m.away_score}
+                        {formatMatchScoreLineSpaced(m)}
                       </span>
                       <span className="badge">Full Time</span>
                     </div>

@@ -11,7 +11,7 @@ update public.matches set
 where stage = 'qf' and slot_code = 'QF1';
 
 update public.matches set
-  home_team_id = 'a0000001-0000-4000-8000-000000000001',
+  home_team_id = 'a0000001-0000-4000-8000-000000000011',
   away_team_id = 'a0000001-0000-4000-8000-000000000004',
   scheduled_at = '2026-05-24 17:30:00+04'::timestamptz,
   sort_order = 101

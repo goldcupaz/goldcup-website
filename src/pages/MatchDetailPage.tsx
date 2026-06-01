@@ -2,10 +2,12 @@ import { useEffect, useLayoutEffect, useMemo } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
 
 import { MatchTimelineSplit } from "../components/MatchTimelineSplit";
+import { PenaltyShootoutTimeline } from "../components/PenaltyShootoutTimeline";
 import { useTournament } from "../context/TournamentContext";
 import type { Database } from "../lib/database.types";
 import { formatKickoff, statusLabel } from "../lib/format";
 import { isMatchInPlayOrBreak } from "../lib/matchStatus";
+import { formatMatchScoreLineSpaced } from "../lib/matchScoreDisplay";
 import { resolveTeamName } from "../lib/matchTeamNames";
 import { trackMatchPageOpen } from "../lib/websiteAnalytics";
 
@@ -86,7 +88,7 @@ export function MatchDetailPage() {
           </div>
           <div className="live-center">
             <div className="live-score">
-              {showScore ? `${match.home_score} – ${match.away_score}` : "vs"}
+              {showScore ? formatMatchScoreLineSpaced(match) : "vs"}
             </div>
             <div className="live-status">{statusLabel(match.status)}</div>
           </div>
@@ -98,6 +100,7 @@ export function MatchDetailPage() {
         <div className="live-timeline-block">
           <h3 className="live-timeline-title">Timeline</h3>
           <MatchTimelineSplit match={match} events={matchEvents} teamNameById={nameById} />
+          <PenaltyShootoutTimeline match={match} events={matchEvents} teamNameById={nameById} />
         </div>
       </div>
     </main>

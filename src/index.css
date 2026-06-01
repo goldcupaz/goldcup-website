@@ -1549,6 +1549,40 @@ th {
   font-weight: 800;
 }
 
+.penalty-shootout-block {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.penalty-shootout-title {
+  margin-top: 0;
+}
+
+.penalty-shootout-teams {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.penalty-shootout-team-name {
+  font-weight: 700;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.penalty-shootout-kicks {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.penalty-shootout-kicks li {
+  padding: 2px 0;
+}
+
 .live-timeline {
   list-style: none;
   padding: 0;

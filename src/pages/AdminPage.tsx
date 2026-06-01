@@ -12,19 +12,36 @@ import { AdminAnalytics } from "../components/AdminAnalytics";
 import { AdminStandingsAdjustments } from "../components/AdminStandingsAdjustments";
 import { PeopleCounterWidget } from "../components/PeopleCounterWidget";
 import { VolunteerTeamCheck } from "../components/VolunteerTeamCheck";
+import { PenaltyShootoutAdmin } from "../components/PenaltyShootoutAdmin";
 import { computeScoresFromScoringEvents } from "../lib/matchEventScores";
+import {
+  filterMainTimelineEvents,
+  filterPenaltyShootoutEvents,
+  isPenaltyShootoutEventType,
+} from "../lib/matchEventPenalties";
 import { TIMELINE_EVENT_OPTIONS } from "../lib/matchEventTimelineOptions";
 import { formatTimelineLine, sortMatchEvents } from "../lib/timeline";
 import { sortMatchesForAdminPicker } from "../lib/matchSort";
 import {
   QUARTER_FINALS,
   QF_BY_SLOT,
+  SEMI_FINALS,
+  SF_BY_SLOT,
   qfAdminFixtureLabel,
   qfScheduledAtIso,
   qfTeamIdsForSlot,
+  sfAdminFixtureLabel,
+  sfScheduledAtIso,
+  sfTeamIdsForSlot,
+  finalAdminFixtureLabel,
+  finalScheduledAtIso,
+  finalTeamIds,
   type QfSlot,
+  type SfSlot,
 } from "../lib/knockoutBracket";
-import { qfMatchNeedsTeamPersist, resolveMatchTeamIds, resolveTeamName } from "../lib/matchTeamNames";
+import { parseOptionalPenaltyField } from "../lib/matchScoreDisplay";
+import { koMatchNeedsTeamPersist, resolveMatchTeamIds, resolveTeamName } from "../lib/matchTeamNames";
+import { AdminMatchScoreInputs } from "../components/AdminMatchScoreInputs";
 import { supabase } from "../lib/supabase";
 import { finalComputed, getBySlot, thirdComputed } from "../lib/knockoutResolve";
 import { winnerId } from "../lib/bracket";
@@ -104,9 +121,9 @@ where id = 'YOUR_USER_UUID';`}
 
   const groupMatches = matches.filter((m) => m.stage === "group").sort((a, b) => a.sort_order - b.sort_order);
   const qfMatches = matches.filter((m) => m.stage === "qf").sort((a, b) => a.sort_order - b.sort_order);
-  const koMatchesLater = matches
-    .filter((m) => m.stage !== "group" && m.stage !== "qf")
-    .sort((a, b) => a.sort_order - b.sort_order);
+  const sfMatches = matches.filter((m) => m.stage === "sf").sort((a, b) => a.sort_order - b.sort_order);
+  const finalMatches = matches.filter((m) => m.stage === "final").sort((a, b) => a.sort_order - b.sort_order);
+  const thirdMatches = matches.filter((m) => m.stage === "third").sort((a, b) => a.sort_order - b.sort_order);
 
   async function notify(msgText: string, error?: string | null) {
     setMsg(msgText);
@@ -118,7 +135,7 @@ where id = 'YOUR_USER_UUID';`}
   async function setLiveMatch(matchId: string | null) {
     if (matchId) {
       const picked = matches.find((m) => m.id === matchId);
-      if (picked && qfMatchNeedsTeamPersist(picked)) {
+      if (picked && koMatchNeedsTeamPersist(picked)) {
         const { homeTeamId, awayTeamId } = resolveMatchTeamIds(picked);
         const { error: te } = await supabase
           .from("matches")
@@ -146,6 +163,53 @@ where id = 'YOUR_USER_UUID';`}
     const { error } = await supabase.from("matches").update(rest).eq("id", id);
     if (error) await notify("", error.message);
     else await notify("Match saved.");
+  }
+
+  async function applySemifinalFixtures() {
+    let ok = 0;
+    for (const def of SEMI_FINALS) {
+      const m = getBySlot(matches, def.slot);
+      if (!m) continue;
+      const { homeTeamId, awayTeamId } = sfTeamIdsForSlot(def.slot);
+      const { error } = await supabase
+        .from("matches")
+        .update({
+          home_team_id: homeTeamId,
+          away_team_id: awayTeamId,
+          scheduled_at: sfScheduledAtIso(def.slot),
+          sort_order: 199 + ok,
+        })
+        .eq("id", m.id);
+      if (error) {
+        await notify("", `SF ${def.slot}: ${error.message}`);
+        return;
+      }
+      ok += 1;
+    }
+    await notify(ok ? `Semi-finals updated (${ok} matches).` : "No semi-final rows found in database.");
+  }
+
+  async function applyFinalFixture() {
+    const m = matches.find((x) => x.stage === "final" && x.slot_code === "FINAL");
+    if (!m) {
+      await notify("No final row found in database.");
+      return;
+    }
+    const { homeTeamId, awayTeamId } = finalTeamIds();
+    const { error } = await supabase
+      .from("matches")
+      .update({
+        home_team_id: homeTeamId,
+        away_team_id: awayTeamId,
+        scheduled_at: finalScheduledAtIso(),
+        sort_order: 300,
+      })
+      .eq("id", m.id);
+    if (error) {
+      await notify("", error.message);
+      return;
+    }
+    await notify("Final updated (MTK Eagles vs Sambo FC).");
   }
 
   async function applyQuarterfinalFixtures() {
@@ -249,15 +313,18 @@ where id = 'YOUR_USER_UUID';`}
       }
       return;
     }
-    const syncErr = await syncMatchScoreToTimeline(matchId);
-    if (syncErr) {
-      await notify("Timeline event added.", syncErr);
-      return;
+    if (!isPenaltyShootoutEventType(row.event_type)) {
+      const syncErr = await syncMatchScoreToTimeline(matchId);
+      if (syncErr) {
+        await notify("Timeline event added.", syncErr);
+        return;
+      }
     }
-    await notify("Timeline event added.");
+    await notify(isPenaltyShootoutEventType(row.event_type) ? "Penalty kick added." : "Timeline event added.");
   }
 
   async function updateMatchEvent(eventId: string, matchId: string, patch: MatchEventEditPayload) {
+    const ev = matchEvents.find((e) => e.id === eventId);
     let { data, error } = await supabase.from("match_events").update(patch).eq("id", eventId).select("id").maybeSingle();
     if (error) {
       const hint = (error.message ?? "").toLowerCase();
@@ -280,12 +347,16 @@ where id = 'YOUR_USER_UUID';`}
       await notify("", "Event update failed (no row returned).");
       return;
     }
-    const syncErr = await syncMatchScoreToTimeline(matchId);
-    if (syncErr) {
-      await notify("Timeline event updated.", syncErr);
-      return;
+    const wasPenalty = ev && isPenaltyShootoutEventType(ev.event_type);
+    const isPenalty = isPenaltyShootoutEventType(patch.event_type);
+    if (!wasPenalty && !isPenalty) {
+      const syncErr = await syncMatchScoreToTimeline(matchId);
+      if (syncErr) {
+        await notify("Timeline event updated.", syncErr);
+        return;
+      }
     }
-    await notify("Timeline event updated.");
+    await notify(wasPenalty || isPenalty ? "Penalty kick updated." : "Timeline event updated.");
   }
 
   async function deleteMatchEvent(eventId: string) {
@@ -296,14 +367,14 @@ where id = 'YOUR_USER_UUID';`}
       await notify("", error.message);
       return;
     }
-    if (mid) {
+    if (mid && ev && !isPenaltyShootoutEventType(ev.event_type)) {
       const syncErr = await syncMatchScoreToTimeline(mid);
       if (syncErr) {
         await notify("Timeline event removed.", syncErr);
         return;
       }
     }
-    await notify("Timeline event removed.");
+    await notify(ev && isPenaltyShootoutEventType(ev.event_type) ? "Penalty kick removed." : "Timeline event removed.");
   }
 
   async function syncBracket() {
@@ -435,9 +506,14 @@ where id = 'YOUR_USER_UUID';`}
                   const hn = resolveTeamName(m, "home", nameById);
                   const an = resolveTeamName(m, "away", nameById);
                   const qfSlot = m.stage === "qf" && m.slot_code && m.slot_code in QF_BY_SLOT ? (m.slot_code as QfSlot) : null;
+                  const sfSlot = m.stage === "sf" && m.slot_code && m.slot_code in SF_BY_SLOT ? (m.slot_code as SfSlot) : null;
                   const optionLabel = qfSlot
                     ? qfAdminFixtureLabel(qfSlot)
-                    : (() => {
+                    : sfSlot
+                      ? sfAdminFixtureLabel(sfSlot)
+                      : m.stage === "final" && m.slot_code === "FINAL"
+                        ? finalAdminFixtureLabel()
+                        : (() => {
                         const stageTag =
                           m.stage === "group"
                             ? `Group ${m.group_letter ?? "?"}`
@@ -469,19 +545,30 @@ where id = 'YOUR_USER_UUID';`}
             </div>
           </div>
 
-          {liveMatch && (
-            <LiveEditor
-              key={liveMatch.id}
-              match={liveMatch}
-              teams={teams}
-              players={players}
-              events={sortMatchEvents(matchEvents.filter((e) => e.match_id === liveMatch.id))}
-              onSave={(p) => void saveMatch(p)}
-              onAddEvent={(row) => void addMatchEvent(liveMatch.id, row)}
-              onUpdateEvent={(eventId, patch) => updateMatchEvent(eventId, liveMatch.id, patch)}
-              onDeleteEvent={(id) => void deleteMatchEvent(id)}
-            />
-          )}
+          {liveMatch && (() => {
+            const allEv = sortMatchEvents(matchEvents.filter((e) => e.match_id === liveMatch.id));
+            return (
+              <LiveEditor
+                key={liveMatch.id}
+                match={liveMatch}
+                teams={teams}
+                players={players}
+                mainEvents={filterMainTimelineEvents(allEv)}
+                penaltyEvents={filterPenaltyShootoutEvents(allEv)}
+                onSave={(p) => void saveMatch(p)}
+                onAddEvent={(row) => void addMatchEvent(liveMatch.id, row)}
+                onAddPenalty={(row) =>
+                  void addMatchEvent(liveMatch.id, {
+                    event_type: row.event_type,
+                    team_id: row.team_id,
+                    player_name: row.player_name,
+                  })
+                }
+                onUpdateEvent={(eventId, patch) => updateMatchEvent(eventId, liveMatch.id, patch)}
+                onDeleteEvent={(id) => void deleteMatchEvent(id)}
+              />
+            );
+          })()}
         </section>
       )}
 
@@ -539,7 +626,75 @@ where id = 'YOUR_USER_UUID';`}
           </div>
 
           <h2 style={{ marginTop: 24, fontSize: 14, letterSpacing: "0.12em", textTransform: "uppercase" }}>
-            Semi-finals &amp; finals
+            Matchday 5 — Semi-finals
+          </h2>
+          <p className="muted" style={{ marginTop: 0, fontSize: 12 }}>
+            SF1 MTK Eagles vs EAS Saints · SF2 Sambo FC vs Ebra FC. Penalty fields optional (e.g. 2–2 (4–3 pens)).
+          </p>
+          <button
+            type="button"
+            className="btn"
+            style={{ marginBottom: 10 }}
+            onClick={() => void applySemifinalFixtures()}
+          >
+            Apply SF fixtures to database
+          </button>
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Slot</th>
+                  <th>When</th>
+                  <th>Match-up</th>
+                  <th>Score</th>
+                  <th>Status</th>
+                  <th />
+                </tr>
+              </thead>
+              <tbody>
+                {sfMatches.map((m) => (
+                  <KoMatchRow key={m.id} m={m} teams={teams} nameById={nameById} onSave={(p) => void saveMatch(p)} />
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <h2 style={{ marginTop: 24, fontSize: 14, letterSpacing: "0.12em", textTransform: "uppercase" }}>
+            Matchday 6 — Final
+          </h2>
+          <p className="muted" style={{ marginTop: 0, fontSize: 12 }}>
+            MTK Eagles vs Sambo FC. Penalty shootout kicks are added on the Live tab.
+          </p>
+          <button
+            type="button"
+            className="btn"
+            style={{ marginBottom: 10 }}
+            onClick={() => void applyFinalFixture()}
+          >
+            Apply final fixture to database
+          </button>
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Slot</th>
+                  <th>When</th>
+                  <th>Match-up</th>
+                  <th>Score</th>
+                  <th>Status</th>
+                  <th />
+                </tr>
+              </thead>
+              <tbody>
+                {finalMatches.map((m) => (
+                  <KoMatchRow key={m.id} m={m} teams={teams} nameById={nameById} onSave={(p) => void saveMatch(p)} />
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <h2 style={{ marginTop: 24, fontSize: 14, letterSpacing: "0.12em", textTransform: "uppercase" }}>
+            3rd place
           </h2>
           <div className="table-wrap">
             <table>
@@ -554,7 +709,7 @@ where id = 'YOUR_USER_UUID';`}
                 </tr>
               </thead>
               <tbody>
-                {koMatchesLater.map((m) => (
+                {thirdMatches.map((m) => (
                   <KoMatchRow key={m.id} m={m} teams={teams} nameById={nameById} onSave={(p) => void saveMatch(p)} />
                 ))}
               </tbody>
@@ -731,16 +886,21 @@ function KoMatchRow({
   onSave: (p: Partial<MatchRow> & { id: string }) => void;
 }) {
   const qfSlot = m.stage === "qf" && m.slot_code && m.slot_code in QF_BY_SLOT ? (m.slot_code as QfSlot) : null;
-  const bracketIds = qfSlot ? qfTeamIdsForSlot(qfSlot) : null;
+  const sfSlot = m.stage === "sf" && m.slot_code && m.slot_code in SF_BY_SLOT ? (m.slot_code as SfSlot) : null;
+  const bracketIds = qfSlot ? qfTeamIdsForSlot(qfSlot) : sfSlot ? sfTeamIdsForSlot(sfSlot) : null;
+  const editableTeams = m.stage === "qf" || m.stage === "sf" || m.stage === "final";
 
   const [hs, setHs] = useState(String(m.home_score));
   const [as, setAs] = useState(String(m.away_score));
+  const [hp, setHp] = useState(m.home_penalties != null ? String(m.home_penalties) : "");
+  const [ap, setAp] = useState(m.away_penalties != null ? String(m.away_penalties) : "");
   const [st, setSt] = useState<MatchStatus>(m.status);
   const [homeId, setHomeId] = useState(m.home_team_id ?? bracketIds?.homeTeamId ?? "");
   const [awayId, setAwayId] = useState(m.away_team_id ?? bracketIds?.awayTeamId ?? "");
   const [when, setWhen] = useState(() => {
     if (m.scheduled_at) return isoToDatetimeLocalValue(m.scheduled_at);
     if (qfSlot) return isoToDatetimeLocalValue(qfScheduledAtIso(qfSlot));
+    if (sfSlot) return isoToDatetimeLocalValue(sfScheduledAtIso(sfSlot));
     return "";
   });
 
@@ -748,11 +908,28 @@ function KoMatchRow({
     setSt(m.status);
     setHs(String(m.home_score));
     setAs(String(m.away_score));
+    setHp(m.home_penalties != null ? String(m.home_penalties) : "");
+    setAp(m.away_penalties != null ? String(m.away_penalties) : "");
     setHomeId(m.home_team_id ?? bracketIds?.homeTeamId ?? "");
     setAwayId(m.away_team_id ?? bracketIds?.awayTeamId ?? "");
     if (m.scheduled_at) setWhen(isoToDatetimeLocalValue(m.scheduled_at));
     else if (qfSlot) setWhen(isoToDatetimeLocalValue(qfScheduledAtIso(qfSlot)));
-  }, [m.id, m.status, m.home_score, m.away_score, m.home_team_id, m.away_team_id, m.scheduled_at, qfSlot]);
+    else if (sfSlot) setWhen(isoToDatetimeLocalValue(sfScheduledAtIso(sfSlot)));
+  }, [
+    m.id,
+    m.status,
+    m.home_score,
+    m.away_score,
+    m.home_penalties,
+    m.away_penalties,
+    m.home_team_id,
+    m.away_team_id,
+    m.scheduled_at,
+    qfSlot,
+    sfSlot,
+    bracketIds?.homeTeamId,
+    bracketIds?.awayTeamId,
+  ]);
 
   function submit(e: FormEvent) {
     e.preventDefault();
@@ -762,21 +939,25 @@ function KoMatchRow({
       away_team_id: awayId || null,
       home_score: Number(hs),
       away_score: Number(as),
+      home_penalties: parseOptionalPenaltyField(hp),
+      away_penalties: parseOptionalPenaltyField(ap),
       status: st,
       scheduled_at: when ? new Date(when).toISOString() : null,
     });
   }
 
-  const homeLabel = resolveTeamName(m, "home", nameById);
-  const awayLabel = resolveTeamName(m, "away", nameById);
+  const matchdayLabel =
+    qfSlot ? "Matchday 4" : sfSlot ? "Matchday 5" : m.stage === "final" ? "Final" : m.stage === "third" ? "Finals" : null;
 
   return (
     <tr>
-      <td>{m.slot_code}</td>
+      <td>
+        <div style={{ fontWeight: 700 }}>{m.slot_code}</div>
+        {matchdayLabel && <div className="muted" style={{ fontSize: 10 }}>{matchdayLabel}</div>}
+      </td>
       <td>
         {qfSlot ? (
           <div style={{ fontSize: 12, lineHeight: 1.4 }}>
-            <div style={{ fontWeight: 700 }}>May 24</div>
             <div className="muted">{QF_BY_SLOT[qfSlot].timeWindow}</div>
             <input
               type="datetime-local"
@@ -790,7 +971,7 @@ function KoMatchRow({
         )}
       </td>
       <td>
-        {qfSlot ? (
+        {editableTeams ? (
           <div style={{ display: "flex", flexDirection: "column", gap: 6, minWidth: 160 }}>
             <select className="select" value={homeId} onChange={(e) => setHomeId(e.target.value)}>
               <option value="">—</option>
@@ -814,13 +995,23 @@ function KoMatchRow({
           </div>
         ) : (
           <>
-            {homeLabel} vs {awayLabel}
+            {resolveTeamName(m, "home", nameById)} vs {resolveTeamName(m, "away", nameById)}
           </>
         )}
       </td>
       <td>
-        <input style={{ width: 48 }} value={hs} onChange={(e) => setHs(e.target.value)} /> –{" "}
-        <input style={{ width: 48 }} value={as} onChange={(e) => setAs(e.target.value)} />
+        <AdminMatchScoreInputs
+          homeScore={hs}
+          awayScore={as}
+          homePenalties={hp}
+          awayPenalties={ap}
+          onHomeScore={setHs}
+          onAwayScore={setAs}
+          onHomePenalties={setHp}
+          onAwayPenalties={setAp}
+          showPenalties={m.stage === "sf" || m.stage === "qf" || m.stage === "final" || m.stage === "third"}
+          compact
+        />
       </td>
       <td>
         <select value={st} onChange={(e) => setSt(e.target.value as MatchStatus)}>
@@ -844,16 +1035,19 @@ function LiveEditor({
   match,
   teams,
   players,
-  events,
+  mainEvents,
+  penaltyEvents,
   onSave,
   onAddEvent,
+  onAddPenalty,
   onUpdateEvent,
   onDeleteEvent,
 }: {
   match: MatchRow;
   teams: Database["public"]["Tables"]["teams"]["Row"][];
   players: PlayerRow[];
-  events: MatchEventRow[];
+  mainEvents: MatchEventRow[];
+  penaltyEvents: MatchEventRow[];
   onSave: (p: Partial<MatchRow> & { id: string }) => void;
   onAddEvent: (row: {
     event_type: MatchEventType;
@@ -862,11 +1056,14 @@ function LiveEditor({
     event_minute?: number | null;
     event_note?: string | null;
   }) => void;
+  onAddPenalty: (row: { event_type: MatchEventType; team_id: string; player_name: string }) => void;
   onUpdateEvent: (eventId: string, patch: MatchEventEditPayload) => void | Promise<void>;
   onDeleteEvent: (id: string) => void | Promise<void>;
 }) {
   const [hs, setHs] = useState(String(match.home_score));
   const [as, setAs] = useState(String(match.away_score));
+  const [hp, setHp] = useState(match.home_penalties != null ? String(match.home_penalties) : "");
+  const [ap, setAp] = useState(match.away_penalties != null ? String(match.away_penalties) : "");
   const [evType, setEvType] = useState<MatchEventType>("goal");
   const [side, setSide] = useState<"home" | "away">("home");
   const [selectedPlayerId, setSelectedPlayerId] = useState("");
@@ -881,6 +1078,8 @@ function LiveEditor({
   useEffect(() => {
     setHs(String(match.home_score));
     setAs(String(match.away_score));
+    setHp(match.home_penalties != null ? String(match.home_penalties) : "");
+    setAp(match.away_penalties != null ? String(match.away_penalties) : "");
     setEvType("goal");
     setSide("home");
     setSelectedPlayerId("");
@@ -889,10 +1088,10 @@ function LiveEditor({
     setAddNote("");
     setEditingEvent(null);
     persistedTeamsForMatch.current = null;
-  }, [match.id, match.home_score, match.away_score, match.home_team_id, match.away_team_id]);
+  }, [match.id, match.home_score, match.away_score, match.home_penalties, match.away_penalties, match.home_team_id, match.away_team_id]);
 
   useEffect(() => {
-    if (!qfMatchNeedsTeamPersist(match)) return;
+    if (!koMatchNeedsTeamPersist(match)) return;
     if (persistedTeamsForMatch.current === match.id) return;
     if (!homeTeamId || !awayTeamId) return;
     persistedTeamsForMatch.current = match.id;
@@ -905,7 +1104,13 @@ function LiveEditor({
 
   function submitScore(e: FormEvent) {
     e.preventDefault();
-    onSave({ id: match.id, home_score: Number(hs), away_score: Number(as) });
+    onSave({
+      id: match.id,
+      home_score: Number(hs),
+      away_score: Number(as),
+      home_penalties: parseOptionalPenaltyField(hp),
+      away_penalties: parseOptionalPenaltyField(ap),
+    });
   }
 
   function parseAddMinute(): number | null {
@@ -980,11 +1185,16 @@ function LiveEditor({
         <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "end" }}>
           <div className="form-row" style={{ marginBottom: 0 }}>
             <label>Score</label>
-            <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-              <input style={{ width: 56 }} value={hs} onChange={(e) => setHs(e.target.value)} />
-              <span>–</span>
-              <input style={{ width: 56 }} value={as} onChange={(e) => setAs(e.target.value)} />
-            </div>
+            <AdminMatchScoreInputs
+              homeScore={hs}
+              awayScore={as}
+              homePenalties={hp}
+              awayPenalties={ap}
+              onHomeScore={setHs}
+              onAwayScore={setAs}
+              onHomePenalties={setHp}
+              onAwayPenalties={setAp}
+            />
           </div>
           <button type="submit" className="btn btn-primary">
             Update score
@@ -997,7 +1207,7 @@ function LiveEditor({
         Score is kept in sync with <strong>Goal</strong> and <strong>Own Goal</strong> events (own goals credit the opposing team). Use &quot;Update score&quot; only if you need a manual override.
       </p>
       <ul className="admin-timeline-list">
-        {events.map((ev) => (
+        {mainEvents.map((ev) => (
           <li key={ev.id} className="admin-timeline-row">
             <span className="admin-timeline-text">{formatTimelineLine(ev, teamNameById)}</span>
             <div className="admin-timeline-actions">
@@ -1010,7 +1220,7 @@ function LiveEditor({
             </div>
           </li>
         ))}
-        {events.length === 0 && <li className="muted">No events yet.</li>}
+        {mainEvents.length === 0 && <li className="muted">No events yet.</li>}
       </ul>
 
       {editingEvent && (
@@ -1083,6 +1293,22 @@ function LiveEditor({
           </button>
         </form>
       </div>
+
+      <PenaltyShootoutAdmin
+        match={match}
+        teams={teams}
+        players={players}
+        events={penaltyEvents}
+        onAdd={onAddPenalty}
+        onDelete={(id) => void onDeleteEvent(id)}
+        onSyncTotals={(home, away) =>
+          onSave({
+            id: match.id,
+            home_penalties: home,
+            away_penalties: away,
+          })
+        }
+      />
     </div>
   );
 }

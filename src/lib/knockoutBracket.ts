@@ -36,12 +36,12 @@ export const QUARTER_FINALS: readonly QuarterFinalDef[] = [
   },
   {
     slot: "QF2",
-    pairing: "D1 vs C2",
+    pairing: "Ebra FC vs Star Eagles",
     order: 2,
     orderLabel: "2nd game",
     timeWindow: "05:30 PM – 06:50 PM",
     kickoffTime: "17:30",
-    homeTeamName: "Sabis Tigers",
+    homeTeamName: "Ebra FC",
     awayTeamName: "Star Eagles",
   },
   {
@@ -94,6 +94,45 @@ export const QF_TEAM_IDS = {
   "132-134 MFC": "a0000001-0000-4000-8000-000000000007",
   "Sahil FC": "a0000001-0000-4000-8000-000000000002",
   "Sambo FC": "a0000001-0000-4000-8000-000000000005",
+  "Ebra FC": "a0000001-0000-4000-8000-000000000011",
+} as const;
+
+export type SfSlot = "SF1" | "SF2";
+
+export const SF_MATCHDAY = "2026-05-30" as const;
+export const SF_MATCHDAY_LABEL = "May 30" as const;
+
+export type SemiFinalDef = {
+  slot: SfSlot;
+  homeTeamName: string;
+  awayTeamName: string;
+  kickoffTime: string;
+};
+
+export const SEMI_FINALS: readonly SemiFinalDef[] = [
+  {
+    slot: "SF1",
+    homeTeamName: "MTK Eagles",
+    awayTeamName: "EAS Saints",
+    kickoffTime: "18:00",
+  },
+  {
+    slot: "SF2",
+    homeTeamName: "Sambo FC",
+    awayTeamName: "Ebra FC",
+    kickoffTime: "20:00",
+  },
+] as const;
+
+export const SF_BY_SLOT: Record<SfSlot, SemiFinalDef> = Object.fromEntries(
+  SEMI_FINALS.map((s) => [s.slot, s]),
+) as Record<SfSlot, SemiFinalDef>;
+
+export const SF_TEAM_IDS = {
+  "MTK Eagles": "a0000001-0000-4000-8000-000000000003",
+  "EAS Saints": "a0000001-0000-4000-8000-000000000006",
+  "Sambo FC": "a0000001-0000-4000-8000-000000000005",
+  "Ebra FC": "a0000001-0000-4000-8000-000000000011",
 } as const;
 
 export function qfTeamIdsForSlot(slot: QfSlot): { homeTeamId: string; awayTeamId: string } {
@@ -108,4 +147,47 @@ export function qfTeamIdsForSlot(slot: QfSlot): { homeTeamId: string; awayTeamId
 export function qfAdminFixtureLabel(slot: QfSlot): string {
   const def = QF_BY_SLOT[slot];
   return `${def.slot} · ${QF_MATCHDAY_LABEL} · ${def.timeWindow} · ${def.homeTeamName} vs ${def.awayTeamName}`;
+}
+
+export function sfScheduledAtIso(slot: SfSlot): string {
+  const s = SF_BY_SLOT[slot];
+  return `${SF_MATCHDAY} ${s.kickoffTime}:00+04`;
+}
+
+export function sfTeamIdsForSlot(slot: SfSlot): { homeTeamId: string; awayTeamId: string } {
+  const def = SF_BY_SLOT[slot];
+  return {
+    homeTeamId: SF_TEAM_IDS[def.homeTeamName as keyof typeof SF_TEAM_IDS],
+    awayTeamId: SF_TEAM_IDS[def.awayTeamName as keyof typeof SF_TEAM_IDS],
+  };
+}
+
+export function sfAdminFixtureLabel(slot: SfSlot): string {
+  const def = SF_BY_SLOT[slot];
+  return `${def.slot} · ${SF_MATCHDAY_LABEL} · ${def.homeTeamName} vs ${def.awayTeamName}`;
+}
+
+export const FINAL_MATCHDAY = "2026-06-07" as const;
+export const FINAL_MATCHDAY_LABEL = "June 7" as const;
+
+export const FINAL_FIXTURE = {
+  slot: "FINAL" as const,
+  homeTeamName: "MTK Eagles",
+  awayTeamName: "Sambo FC",
+  kickoffTime: "19:00",
+};
+
+export function finalScheduledAtIso(): string {
+  return `${FINAL_MATCHDAY} ${FINAL_FIXTURE.kickoffTime}:00+04`;
+}
+
+export function finalTeamIds(): { homeTeamId: string; awayTeamId: string } {
+  return {
+    homeTeamId: QF_TEAM_IDS["MTK Eagles"],
+    awayTeamId: QF_TEAM_IDS["Sambo FC"],
+  };
+}
+
+export function finalAdminFixtureLabel(): string {
+  return `Final · ${FINAL_MATCHDAY_LABEL} · ${FINAL_FIXTURE.homeTeamName} vs ${FINAL_FIXTURE.awayTeamName}`;
 }
