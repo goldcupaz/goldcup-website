@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 
 import { BuyTicketsButton } from "../components/BuyTicketsButton";
 import { SponsorLogoStrip } from "../components/SponsorLogoStrip";
+import { TeamBadge } from "../components/TeamBadge";
 import { useTournament } from "../context/TournamentContext";
 import { FINAL_FIXTURE, SEMI_FINALS, THIRD_PLACE_FIXTURE } from "../lib/knockoutBracket";
 import { formatHeroKickoff } from "../lib/heroKickoff";
@@ -41,11 +42,17 @@ export function Home() {
         <h1 id="home-hero-title" className="uefa-hero__title">
           THE FINAL
         </h1>
-        <p className="uefa-hero__matchup">
-          {FINAL_FIXTURE.homeTeamName}
+        <div className="uefa-hero__crests">
+          <div className="uefa-hero__crest-col">
+            <TeamBadge name={FINAL_FIXTURE.homeTeamName} size="hero" priority />
+            <span className="uefa-hero__crest-name">{FINAL_FIXTURE.homeTeamName}</span>
+          </div>
           <span className="uefa-hero__vs">vs</span>
-          {FINAL_FIXTURE.awayTeamName}
-        </p>
+          <div className="uefa-hero__crest-col">
+            <TeamBadge name={FINAL_FIXTURE.awayTeamName} size="hero" priority />
+            <span className="uefa-hero__crest-name">{FINAL_FIXTURE.awayTeamName}</span>
+          </div>
+        </div>
         <p className="uefa-hero__when">{finalKickoff}</p>
         <p className="uefa-hero__venue">{venue}</p>
         <div className="uefa-hero__actions">
@@ -76,13 +83,23 @@ export function Home() {
           {SEMI_FINALS.map((sf) => (
             <li key={sf.slot} className="uefa-road__item">
               <span className="uefa-road__sf">{sf.slot}</span>
-              <span className="uefa-road__teams">
-                {sf.homeTeamName}
-                {finalistStar(sf.homeTeamName)}
+              <div className="uefa-road__match">
+                <span className="uefa-road__side">
+                  <TeamBadge name={sf.homeTeamName} size="sm" />
+                  <span>
+                    {sf.homeTeamName}
+                    {finalistStar(sf.homeTeamName)}
+                  </span>
+                </span>
                 <span className="uefa-road__vs">vs</span>
-                {sf.awayTeamName}
-                {finalistStar(sf.awayTeamName)}
-              </span>
+                <span className="uefa-road__side">
+                  <TeamBadge name={sf.awayTeamName} size="sm" />
+                  <span>
+                    {sf.awayTeamName}
+                    {finalistStar(sf.awayTeamName)}
+                  </span>
+                </span>
+              </div>
             </li>
           ))}
         </ul>
@@ -94,18 +111,6 @@ export function Home() {
       <section className="uefa-sponsors" aria-label="Sponsors">
         <h2 className="section-title section-title--compact uefa-sponsors__title">Partners</h2>
         <SponsorLogoStrip />
-      </section>
-
-      <section className="uefa-about card" aria-labelledby="home-about-heading">
-        <h2 id="home-about-heading" className="section-title section-title--compact">
-          About Gold Cup
-        </h2>
-        <p className="uefa-about__text">
-          Youth mini football in Baku — fixtures, live scores, standings, and official tickets via iTicket.
-        </p>
-        <Link to="/about" className="home-link-more">
-          More about the tournament →
-        </Link>
       </section>
 
       <div className="seo-visually-hidden">

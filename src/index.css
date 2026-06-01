@@ -4200,6 +4200,75 @@ select {
   font-size: 14px;
 }
 
+.team-badge--hero {
+  width: 80px;
+  height: 80px;
+  font-size: 16px;
+}
+
+.team-badge--logo {
+  padding: 2px;
+  background: rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+}
+
+.team-badge--logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.uefa-hero__crests {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(16px, 4vw, 28px);
+  margin: 18px 0 8px;
+}
+
+.uefa-hero__crest-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
+  max-width: 140px;
+}
+
+.uefa-hero__crest-name {
+  font-weight: 900;
+  font-size: clamp(13px, 3.2vw, 16px);
+  letter-spacing: 0.04em;
+  text-align: center;
+  line-height: 1.2;
+}
+
+.uefa-road__match {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+.uefa-road__side {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 800;
+  font-size: 14px;
+  min-width: 0;
+}
+
+.uefa-road__side span:last-child {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .matchday-card-head--compact {
   margin-bottom: 12px;
 }

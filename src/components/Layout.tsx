@@ -117,12 +117,6 @@ export function Layout() {
               <NavLink to="/fanzone" className="nav-more-item" onClick={closeNav}>
                 Fanzone
               </NavLink>
-              <NavLink to="/rules" className="nav-more-item" onClick={closeNav}>
-                Rules
-              </NavLink>
-              <NavLink to="/about" className="nav-more-item" onClick={closeNav}>
-                About
-              </NavLink>
               <NavLink to="/statistics" className="nav-more-item" onClick={closeNav}>
                 Statistics
               </NavLink>
