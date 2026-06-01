@@ -321,6 +321,23 @@ main {
   max-width: 52ch;
 }
 
+.home-seo-intro {
+  margin-top: 14px;
+}
+
+.home-seo-text {
+  margin: 0;
+  line-height: 1.65;
+  color: var(--text);
+  font-size: 15px;
+}
+
+.home-seo-keywords {
+  margin: 12px 0 0;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
 .home-page section.card {
   margin-top: 14px;
 }

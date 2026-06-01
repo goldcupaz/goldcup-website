@@ -1,20 +1,24 @@
-import { NavLink, Outlet, Link } from "react-router-dom";
+import { NavLink, Outlet, Link, useLocation } from "react-router-dom";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { useAuth } from "../context/AuthContext";
 import { isSupabaseConfigured } from "../lib/supabase";
+import { seoForPath } from "../lib/seo";
 import { Footer } from "./Footer";
 import { GoldCupSocialLinks } from "./GoldCupSocialLinks";
 import { PageViewTracker } from "./PageViewTracker";
+import { SeoHead } from "./SeoHead";
 import logo from "../assets/goldcup-logo.png";
 
 export function Layout() {
   const { session } = useAuth();
+  const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const moreWrapRef = useRef<HTMLDivElement>(null);
 
   const adminLabel = useMemo(() => (session ? "Admin" : "Admin / Login"), [session]);
+  const routeSeo = useMemo(() => seoForPath(location.pathname), [location.pathname]);
 
   useEffect(() => {
     if (!moreOpen) return;
@@ -37,7 +41,7 @@ export function Layout() {
       <header className="topbar">
         <div className="brand">
           <Link to="/" className="brand-link" onClick={() => (setMenuOpen(false), setMoreOpen(false))}>
-            <img className="brand-logo" src={logo} alt="Gold Cup logo" />
+            <img className="brand-logo" src={logo} alt="Gold Cup Azerbaijan logo" width={40} height={40} />
             <span className="brand-name">Gold Cup</span>
           </Link>
         </div>
@@ -108,6 +112,12 @@ export function Layout() {
               <NavLink to="/sponsors" className="nav-more-item" onClick={closeMoreAndMaybeMenu}>
                 Sponsors
               </NavLink>
+              <NavLink to="/fanzone" className="nav-more-item" onClick={closeMoreAndMaybeMenu}>
+                Fanzone
+              </NavLink>
+              <NavLink to="/rules" className="nav-more-item" onClick={closeMoreAndMaybeMenu}>
+                Rules
+              </NavLink>
               <NavLink to="/about" className="nav-more-item" onClick={closeMoreAndMaybeMenu}>
                 About
               </NavLink>
@@ -140,6 +150,9 @@ export function Layout() {
           <span className="kbd">VITE_SUPABASE_ANON_KEY</span> in Netlify (or <span className="kbd">.env</span> locally).
           See <span className="kbd">README.md</span>.
         </div>
+      )}
+      {routeSeo && !/^\/matches\/[^/]+$/.test(location.pathname) && (
+        <SeoHead pathname={location.pathname} {...routeSeo} />
       )}
       <PageViewTracker />
       <Outlet />

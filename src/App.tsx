@@ -19,6 +19,8 @@ import { TeamsPage } from "./pages/TeamsPage";
 import { VolunteerHub } from "./pages/VolunteerHub";
 import { LinksPage } from "./pages/LinksPage";
 import { AboutPage } from "./pages/AboutPage";
+import { FanzonePage } from "./pages/FanzonePage";
+import { RulesPage } from "./pages/RulesPage";
 
 export default function App() {
   return (
@@ -31,7 +33,10 @@ export default function App() {
               <Route path="groups" element={<GroupsPage />} />
               <Route path="standings" element={<StandingsPage />} />
               <Route path="fixtures" element={<FixturesPage />} />
+              <Route path="matches" element={<Navigate to="/fixtures" replace />} />
               <Route path="matches/:matchId" element={<MatchDetailPage />} />
+              <Route path="fanzone" element={<FanzonePage />} />
+              <Route path="rules" element={<RulesPage />} />
               <Route path="live" element={<LiveMatchPage />} />
               <Route path="teams/:teamId" element={<TeamDetailPage />} />
               <Route path="teams" element={<TeamsPage />} />

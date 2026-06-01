@@ -104,7 +104,12 @@ export function SponsorsPage() {
               onClick={() => onSponsorClick("Azersun", AZERSUN_URL, "sponsors_page_main")}
             >
               <div className="sponsor-logo-chip sponsor-logo-chip--sponsors-main">
-                <img className="sponsor-logo sponsor-logo--sponsors-main-azersun" src={azersunLogo} alt="" />
+                <img
+                  className="sponsor-logo sponsor-logo--sponsors-main-azersun"
+                  src={azersunLogo}
+                  alt="Azersun — Gold Cup youth football tournament in Baku"
+                  loading="lazy"
+                />
               </div>
             </a>
           </div>
@@ -118,7 +123,12 @@ export function SponsorsPage() {
               onClick={() => onSponsorClick("Dream Fest", DREAMFEST_URL, "sponsors_page_main")}
             >
               <div className="sponsor-logo-chip sponsor-logo-chip--sponsors-main">
-                <img className="sponsor-logo sponsor-logo--sponsors-main-dreamfest" src={dreamFestLogo} alt="" />
+                <img
+                  className="sponsor-logo sponsor-logo--sponsors-main-dreamfest"
+                  src={dreamFestLogo}
+                  alt="Dream Fest — Gold Cup youth football tournament in Baku"
+                  loading="lazy"
+                />
               </div>
             </a>
           </div>
@@ -135,7 +145,8 @@ export function SponsorsPage() {
                 <img
                   className="sponsor-logo sponsor-logo--sponsors-main-star"
                   src={starCollegesLogo}
-                  alt=""
+                  alt="Star Colleges — Gold Cup youth football tournament in Baku"
+                  loading="lazy"
                 />
               </div>
             </a>
@@ -151,7 +162,8 @@ export function SponsorsPage() {
               <img
                 className={`sponsor-logo sponsor-logo--free ${s.imgClassName ?? ""}`.trim()}
                 src={s.src}
-                alt={`${s.name} logo`}
+                alt={`${s.name} — Gold Cup Azerbaijan partner`}
+                loading="lazy"
               />
             );
             return (

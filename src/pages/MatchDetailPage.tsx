@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo } from "react";
-import { Link, Navigate, useParams } from "react-router-dom";
+import { Link, Navigate, useLocation, useParams } from "react-router-dom";
 
+import { SeoHead } from "../components/SeoHead";
 import { MatchTimelineSplit } from "../components/MatchTimelineSplit";
 import { PenaltyShootoutTimeline } from "../components/PenaltyShootoutTimeline";
 import { useTournament } from "../context/TournamentContext";
@@ -22,6 +23,7 @@ function matchLabel(m: MatchRow): string {
 
 export function MatchDetailPage() {
   const { matchId } = useParams<{ matchId: string }>();
+  const location = useLocation();
   const { matches, matchEvents, teams, loading, error } = useTournament();
 
   const nameById = useMemo(() => new Map(teams.map((t) => [t.id, t.name] as const)), [teams]);
@@ -30,6 +32,22 @@ export function MatchDetailPage() {
     if (!matchId) return null;
     return matches.find((m) => m.id === matchId) ?? null;
   }, [matches, matchId]);
+
+  const matchSeo = useMemo(() => {
+    if (!match) {
+      return {
+        title: "Gold Cup Match | Gold Cup Azerbaijan",
+        description:
+          "Match details, live score, and timeline for Gold Cup Azerbaijan youth mini football tournament in Baku.",
+      };
+    }
+    const home = resolveTeamName(match, "home", nameById);
+    const away = resolveTeamName(match, "away", nameById);
+    return {
+      title: `${home} vs ${away} | Gold Cup Fixtures & Results`,
+      description: `${home} vs ${away} at Gold Cup Azerbaijan — live score, match timeline, and results for this youth mini football tournament in Baku.`,
+    };
+  }, [match, nameById]);
 
   useLayoutEffect(() => {
     window.scrollTo(0, 0);
@@ -48,6 +66,7 @@ export function MatchDetailPage() {
   if (!loading && !match) {
     return (
       <main className="match-detail-page">
+        <SeoHead pathname={location.pathname} title={matchSeo.title} description={matchSeo.description} />
         <p className="empty">Match not found.</p>
         <Link to="/fixtures" className="btn">
           Back to fixtures
@@ -64,6 +83,7 @@ export function MatchDetailPage() {
 
   return (
     <main className="match-detail-page">
+      <SeoHead pathname={location.pathname} title={matchSeo.title} description={matchSeo.description} />
       <div className="match-detail-back">
         <Link className="muted" to="/fixtures" style={{ fontWeight: 700, textDecoration: "none" }}>
           ← Fixtures

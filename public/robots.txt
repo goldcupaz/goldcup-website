@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+
+Disallow: /admin
+Disallow: /admin/
+Disallow: /volunteer
+Disallow: /volunteer/
+
+Sitemap: https://goldcupaz.netlify.app/sitemap.xml

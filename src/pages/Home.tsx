@@ -90,13 +90,36 @@ export function Home() {
     <main className="home-page">
       <header className="home-hero">
         <div className="home-hero-row">
-          <img className="home-hero-logo" src={logo} alt="Gold Cup logo" />
+          <img
+            className="home-hero-logo"
+            src={logo}
+            alt="Gold Cup Azerbaijan logo — youth football tournament in Baku"
+            width={88}
+            height={88}
+            fetchPriority="high"
+          />
           <div>
-            <h1 className="page-title home-title">Gold Cup</h1>
-            <p className="subtitle home-subtitle">More than a game — a tournament experience.</p>
+            <h1 className="page-title home-title">Gold Cup Azerbaijan</h1>
+            <p className="subtitle home-subtitle">Youth Mini Football Tournament in Baku</p>
           </div>
         </div>
       </header>
+
+      <section className="card home-seo-intro" aria-labelledby="home-about-heading">
+        <h2 id="home-about-heading" className="section-title">
+          About Gold Cup Azerbaijan
+        </h2>
+        <p className="home-seo-text">
+          Gold Cup Azerbaijan is a youth mini football tournament in Baku bringing together school teams, young players,
+          supporters, sponsors, media coverage, a fan zone, and a professional matchday atmosphere. The website includes
+          fixtures, standings, live match updates, team pages, statistics, sponsors, and tournament news.
+        </p>
+        <p className="muted home-seo-keywords">
+          Follow Gold Cup AZ and Gold Cup Baku for schedules and results from this school football tournament in Baku — a
+          leading mini football tournament in Azerbaijan and youth sports event in the capital.
+        </p>
+      </section>
+
       {error && <div className="alert warn">{error}</div>}
 
       <section className="card home-live-card">

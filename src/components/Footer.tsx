@@ -96,7 +96,14 @@ export function Footer() {
     <footer className="site-footer">
       <div className="site-footer-inner">
         <div className="site-footer-brand">
-          <img className="site-footer-logo" src={logo} alt="Gold Cup logo" />
+          <img
+            className="site-footer-logo"
+            src={logo}
+            alt="Gold Cup Azerbaijan logo"
+            width={48}
+            height={48}
+            loading="lazy"
+          />
           <div>
             <div className="site-footer-title">Gold Cup</div>
             <div className="site-footer-tag">#morethanagame</div>
@@ -148,7 +155,8 @@ export function Footer() {
               <img
                 className="sponsor-logo sponsor-logo--free sponsor-logo--footer-azersun"
                 src={azersunLogo}
-                alt=""
+                alt="Azersun — Gold Cup youth football tournament in Baku"
+                loading="lazy"
               />
             </a>
           </div>
@@ -164,7 +172,8 @@ export function Footer() {
               <img
                 className="sponsor-logo sponsor-logo--free sponsor-logo--footer-dreamfest"
                 src={dreamFestLogo}
-                alt=""
+                alt="Dream Fest — Gold Cup youth football tournament in Baku"
+                loading="lazy"
               />
             </a>
           </div>
@@ -178,7 +187,12 @@ export function Footer() {
               onClick={() => onSponsorClick("Star Colleges", STAR_COLLEGES_URL, "footer_main")}
             >
               <div className="sponsor-logo-chip">
-                <img className="sponsor-logo sponsor-logo--star" src={starCollegesLogo} alt="" />
+                <img
+                  className="sponsor-logo sponsor-logo--star"
+                  src={starCollegesLogo}
+                  alt="Star Colleges — Gold Cup youth football tournament in Baku"
+                  loading="lazy"
+                />
               </div>
             </a>
           </div>
@@ -203,10 +217,20 @@ export function Footer() {
                     aria-label={`${slot.alt} — opens in a new tab`}
                     onClick={() => onSponsorClick(slot.alt, slot.href, "footer_official")}
                   >
-                    <img className={`sponsor-official-img ${slot.zoomClass}`} src={slot.src} alt="" />
+                    <img
+                      className={`sponsor-official-img ${slot.zoomClass}`}
+                      src={slot.src}
+                      alt={`${slot.alt} — Gold Cup Azerbaijan partner`}
+                      loading="lazy"
+                    />
                   </a>
                 ) : (
-                  <img className={`sponsor-official-img ${slot.zoomClass}`} src={slot.src} alt="" />
+                  <img
+                    className={`sponsor-official-img ${slot.zoomClass}`}
+                    src={slot.src}
+                    alt={`${slot.alt} — Gold Cup Azerbaijan partner`}
+                    loading="lazy"
+                  />
                 )}
               </div>
             ))}

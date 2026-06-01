@@ -1,6 +1,7 @@
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
+import { SeoHead } from "../components/SeoHead";
 import { Footer } from "../components/Footer";
 import { PeopleCounterWidget } from "../components/PeopleCounterWidget";
 import { VolunteerTeamCheck } from "../components/VolunteerTeamCheck";
@@ -47,9 +48,15 @@ export function VolunteerHub() {
   if (!unlocked) {
     return (
       <div className="volunteer-shell">
+        <SeoHead
+          pathname="/volunteer"
+          title="Gold Cup Volunteer Portal"
+          description="Volunteer portal for Gold Cup Azerbaijan tournament operations."
+          noindex
+        />
         <header className="volunteer-topbar">
           <Link to="/" className="volunteer-brand">
-            <img src={logo} alt="" className="volunteer-logo" />
+            <img src={logo} alt="Gold Cup Azerbaijan logo" className="volunteer-logo" loading="lazy" />
             <span>Gold Cup · Volunteers</span>
           </Link>
         </header>
@@ -82,9 +89,15 @@ export function VolunteerHub() {
 
   return (
     <div className="volunteer-shell">
+      <SeoHead
+        pathname="/volunteer"
+        title="Gold Cup Volunteer Portal"
+        description="Volunteer portal for Gold Cup Azerbaijan tournament operations."
+        noindex
+      />
       <header className="volunteer-topbar">
         <Link to="/" className="volunteer-brand">
-          <img src={logo} alt="" className="volunteer-logo" />
+          <img src={logo} alt="Gold Cup Azerbaijan logo" className="volunteer-logo" loading="lazy" />
           <span>Gold Cup · Volunteers</span>
         </Link>
         <button type="button" className="btn" onClick={signOutVolunteer}>
