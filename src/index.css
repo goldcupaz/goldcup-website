@@ -1583,6 +1583,12 @@ th {
   padding: 2px 0;
 }
 
+.team-qualified-star {
+  color: var(--gold, #d4af37);
+  font-size: 0.95em;
+  margin-left: 2px;
+}
+
 .live-timeline {
   list-style: none;
   padding: 0;

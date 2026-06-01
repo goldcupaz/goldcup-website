@@ -135,6 +135,19 @@ export const SF_TEAM_IDS = {
   "Ebra FC": "a0000001-0000-4000-8000-000000000011",
 } as const;
 
+/** Semifinal fixture: show ★ next to this team (confirmed qualifier). */
+export const SF_QUALIFIED_STAR_TEAM_ID = SF_TEAM_IDS["Sambo FC"];
+
+export function showsSemifinalQualificationStar(
+  match: { stage: string },
+  teamName: string,
+  teamId?: string | null,
+): boolean {
+  if (match.stage !== "sf") return false;
+  if (teamId === SF_QUALIFIED_STAR_TEAM_ID) return true;
+  return teamName === "Sambo FC";
+}
+
 export function qfTeamIdsForSlot(slot: QfSlot): { homeTeamId: string; awayTeamId: string } {
   const def = QF_BY_SLOT[slot];
   return {

@@ -8,6 +8,7 @@ import type { Database } from "../lib/database.types";
 import { formatKickoff, statusLabel } from "../lib/format";
 import { isMatchInPlayOrBreak } from "../lib/matchStatus";
 import { formatMatchScoreLineSpaced } from "../lib/matchScoreDisplay";
+import { TeamNameWithQualification } from "../components/TeamNameWithQualification";
 import { resolveTeamName } from "../lib/matchTeamNames";
 import { trackMatchPageOpen } from "../lib/websiteAnalytics";
 
@@ -69,11 +70,11 @@ export function MatchDetailPage() {
       </div>
 
       <h1 className="page-title match-detail-title">
-        {resolveTeamName(match, "home", nameById)}{" "}
+        <TeamNameWithQualification match={match} side="home" nameById={nameById} />{" "}
         <span className="muted" style={{ fontWeight: 600 }}>
           vs
         </span>{" "}
-        {resolveTeamName(match, "away", nameById)}
+        <TeamNameWithQualification match={match} side="away" nameById={nameById} />
       </h1>
 
       <div className="muted match-detail-meta">{matchLabel(match)}</div>

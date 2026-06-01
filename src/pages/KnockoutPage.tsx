@@ -6,6 +6,7 @@ import type { Database } from "../lib/database.types";
 import { formatKickoff, statusLabel } from "../lib/format";
 import { formatMatchScoreLineSpaced } from "../lib/matchScoreDisplay";
 import { isMatchInPlayOrBreak } from "../lib/matchStatus";
+import { TeamNameWithQualification } from "../components/TeamNameWithQualification";
 import { QUARTER_FINALS, qfDisplayLabel, type QfSlot } from "../lib/knockoutBracket";
 import {
   finalComputed,
@@ -139,6 +140,7 @@ function MatchCard(props: {
   computedAway?: string | null;
 }) {
   const { label, m, teams, phH, phA, timeWindow, computedHome, computedAway } = props;
+  const nameById = useMemo(() => new Map(teams.map((t) => [t.id, t.name] as const)), [teams]);
   const h = sideName(m, "home", teams, computedHome ?? null, phH);
   const a = sideName(m, "away", teams, computedAway ?? null, phA);
   const when = m?.scheduled_at ? formatKickoff(m.scheduled_at) : "";
@@ -159,7 +161,9 @@ function MatchCard(props: {
         )
       )}
       <div className="match-line">
-        <span>{h}</span>
+        <span>
+          {m ? <TeamNameWithQualification match={m} side="home" nameById={nameById} /> : h}
+        </span>
         {m && (m.status === "full_time" || isMatchInPlayOrBreak(m.status)) ? (
           <span className="match-score">
             {formatMatchScoreLineSpaced(m)}
@@ -167,7 +171,9 @@ function MatchCard(props: {
         ) : (
           <span className="muted">vs</span>
         )}
-        <span>{a}</span>
+        <span>
+          {m ? <TeamNameWithQualification match={m} side="away" nameById={nameById} /> : a}
+        </span>
       </div>
       <div className="muted" style={{ fontSize: 11, marginTop: 6 }}>
         {m ? statusLabel(m.status) : "—"}

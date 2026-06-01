@@ -8,6 +8,7 @@ import { isMatchInPlayOrBreak } from "../lib/matchStatus";
 import { FINAL_FIXTURE, QUARTER_FINALS, SEMI_FINALS } from "../lib/knockoutBracket";
 import { formatMatchScoreLine } from "../lib/matchScoreDisplay";
 import { stageSortKey } from "../lib/matchSort";
+import { TeamNameWithQualification } from "../components/TeamNameWithQualification";
 import { resolveTeamName } from "../lib/matchTeamNames";
 
 type MatchRow = Database["public"]["Tables"]["matches"]["Row"];
@@ -543,9 +544,13 @@ function KnockoutFixtureRow({
     >
       <td>{formatKickoff(m.scheduled_at)}</td>
       <td style={{ fontSize: 12, fontWeight: 700 }}>{roundLabel}</td>
-      <td style={{ fontWeight: 800 }}>{resolveTeamName(m, "home", nameById)}</td>
+      <td style={{ fontWeight: 800 }}>
+        <TeamNameWithQualification match={m} side="home" nameById={nameById} />
+      </td>
       <td className="muted fixture-hide-vs">vs</td>
-      <td style={{ fontWeight: 800 }}>{resolveTeamName(m, "away", nameById)}</td>
+      <td style={{ fontWeight: 800 }}>
+        <TeamNameWithQualification match={m} side="away" nameById={nameById} />
+      </td>
       <td style={{ fontVariantNumeric: "tabular-nums" }}>
         {finished || live ? formatMatchScoreLine(m) : "—"}
       </td>

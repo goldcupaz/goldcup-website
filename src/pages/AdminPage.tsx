@@ -40,6 +40,8 @@ import {
   type SfSlot,
 } from "../lib/knockoutBracket";
 import { parseOptionalPenaltyField } from "../lib/matchScoreDisplay";
+import { TeamNameWithQualification } from "../components/TeamNameWithQualification";
+import { SF_QUALIFIED_STAR_TEAM_ID } from "../lib/knockoutBracket";
 import { koMatchNeedsTeamPersist, resolveMatchTeamIds, resolveTeamName } from "../lib/matchTeamNames";
 import { AdminMatchScoreInputs } from "../components/AdminMatchScoreInputs";
 import { supabase } from "../lib/supabase";
@@ -978,6 +980,7 @@ function KoMatchRow({
               {teams.map((t) => (
                 <option key={t.id} value={t.id}>
                   {t.name}
+                  {m.stage === "sf" && t.id === SF_QUALIFIED_STAR_TEAM_ID ? " ★" : ""}
                 </option>
               ))}
             </select>
@@ -989,13 +992,15 @@ function KoMatchRow({
               {teams.map((t) => (
                 <option key={t.id} value={t.id}>
                   {t.name}
+                  {m.stage === "sf" && t.id === SF_QUALIFIED_STAR_TEAM_ID ? " ★" : ""}
                 </option>
               ))}
             </select>
           </div>
         ) : (
           <>
-            {resolveTeamName(m, "home", nameById)} vs {resolveTeamName(m, "away", nameById)}
+            <TeamNameWithQualification match={m} side="home" nameById={nameById} /> vs{" "}
+            <TeamNameWithQualification match={m} side="away" nameById={nameById} />
           </>
         )}
       </td>

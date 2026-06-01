@@ -9,7 +9,7 @@ import {
   type SfSlot,
 } from "./knockoutBracket";
 
-type MatchSides = {
+export type MatchSides = {
   stage: string;
   slot_code: string | null;
   home_team_id: string | null;
