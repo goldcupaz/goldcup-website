@@ -1583,8 +1583,8 @@ th {
   padding: 2px 0;
 }
 
-/* Matchday 6 — Finals layout */
-.matchday-card--finals .matchday-card-head {
+/* Matchday 5 / 6 — knockout styled fixture blocks */
+.matchday-card--ko-styled .matchday-card-head {
   text-align: center;
 }
 
@@ -1603,7 +1603,7 @@ th {
   width: 100%;
 }
 
-.finals-matchday-section--after-final {
+.finals-matchday-section--separated {
   margin-top: 8px;
   padding-top: 12px;
   border-top: 1px solid rgba(212, 175, 55, 0.14);
@@ -1618,8 +1618,31 @@ th {
   width: 100%;
 }
 
-.finals-section-divider--final {
+.finals-section-divider--final,
+.finals-section-divider--sf1 {
   margin-top: clamp(12px, 2vw, 18px);
+}
+
+.finals-section-divider--sf1 .finals-section-divider__label {
+  font-size: clamp(13px, 2.3vw, 15px);
+  text-shadow: 0 0 20px rgba(212, 175, 55, 0.28);
+}
+
+.finals-section-divider--sf2 .finals-section-divider__label {
+  font-size: clamp(12px, 2.2vw, 13px);
+  letter-spacing: 0.18em;
+  color: rgba(212, 175, 55, 0.9);
+}
+
+.finals-section-divider--sf2 .finals-section-divider__line {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(212, 175, 55, 0.14) 20%,
+    rgba(212, 175, 55, 0.45) 50%,
+    rgba(212, 175, 55, 0.14) 80%,
+    transparent 100%
+  );
 }
 
 .finals-section-divider__line {
@@ -1691,6 +1714,13 @@ th {
   background: linear-gradient(180deg, rgba(212, 175, 55, 0.06), rgba(0, 0, 0, 0.24));
 }
 
+.finals-matchday-section--sf1 .finals-matchday-table-card {
+  border-color: rgba(212, 175, 55, 0.36);
+  box-shadow: 0 0 20px rgba(212, 175, 55, 0.06);
+  background: linear-gradient(180deg, rgba(212, 175, 55, 0.05), rgba(0, 0, 0, 0.22));
+}
+
+.finals-matchday-section--sf2 .finals-matchday-table-card,
 .finals-matchday-section--third .finals-matchday-table-card {
   border-color: rgba(212, 175, 55, 0.16);
 }
@@ -1770,7 +1800,7 @@ th {
   padding-right: 0;
 }
 
-.fixture-row--finals:hover td {
+.fixture-row--ko-styled:hover td {
   background: rgba(212, 175, 55, 0.06);
 }
 
