@@ -4,7 +4,9 @@ import {
   QF_TEAM_IDS,
   SF_BY_SLOT,
   SF_TEAM_IDS,
+  THIRD_PLACE_FIXTURE,
   finalTeamIds,
+  thirdPlaceTeamIds,
   type QfSlot,
   type SfSlot,
 } from "./knockoutBracket";
@@ -28,6 +30,9 @@ function bracketTeamName(match: MatchSides, side: "home" | "away"): string | nul
   if (match.stage === "final" && match.slot_code === FINAL_FIXTURE.slot) {
     return side === "home" ? FINAL_FIXTURE.homeTeamName : FINAL_FIXTURE.awayTeamName;
   }
+  if (match.stage === "third" && match.slot_code === THIRD_PLACE_FIXTURE.slot) {
+    return side === "home" ? THIRD_PLACE_FIXTURE.homeTeamName : THIRD_PLACE_FIXTURE.awayTeamName;
+  }
   return null;
 }
 
@@ -36,6 +41,10 @@ function bracketTeamId(match: MatchSides, side: "home" | "away"): string | null 
   if (!name) return null;
   if (match.stage === "final" && match.slot_code === FINAL_FIXTURE.slot) {
     const ids = finalTeamIds();
+    return side === "home" ? ids.homeTeamId : ids.awayTeamId;
+  }
+  if (match.stage === "third" && match.slot_code === THIRD_PLACE_FIXTURE.slot) {
+    const ids = thirdPlaceTeamIds();
     return side === "home" ? ids.homeTeamId : ids.awayTeamId;
   }
   const ids = { ...QF_TEAM_IDS, ...SF_TEAM_IDS };
@@ -75,7 +84,7 @@ export function resolveMatchTeamIds(match: MatchSides): {
 }
 
 export function koMatchNeedsTeamPersist(match: MatchSides): boolean {
-  if (match.stage !== "qf" && match.stage !== "sf" && match.stage !== "final") return false;
+  if (match.stage !== "qf" && match.stage !== "sf" && match.stage !== "final" && match.stage !== "third") return false;
   if (!match.slot_code) return false;
   const { homeTeamId, awayTeamId } = resolveMatchTeamIds(match);
   if (!homeTeamId || !awayTeamId) return false;

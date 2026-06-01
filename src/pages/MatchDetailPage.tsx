@@ -10,13 +10,14 @@ import { isMatchInPlayOrBreak } from "../lib/matchStatus";
 import { formatMatchScoreLineSpaced } from "../lib/matchScoreDisplay";
 import { TeamNameWithQualification } from "../components/TeamNameWithQualification";
 import { resolveTeamName } from "../lib/matchTeamNames";
+import { matchRoundLabel } from "../lib/matchRoundLabels";
 import { trackMatchPageOpen } from "../lib/websiteAnalytics";
 
 type MatchRow = Database["public"]["Tables"]["matches"]["Row"];
 
 function matchLabel(m: MatchRow): string {
   if (m.stage === "group") return `Group ${m.group_letter ?? "?"} · ${m.slot_code ?? ""}`;
-  return m.slot_code ?? m.stage;
+  return matchRoundLabel(m);
 }
 
 export function MatchDetailPage() {
@@ -79,6 +80,7 @@ export function MatchDetailPage() {
 
       <div className="muted match-detail-meta">{matchLabel(match)}</div>
       {match.scheduled_at && <p className="muted match-detail-kick">{formatKickoff(match.scheduled_at)}</p>}
+      {match.venue?.trim() && <p className="muted match-detail-kick">{match.venue.trim()}</p>}
 
       {error && <div className="alert warn">{error}</div>}
 

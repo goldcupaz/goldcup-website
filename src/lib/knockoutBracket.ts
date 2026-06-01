@@ -204,3 +204,31 @@ export function finalTeamIds(): { homeTeamId: string; awayTeamId: string } {
 export function finalAdminFixtureLabel(): string {
   return `Final · ${FINAL_MATCHDAY_LABEL} · ${FINAL_FIXTURE.homeTeamName} vs ${FINAL_FIXTURE.awayTeamName}`;
 }
+
+export const THIRD_PLACE_FIXTURE = {
+  slot: "THIRD" as const,
+  homeTeamName: "Ebra FC",
+  awayTeamName: "EAS Saints",
+  kickoffTime: "16:00",
+};
+
+export function thirdPlaceScheduledAtIso(): string {
+  return `${FINAL_MATCHDAY} ${THIRD_PLACE_FIXTURE.kickoffTime}:00+04`;
+}
+
+export function thirdPlaceTeamIds(): { homeTeamId: string; awayTeamId: string } {
+  return {
+    homeTeamId: QF_TEAM_IDS["Ebra FC"],
+    awayTeamId: QF_TEAM_IDS["EAS Saints"],
+  };
+}
+
+export function thirdPlaceAdminFixtureLabel(): string {
+  return `Third Place · ${FINAL_MATCHDAY_LABEL} · ${THIRD_PLACE_FIXTURE.homeTeamName} vs ${THIRD_PLACE_FIXTURE.awayTeamName}`;
+}
+
+/** Apply both Matchday 6 fixtures (final + third place) in display order. */
+export const MATCHDAY_6_FIXTURES = [
+  { kind: "final" as const, def: FINAL_FIXTURE },
+  { kind: "third" as const, def: THIRD_PLACE_FIXTURE },
+] as const;

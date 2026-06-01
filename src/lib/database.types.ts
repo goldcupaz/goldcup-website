@@ -120,6 +120,7 @@ export type Database = {
           away_score: number;
           home_penalties: number | null;
           away_penalties: number | null;
+          venue: string | null;
           sort_order: number;
           created_at: string;
           updated_at: string;
@@ -137,6 +138,7 @@ export type Database = {
           away_score?: number;
           home_penalties?: number | null;
           away_penalties?: number | null;
+          venue?: string | null;
           sort_order?: number;
         };
         Update: {
@@ -151,6 +153,7 @@ export type Database = {
           away_score?: number;
           home_penalties?: number | null;
           away_penalties?: number | null;
+          venue?: string | null;
           sort_order?: number;
         };
       };

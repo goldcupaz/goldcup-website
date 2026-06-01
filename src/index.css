@@ -1583,6 +1583,21 @@ th {
   padding: 2px 0;
 }
 
+.finals-matchday-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.finals-matchday-round {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
 .team-qualified-star {
   color: var(--gold, #d4af37);
   font-size: 0.95em;

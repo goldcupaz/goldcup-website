@@ -36,16 +36,22 @@ import {
   finalAdminFixtureLabel,
   finalScheduledAtIso,
   finalTeamIds,
+  THIRD_PLACE_FIXTURE,
+  FINAL_FIXTURE,
+  thirdPlaceAdminFixtureLabel,
+  thirdPlaceScheduledAtIso,
+  thirdPlaceTeamIds,
   type QfSlot,
   type SfSlot,
 } from "../lib/knockoutBracket";
+import { matchRoundLabel } from "../lib/matchRoundLabels";
 import { parseOptionalPenaltyField } from "../lib/matchScoreDisplay";
 import { TeamNameWithQualification } from "../components/TeamNameWithQualification";
 import { SF_QUALIFIED_STAR_TEAM_ID } from "../lib/knockoutBracket";
 import { koMatchNeedsTeamPersist, resolveMatchTeamIds, resolveTeamName } from "../lib/matchTeamNames";
 import { AdminMatchScoreInputs } from "../components/AdminMatchScoreInputs";
 import { supabase } from "../lib/supabase";
-import { finalComputed, getBySlot, thirdComputed } from "../lib/knockoutResolve";
+import { getBySlot } from "../lib/knockoutResolve";
 import { winnerId } from "../lib/bracket";
 
 type MatchRow = Database["public"]["Tables"]["matches"]["Row"];
@@ -192,7 +198,7 @@ where id = 'YOUR_USER_UUID';`}
   }
 
   async function applyFinalFixture() {
-    const m = matches.find((x) => x.stage === "final" && x.slot_code === "FINAL");
+    const m = matches.find((x) => x.stage === "final" && x.slot_code === FINAL_FIXTURE.slot);
     if (!m) {
       await notify("No final row found in database.");
       return;
@@ -212,6 +218,67 @@ where id = 'YOUR_USER_UUID';`}
       return;
     }
     await notify("Final updated (MTK Eagles vs Sambo FC).");
+  }
+
+  async function applyThirdPlaceFixture() {
+    const m = matches.find((x) => x.stage === "third" && x.slot_code === THIRD_PLACE_FIXTURE.slot);
+    if (!m) {
+      await notify("No third place row found in database.");
+      return;
+    }
+    const { homeTeamId, awayTeamId } = thirdPlaceTeamIds();
+    const { error } = await supabase
+      .from("matches")
+      .update({
+        home_team_id: homeTeamId,
+        away_team_id: awayTeamId,
+        scheduled_at: thirdPlaceScheduledAtIso(),
+        sort_order: 299,
+      })
+      .eq("id", m.id);
+    if (error) {
+      await notify("", error.message);
+      return;
+    }
+    await notify("Third place match updated (Ebra FC vs EAS Saints).");
+  }
+
+  async function applyMatchday6Fixtures() {
+    const third = matches.find((x) => x.stage === "third" && x.slot_code === THIRD_PLACE_FIXTURE.slot);
+    const fin = matches.find((x) => x.stage === "final" && x.slot_code === FINAL_FIXTURE.slot);
+    if (!third || !fin) {
+      await notify("Missing final or third place row in database.");
+      return;
+    }
+    const tIds = thirdPlaceTeamIds();
+    const { error: e1 } = await supabase
+      .from("matches")
+      .update({
+        home_team_id: tIds.homeTeamId,
+        away_team_id: tIds.awayTeamId,
+        scheduled_at: thirdPlaceScheduledAtIso(),
+        sort_order: 299,
+      })
+      .eq("id", third.id);
+    if (e1) {
+      await notify("", e1.message);
+      return;
+    }
+    const fIds = finalTeamIds();
+    const { error: e2 } = await supabase
+      .from("matches")
+      .update({
+        home_team_id: fIds.homeTeamId,
+        away_team_id: fIds.awayTeamId,
+        scheduled_at: finalScheduledAtIso(),
+        sort_order: 300,
+      })
+      .eq("id", fin.id);
+    if (e2) {
+      await notify("", e2.message);
+      return;
+    }
+    await notify("Matchday 6 updated: Final (MTK vs Sambo) and Third Place (Ebra vs EAS Saints).");
   }
 
   async function applyQuarterfinalFixtures() {
@@ -386,9 +453,7 @@ where id = 'YOUR_USER_UUID';`}
     const qf4 = getBySlot(matches, "QF4");
     const sf1 = getBySlot(matches, "SF1");
     const sf2 = getBySlot(matches, "SF2");
-    const fin = getBySlot(matches, "FINAL");
-    const third = getBySlot(matches, "THIRD");
-    if (!sf1 || !sf2 || !fin || !third) return;
+    if (!sf1 || !sf2) return;
 
     const w1 = qf1 ? winnerId(qf1) : null;
     const w2 = qf2 ? winnerId(qf2) : null;
@@ -412,38 +477,8 @@ where id = 'YOUR_USER_UUID';`}
       return;
     }
 
-    const { data: fresh, error: fe } = await supabase.from("matches").select("*").order("sort_order");
-    if (fe || !fresh) {
-      await notify("", fe?.message ?? "Could not reload matches.");
-      return;
-    }
-    const mlist = fresh as MatchRow[];
-    const cF = finalComputed(mlist);
-    const cT = thirdComputed(mlist);
-
-    if (cF.homeId && cF.awayId) {
-      const { error: e3 } = await supabase
-        .from("matches")
-        .update({ home_team_id: cF.homeId, away_team_id: cF.awayId })
-        .eq("id", fin.id);
-      if (e3) {
-        await notify("", e3.message);
-        return;
-      }
-    }
-    if (cT.homeId && cT.awayId) {
-      const { error: e4 } = await supabase
-        .from("matches")
-        .update({ home_team_id: cT.homeId, away_team_id: cT.awayId })
-        .eq("id", third.id);
-      if (e4) {
-        await notify("", e4.message);
-        return;
-      }
-    }
-
     await notify(
-      "Bracket synced: semi-final slots updated from quarter-finals. Final / 3rd place updated when semi-finals have winners.",
+      "Bracket synced: semi-final slots updated from quarter-finals. Use “Apply Matchday 6 fixtures” for final and third place teams.",
     );
   }
 
@@ -513,9 +548,11 @@ where id = 'YOUR_USER_UUID';`}
                     ? qfAdminFixtureLabel(qfSlot)
                     : sfSlot
                       ? sfAdminFixtureLabel(sfSlot)
-                      : m.stage === "final" && m.slot_code === "FINAL"
+                      : m.stage === "final" && m.slot_code === FINAL_FIXTURE.slot
                         ? finalAdminFixtureLabel()
-                        : (() => {
+                        : m.stage === "third" && m.slot_code === THIRD_PLACE_FIXTURE.slot
+                          ? thirdPlaceAdminFixtureLabel()
+                          : (() => {
                         const stageTag =
                           m.stage === "group"
                             ? `Group ${m.group_letter ?? "?"}`
@@ -662,61 +699,49 @@ where id = 'YOUR_USER_UUID';`}
           </div>
 
           <h2 style={{ marginTop: 24, fontSize: 14, letterSpacing: "0.12em", textTransform: "uppercase" }}>
-            Matchday 6 — Final
+            Matchday 6 — Finals
           </h2>
           <p className="muted" style={{ marginTop: 0, fontSize: 12 }}>
-            MTK Eagles vs Sambo FC. Penalty shootout kicks are added on the Live tab.
+            Final: MTK Eagles vs Sambo FC · Third Place: Ebra FC vs EAS Saints. Penalty shootout kicks on the Live tab.
           </p>
           <button
             type="button"
             className="btn"
             style={{ marginBottom: 10 }}
-            onClick={() => void applyFinalFixture()}
+            onClick={() => void applyMatchday6Fixtures()}
           >
-            Apply final fixture to database
+            Apply Matchday 6 fixtures to database
           </button>
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Slot</th>
-                  <th>When</th>
-                  <th>Match-up</th>
-                  <th>Score</th>
-                  <th>Status</th>
-                  <th />
-                </tr>
-              </thead>
-              <tbody>
-                {finalMatches.map((m) => (
-                  <KoMatchRow key={m.id} m={m} teams={teams} nameById={nameById} onSave={(p) => void saveMatch(p)} />
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          <h2 style={{ marginTop: 24, fontSize: 14, letterSpacing: "0.12em", textTransform: "uppercase" }}>
-            3rd place
-          </h2>
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Slot</th>
-                  <th>When</th>
-                  <th>Match-up</th>
-                  <th>Score</th>
-                  <th>Status</th>
-                  <th />
-                </tr>
-              </thead>
-              <tbody>
-                {thirdMatches.map((m) => (
-                  <KoMatchRow key={m.id} m={m} teams={teams} nameById={nameById} onSave={(p) => void saveMatch(p)} />
-                ))}
-              </tbody>
-            </table>
-          </div>
+          {[...finalMatches, ...thirdMatches]
+            .sort((a, b) => {
+              if (a.stage === "final" && b.stage === "third") return -1;
+              if (a.stage === "third" && b.stage === "final") return 1;
+              return a.sort_order - b.sort_order;
+            })
+            .map((m) => (
+              <div key={m.id} style={{ marginTop: 16 }}>
+                <h3 style={{ fontSize: 12, letterSpacing: "0.1em", textTransform: "uppercase", margin: "0 0 8px" }}>
+                  {matchRoundLabel(m)}
+                </h3>
+                <div className="table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Round</th>
+                        <th>When / venue</th>
+                        <th>Match-up</th>
+                        <th>Score</th>
+                        <th>Status</th>
+                        <th />
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <KoMatchRow m={m} teams={teams} nameById={nameById} onSave={(p) => void saveMatch(p)} showVenue />
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ))}
         </section>
       )}
 
@@ -881,16 +906,28 @@ function KoMatchRow({
   teams,
   nameById,
   onSave,
+  showVenue = false,
 }: {
   m: MatchRow;
   teams: Database["public"]["Tables"]["teams"]["Row"][];
   nameById: Map<string, string>;
   onSave: (p: Partial<MatchRow> & { id: string }) => void;
+  showVenue?: boolean;
 }) {
   const qfSlot = m.stage === "qf" && m.slot_code && m.slot_code in QF_BY_SLOT ? (m.slot_code as QfSlot) : null;
   const sfSlot = m.stage === "sf" && m.slot_code && m.slot_code in SF_BY_SLOT ? (m.slot_code as SfSlot) : null;
-  const bracketIds = qfSlot ? qfTeamIdsForSlot(qfSlot) : sfSlot ? sfTeamIdsForSlot(sfSlot) : null;
-  const editableTeams = m.stage === "qf" || m.stage === "sf" || m.stage === "final";
+  const finalSlot = m.stage === "final" && m.slot_code === FINAL_FIXTURE.slot;
+  const thirdSlot = m.stage === "third" && m.slot_code === THIRD_PLACE_FIXTURE.slot;
+  const bracketIds = qfSlot
+    ? qfTeamIdsForSlot(qfSlot)
+    : sfSlot
+      ? sfTeamIdsForSlot(sfSlot)
+      : finalSlot
+        ? finalTeamIds()
+        : thirdSlot
+          ? thirdPlaceTeamIds()
+          : null;
+  const editableTeams = m.stage === "qf" || m.stage === "sf" || m.stage === "final" || m.stage === "third";
 
   const [hs, setHs] = useState(String(m.home_score));
   const [as, setAs] = useState(String(m.away_score));
@@ -899,10 +936,13 @@ function KoMatchRow({
   const [st, setSt] = useState<MatchStatus>(m.status);
   const [homeId, setHomeId] = useState(m.home_team_id ?? bracketIds?.homeTeamId ?? "");
   const [awayId, setAwayId] = useState(m.away_team_id ?? bracketIds?.awayTeamId ?? "");
+  const [venue, setVenue] = useState(m.venue ?? "");
   const [when, setWhen] = useState(() => {
     if (m.scheduled_at) return isoToDatetimeLocalValue(m.scheduled_at);
     if (qfSlot) return isoToDatetimeLocalValue(qfScheduledAtIso(qfSlot));
     if (sfSlot) return isoToDatetimeLocalValue(sfScheduledAtIso(sfSlot));
+    if (finalSlot) return isoToDatetimeLocalValue(finalScheduledAtIso());
+    if (thirdSlot) return isoToDatetimeLocalValue(thirdPlaceScheduledAtIso());
     return "";
   });
 
@@ -914,9 +954,12 @@ function KoMatchRow({
     setAp(m.away_penalties != null ? String(m.away_penalties) : "");
     setHomeId(m.home_team_id ?? bracketIds?.homeTeamId ?? "");
     setAwayId(m.away_team_id ?? bracketIds?.awayTeamId ?? "");
+    setVenue(m.venue ?? "");
     if (m.scheduled_at) setWhen(isoToDatetimeLocalValue(m.scheduled_at));
     else if (qfSlot) setWhen(isoToDatetimeLocalValue(qfScheduledAtIso(qfSlot)));
     else if (sfSlot) setWhen(isoToDatetimeLocalValue(sfScheduledAtIso(sfSlot)));
+    else if (finalSlot) setWhen(isoToDatetimeLocalValue(finalScheduledAtIso()));
+    else if (thirdSlot) setWhen(isoToDatetimeLocalValue(thirdPlaceScheduledAtIso()));
   }, [
     m.id,
     m.status,
@@ -927,8 +970,11 @@ function KoMatchRow({
     m.home_team_id,
     m.away_team_id,
     m.scheduled_at,
+    m.venue,
     qfSlot,
     sfSlot,
+    finalSlot,
+    thirdSlot,
     bracketIds?.homeTeamId,
     bracketIds?.awayTeamId,
   ]);
@@ -945,16 +991,17 @@ function KoMatchRow({
       away_penalties: parseOptionalPenaltyField(ap),
       status: st,
       scheduled_at: when ? new Date(when).toISOString() : null,
+      ...(showVenue ? { venue: venue.trim() ? venue.trim() : null } : {}),
     });
   }
 
   const matchdayLabel =
-    qfSlot ? "Matchday 4" : sfSlot ? "Matchday 5" : m.stage === "final" ? "Final" : m.stage === "third" ? "Finals" : null;
+    qfSlot ? "Matchday 4" : sfSlot ? "Matchday 5" : finalSlot || thirdSlot ? "Matchday 6" : null;
 
   return (
     <tr>
       <td>
-        <div style={{ fontWeight: 700 }}>{m.slot_code}</div>
+        <div style={{ fontWeight: 700 }}>{matchRoundLabel(m)}</div>
         {matchdayLabel && <div className="muted" style={{ fontSize: 10 }}>{matchdayLabel}</div>}
       </td>
       <td>
@@ -969,7 +1016,18 @@ function KoMatchRow({
             />
           </div>
         ) : (
-          <input type="datetime-local" value={when} onChange={(e) => setWhen(e.target.value)} />
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            <input type="datetime-local" value={when} onChange={(e) => setWhen(e.target.value)} />
+            {showVenue && (
+              <input
+                type="text"
+                placeholder="Venue"
+                value={venue}
+                onChange={(e) => setVenue(e.target.value)}
+                style={{ maxWidth: "100%" }}
+              />
+            )}
+          </div>
         )}
       </td>
       <td>

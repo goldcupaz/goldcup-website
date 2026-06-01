@@ -114,7 +114,7 @@ export function KnockoutPage() {
               phA="Winner SF2"
             />
             <MatchCard
-              label="3rd place"
+              label="Third Place Match"
               m={third}
               teams={teams}
               computedHome={c_third.homeId}

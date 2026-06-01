@@ -5,9 +5,9 @@ import { useTournament } from "../context/TournamentContext";
 import type { Database } from "../lib/database.types";
 import { formatKickoff, statusLabel } from "../lib/format";
 import { isMatchInPlayOrBreak } from "../lib/matchStatus";
-import { FINAL_FIXTURE, QUARTER_FINALS, SEMI_FINALS } from "../lib/knockoutBracket";
+import { FINAL_FIXTURE, QUARTER_FINALS, SEMI_FINALS, THIRD_PLACE_FIXTURE } from "../lib/knockoutBracket";
 import { formatMatchScoreLine } from "../lib/matchScoreDisplay";
-import { stageSortKey } from "../lib/matchSort";
+import { matchRoundLabel } from "../lib/matchRoundLabels";
 import { TeamNameWithQualification } from "../components/TeamNameWithQualification";
 import { resolveTeamName } from "../lib/matchTeamNames";
 
@@ -47,12 +47,22 @@ type MatchdayBucket = {
   label: string;
   subtitle: string;
   matches: MatchRow[];
-  kind: "group" | "quarterfinals" | "semifinals" | "final";
+  kind: "group" | "quarterfinals" | "semifinals" | "finals";
+};
+
+type FinalsSection = {
+  roundLabel: string;
+  match: MatchRow;
+};
+
+type FinalsMatchdayBucket = MatchdayBucket & {
+  kind: "finals";
+  sections: FinalsSection[];
 };
 
 const MD4_KEY = "matchday-4-quarterfinals";
 const MD5_KEY = "matchday-5-semifinals";
-const MD6_KEY = "matchday-6-final";
+const MD6_KEY = "matchday-6-finals";
 
 const FIXTURE_TABS: { index: number; label: string }[] = [
   { index: 0, label: "Matchday 1" },
@@ -60,7 +70,7 @@ const FIXTURE_TABS: { index: number; label: string }[] = [
   { index: 2, label: "Matchday 3" },
   { index: 3, label: "Matchday 4 — Quarterfinals" },
   { index: 4, label: "Matchday 5 — Semifinals" },
-  { index: 5, label: "Matchday 6 — Final" },
+  { index: 5, label: "Matchday 6 — Finals" },
 ];
 
 export function FixturesPage() {
@@ -171,16 +181,24 @@ export function FixturesPage() {
     return matches.find((m) => m.stage === "final" && m.slot_code === FINAL_FIXTURE.slot) ?? null;
   }, [matches]);
 
-  const matchday6: MatchdayBucket | null = useMemo(() => {
-    if (!finalMatch) return null;
+  const thirdPlaceMatch = useMemo(() => {
+    return matches.find((m) => m.stage === "third" && m.slot_code === THIRD_PLACE_FIXTURE.slot) ?? null;
+  }, [matches]);
+
+  const matchday6: FinalsMatchdayBucket | null = useMemo(() => {
+    const sections: FinalsSection[] = [];
+    if (finalMatch) sections.push({ roundLabel: "Final", match: finalMatch });
+    if (thirdPlaceMatch) sections.push({ roundLabel: "Third Place Match", match: thirdPlaceMatch });
+    if (sections.length === 0) return null;
     return {
       key: MD6_KEY,
-      label: "Matchday 6 — Final",
-      subtitle: `${FINAL_FIXTURE.homeTeamName} vs ${FINAL_FIXTURE.awayTeamName}`,
-      matches: [finalMatch],
-      kind: "final",
+      label: "Matchday 6 — Finals",
+      subtitle: "Final · Third Place Match",
+      matches: sections.map((s) => s.match),
+      sections,
+      kind: "finals",
     };
-  }, [finalMatch]);
+  }, [finalMatch, thirdPlaceMatch]);
 
   const allMatchdaySections = useMemo(() => {
     const sections = [...groupMatchdays];
@@ -199,21 +217,6 @@ export function FixturesPage() {
     return b ? [b] : [];
   }, [allMatchdaySections, filter, groupMatchdays, matchday4, matchday5, matchday6]);
 
-  const laterKnockoutMatches = useMemo(() => {
-    return matches
-      .filter((m) => m.stage === "third")
-      .slice()
-      .sort((a, b) => {
-        const sa = stageSortKey(a.stage);
-        const sb = stageSortKey(b.stage);
-        if (sa !== sb) return sa - sb;
-        if (a.sort_order !== b.sort_order) return a.sort_order - b.sort_order;
-        const ta = a.scheduled_at ? new Date(a.scheduled_at).getTime() : Infinity;
-        const tb = b.scheduled_at ? new Date(b.scheduled_at).getTime() : Infinity;
-        return ta - tb;
-      });
-  }, [matches]);
-
   const qfTimeBySlot = useMemo(() => {
     const map = new Map<string, string>();
     for (const q of QUARTER_FINALS) map.set(q.slot, q.timeWindow);
@@ -222,7 +225,7 @@ export function FixturesPage() {
 
   if (loading && matches.length === 0) return <p className="empty">Loading…</p>;
 
-  const hasAnyFixtures = allMatchdaySections.length > 0 || laterKnockoutMatches.length > 0;
+  const hasAnyFixtures = allMatchdaySections.length > 0;
 
   function tabBucket(tabIndex: number): MatchdayBucket | null | undefined {
     if (tabIndex < 3) return groupMatchdays[tabIndex];
@@ -236,7 +239,7 @@ export function FixturesPage() {
     <main>
       <h1 className="page-title">Fixtures / Results</h1>
       <p className="subtitle">
-        Group stage by matchday, quarter-finals, semi-finals, final, then 3rd place. Live matches are highlighted.
+        Group stage by matchday, quarter-finals, semi-finals, then Matchday 6 finals. Live matches are highlighted.
       </p>
       {error && <div className="alert warn">{error}</div>}
 
@@ -284,47 +287,21 @@ export function FixturesPage() {
               qfTimeBySlot={qfTimeBySlot}
               onOpen={goMatch}
             />
-          ) : bucket.kind === "semifinals" || bucket.kind === "final" ? (
+          ) : bucket.kind === "semifinals" ? (
             <KnockoutMatchdayCard
               key={bucket.key}
               bucket={bucket}
               nameById={nameById}
               onOpen={goMatch}
             />
+          ) : bucket.kind === "finals" ? (
+            <FinalsMatchdayCard key={bucket.key} bucket={bucket} nameById={nameById} onOpen={goMatch} />
           ) : (
             <GroupMatchdayCard key={bucket.key} bucket={bucket} nameById={nameById} onOpen={goMatch} />
           ),
         )}
       </div>
 
-      {laterKnockoutMatches.length > 0 && filter === "all" && (
-        <section className="matchday-card fixtures-knockout-section" style={{ marginTop: 20 }}>
-          <header className="matchday-card-head">
-            <h2 className="matchday-card-title">3rd place</h2>
-            <p className="matchday-card-sub">Bronze medal match</p>
-          </header>
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Kickoff</th>
-                  <th>Round</th>
-                  <th>Home</th>
-                  <th className="fixture-hide-vs" aria-hidden />
-                  <th>Away</th>
-                  <th>Score</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {laterKnockoutMatches.map((m) => (
-                  <KnockoutFixtureRow key={m.id} m={m} nameById={nameById} onOpen={goMatch} />
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
-      )}
     </main>
   );
 }
@@ -479,6 +456,52 @@ function QuarterfinalsMatchdayCard({
   );
 }
 
+function FinalsMatchdayCard({
+  bucket,
+  nameById,
+  onOpen,
+}: {
+  bucket: FinalsMatchdayBucket;
+  nameById: Map<string, string>;
+  onOpen: (id: string) => void;
+}) {
+  return (
+    <section className="matchday-card matchday-card--finals" aria-labelledby={`md-${bucket.key}`}>
+      <header className="matchday-card-head">
+        <h2 id={`md-${bucket.key}`} className="matchday-card-title">
+          {bucket.label}
+        </h2>
+        <p className="matchday-card-sub">{bucket.subtitle}</p>
+      </header>
+      <div className="finals-matchday-sections">
+        {bucket.sections.map((section) => (
+          <div key={section.match.id} className="finals-matchday-section">
+            <h3 className="finals-matchday-round">{section.roundLabel}</h3>
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Kickoff</th>
+                    <th>Round</th>
+                    <th>Home</th>
+                    <th className="fixture-hide-vs" aria-hidden />
+                    <th>Away</th>
+                    <th>Score</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <KnockoutFixtureRow m={section.match} nameById={nameById} onOpen={onOpen} />
+                </tbody>
+              </table>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function KnockoutMatchdayCard({
   bucket,
   nameById,
@@ -531,7 +554,7 @@ function KnockoutFixtureRow({
 }) {
   const live = isMatchInPlayOrBreak(m.status);
   const finished = m.status === "full_time";
-  const roundLabel = m.slot_code ?? m.stage;
+  const roundLabel = matchRoundLabel(m);
 
   return (
     <tr
