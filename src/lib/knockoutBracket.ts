@@ -106,6 +106,8 @@ export type SemiFinalDef = {
   slot: SfSlot;
   homeTeamName: string;
   awayTeamName: string;
+  /** Local kickoff–full-time window (80 min). */
+  timeWindow: string;
   kickoffTime: string;
 };
 
@@ -114,13 +116,15 @@ export const SEMI_FINALS: readonly SemiFinalDef[] = [
     slot: "SF1",
     homeTeamName: "MTK Eagles",
     awayTeamName: "EAS Saints",
+    timeWindow: "06:00 PM – 07:20 PM",
     kickoffTime: "18:00",
   },
   {
     slot: "SF2",
     homeTeamName: "Sambo FC",
     awayTeamName: "Ebra FC",
-    kickoffTime: "20:00",
+    timeWindow: "07:30 PM – 08:50 PM",
+    kickoffTime: "19:30",
   },
 ] as const;
 
@@ -175,9 +179,13 @@ export function sfTeamIdsForSlot(slot: SfSlot): { homeTeamId: string; awayTeamId
   };
 }
 
+export function sfTimeWindow(slot: SfSlot): string {
+  return SF_BY_SLOT[slot].timeWindow;
+}
+
 export function sfAdminFixtureLabel(slot: SfSlot): string {
   const def = SF_BY_SLOT[slot];
-  return `${def.slot} · ${SF_MATCHDAY_LABEL} · ${def.homeTeamName} vs ${def.awayTeamName}`;
+  return `${def.slot} · ${SF_MATCHDAY_LABEL} · ${def.timeWindow} · ${def.homeTeamName} vs ${def.awayTeamName}`;
 }
 
 export const FINAL_MATCHDAY = "2026-06-07" as const;
@@ -187,8 +195,12 @@ export const FINAL_FIXTURE = {
   slot: "FINAL" as const,
   homeTeamName: "MTK Eagles",
   awayTeamName: "Sambo FC",
-  kickoffTime: "19:00",
+  timeWindow: "08:00 PM – 09:20 PM",
+  kickoffTime: "20:00",
 };
+
+/** Shown under the final fixture on Matchday 6. */
+export const FINAL_AFTERPARTY_LABEL = "Afterparty until 22:00";
 
 export function finalScheduledAtIso(): string {
   return `${FINAL_MATCHDAY} ${FINAL_FIXTURE.kickoffTime}:00+04`;
@@ -202,14 +214,15 @@ export function finalTeamIds(): { homeTeamId: string; awayTeamId: string } {
 }
 
 export function finalAdminFixtureLabel(): string {
-  return `Final · ${FINAL_MATCHDAY_LABEL} · ${FINAL_FIXTURE.homeTeamName} vs ${FINAL_FIXTURE.awayTeamName}`;
+  return `Final · ${FINAL_MATCHDAY_LABEL} · ${FINAL_FIXTURE.timeWindow} · ${FINAL_FIXTURE.homeTeamName} vs ${FINAL_FIXTURE.awayTeamName}`;
 }
 
 export const THIRD_PLACE_FIXTURE = {
   slot: "THIRD" as const,
   homeTeamName: "Ebra FC",
   awayTeamName: "EAS Saints",
-  kickoffTime: "16:00",
+  timeWindow: "06:00 PM – 07:20 PM",
+  kickoffTime: "18:00",
 };
 
 export function thirdPlaceScheduledAtIso(): string {
@@ -224,7 +237,7 @@ export function thirdPlaceTeamIds(): { homeTeamId: string; awayTeamId: string } 
 }
 
 export function thirdPlaceAdminFixtureLabel(): string {
-  return `Third Place · ${FINAL_MATCHDAY_LABEL} · ${THIRD_PLACE_FIXTURE.homeTeamName} vs ${THIRD_PLACE_FIXTURE.awayTeamName}`;
+  return `Third Place · ${FINAL_MATCHDAY_LABEL} · ${THIRD_PLACE_FIXTURE.timeWindow} · ${THIRD_PLACE_FIXTURE.homeTeamName} vs ${THIRD_PLACE_FIXTURE.awayTeamName}`;
 }
 
 /** Apply both Matchday 6 fixtures (final + third place) in display order. */
@@ -232,3 +245,22 @@ export const MATCHDAY_6_FIXTURES = [
   { kind: "final" as const, def: FINAL_FIXTURE },
   { kind: "third" as const, def: THIRD_PLACE_FIXTURE },
 ] as const;
+
+export type KoTimeMatch = {
+  stage: string;
+  slot_code: string | null;
+};
+
+/** Display window for SF / final / third place. */
+export function koTimeWindowForMatch(match: KoTimeMatch): string | null {
+  if (match.stage === "sf" && match.slot_code && match.slot_code in SF_BY_SLOT) {
+    return sfTimeWindow(match.slot_code as SfSlot);
+  }
+  if (match.stage === "final" && match.slot_code === FINAL_FIXTURE.slot) {
+    return FINAL_FIXTURE.timeWindow;
+  }
+  if (match.stage === "third" && match.slot_code === THIRD_PLACE_FIXTURE.slot) {
+    return THIRD_PLACE_FIXTURE.timeWindow;
+  }
+  return null;
+}

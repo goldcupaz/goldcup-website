@@ -27,7 +27,7 @@ where stage = 'qf' and slot_code = 'QF2';
 update public.matches set
   home_team_id = 'a0000001-0000-4000-8000-000000000003',
   away_team_id = 'a0000001-0000-4000-8000-000000000005',
-  scheduled_at = '2026-06-07 19:00:00+04'::timestamptz,
+  scheduled_at = '2026-06-07 20:00:00+04'::timestamptz,
   sort_order = 300
 where stage = 'final' and slot_code = 'FINAL';
 

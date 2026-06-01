@@ -32,6 +32,7 @@ import {
   qfTeamIdsForSlot,
   sfAdminFixtureLabel,
   sfScheduledAtIso,
+  sfTimeWindow,
   sfTeamIdsForSlot,
   finalAdminFixtureLabel,
   finalScheduledAtIso,
@@ -1005,15 +1006,34 @@ function KoMatchRow({
         {matchdayLabel && <div className="muted" style={{ fontSize: 10 }}>{matchdayLabel}</div>}
       </td>
       <td>
-        {qfSlot ? (
+        {qfSlot || sfSlot ? (
           <div style={{ fontSize: 12, lineHeight: 1.4 }}>
-            <div className="muted">{QF_BY_SLOT[qfSlot].timeWindow}</div>
+            <div className="muted">{qfSlot ? QF_BY_SLOT[qfSlot].timeWindow : sfTimeWindow(sfSlot!)}</div>
             <input
               type="datetime-local"
               value={when}
               onChange={(e) => setWhen(e.target.value)}
               style={{ marginTop: 6, maxWidth: "100%" }}
             />
+          </div>
+        ) : finalSlot || thirdSlot ? (
+          <div style={{ fontSize: 12, lineHeight: 1.4 }}>
+            <div className="muted">{finalSlot ? FINAL_FIXTURE.timeWindow : THIRD_PLACE_FIXTURE.timeWindow}</div>
+            <input
+              type="datetime-local"
+              value={when}
+              onChange={(e) => setWhen(e.target.value)}
+              style={{ marginTop: 6, maxWidth: "100%" }}
+            />
+            {showVenue && (
+              <input
+                type="text"
+                placeholder="Venue"
+                value={venue}
+                onChange={(e) => setVenue(e.target.value)}
+                style={{ marginTop: 6, maxWidth: "100%" }}
+              />
+            )}
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>

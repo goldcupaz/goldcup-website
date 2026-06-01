@@ -10,6 +10,8 @@ import {
   QUARTER_FINALS,
   SEMI_FINALS,
   THIRD_PLACE_FIXTURE,
+  FINAL_AFTERPARTY_LABEL,
+  koTimeWindowForMatch,
   type SfSlot,
 } from "../lib/knockoutBracket";
 import { formatMatchScoreLine } from "../lib/matchScoreDisplay";
@@ -533,7 +535,7 @@ function KoStyledMatchdayCard({
                 <table className="finals-fixture-table">
                   <thead>
                     <tr>
-                      <th>Kickoff</th>
+                      <th>Time</th>
                       <th className="finals-fixture-team-col">Home</th>
                       <th className="fixture-hide-vs finals-fixture-vs-col" aria-hidden />
                       <th className="finals-fixture-team-col">Away</th>
@@ -547,6 +549,18 @@ function KoStyledMatchdayCard({
                 </table>
               </div>
             </div>
+            {section.variant === "final" && (
+              <div className="finals-afterparty" role="note">
+                <span className="finals-afterparty__line" aria-hidden />
+                <p className="finals-afterparty__text">
+                  <span className="finals-afterparty__icon" aria-hidden="true">
+                    ✦
+                  </span>
+                  {FINAL_AFTERPARTY_LABEL}
+                </p>
+                <span className="finals-afterparty__line" aria-hidden />
+              </div>
+            )}
           </div>
         ))}
       </div>
@@ -567,6 +581,7 @@ function KoStyledFixtureRow({
   const finished = m.status === "full_time";
   const homeName = resolveTeamName(m, "home", nameById);
   const awayName = resolveTeamName(m, "away", nameById);
+  const timeLabel = koTimeWindowForMatch(m) ?? formatKickoff(m.scheduled_at);
 
   return (
     <tr
@@ -577,7 +592,7 @@ function KoStyledFixtureRow({
       onClick={() => onOpen(m.id)}
       onKeyDown={(e) => openMatchKey(e, m.id, onOpen)}
     >
-      <td className="finals-fixture-kickoff">{formatKickoff(m.scheduled_at)}</td>
+      <td className="finals-fixture-kickoff">{timeLabel}</td>
       <td className="finals-fixture-team finals-fixture-team--home">
         <span className="finals-fixture-team-inner">
           <TeamNameWithQualification match={m} side="home" nameById={nameById} />

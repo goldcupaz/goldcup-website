@@ -1804,6 +1804,64 @@ th {
   background: rgba(212, 175, 55, 0.06);
 }
 
+.finals-afterparty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(10px, 2.5vw, 16px);
+  margin: clamp(14px, 3vw, 20px) 0 clamp(6px, 2vw, 10px);
+  padding: 0 8px;
+}
+
+.finals-afterparty__line {
+  flex: 1;
+  height: 1px;
+  max-width: 120px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(212, 175, 55, 0.2) 25%,
+    rgba(212, 175, 55, 0.55) 50%,
+    rgba(212, 175, 55, 0.2) 75%,
+    transparent 100%
+  );
+}
+
+.finals-afterparty__text {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 10px 16px;
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(212, 175, 55, 0.12), rgba(0, 0, 0, 0.35));
+  color: var(--gold);
+  font-size: clamp(11px, 2.2vw, 13px);
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  box-shadow: 0 0 20px rgba(212, 175, 55, 0.1);
+}
+
+.finals-afterparty__icon {
+  font-size: 1.1em;
+  line-height: 1;
+}
+
+@media (max-width: 520px) {
+  .finals-afterparty__text {
+    font-size: 10px;
+    padding: 8px 12px;
+    letter-spacing: 0.08em;
+  }
+
+  .finals-afterparty__line {
+    max-width: 36px;
+  }
+}
+
 @media (max-width: 520px) {
   .finals-matchday-sections {
     padding-left: 4px;
